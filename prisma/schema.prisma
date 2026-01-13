@@ -1,0 +1,328 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER & ATHLETE
+// ============================================
+
+model User {
+  id          String      @id @default(cuid())
+  clerkId     String      @unique
+  email       String      @unique
+  accountType AccountType @default(ATHLETE)
+  role        Role        @default(ATHLETE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // If accountType is ATHLETE, this is their own athlete profile
+  athlete Athlete? @relation("UserAthlete")
+
+  // If accountType is PARENT, these are their managed children
+  managedAthletes Athlete[] @relation("ParentManaged")
+}
+
+enum AccountType {
+  ATHLETE // Adult competing for themselves
+  PARENT // Parent managing child athletes
+}
+
+enum Role {
+  ATHLETE
+  PARENT
+  COACH
+  GYM_ADMIN
+  SYSTEM_ADMIN
+}
+
+model Athlete {
+  id String @id @default(cuid())
+
+  // For adult athletes who have their own account
+  userId String? @unique
+  user   User?   @relation("UserAthlete", fields: [userId], references: [id])
+
+  // For child athletes managed by a parent
+  parentId String?
+  parent   User?   @relation("ParentManaged", fields: [parentId], references: [id])
+
+  displayName String
+  dateOfBirth DateTime
+  gender      String // Maps to division
+  avatarUrl   String?
+  isMinor     Boolean  @default(false) // Calculated from DOB, for quick filtering
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  domainLevels   DomainLevel[]
+  xpTransactions XPTransaction[]
+  submissions    ChallengeSubmission[]
+}
+
+// ============================================
+// DOMAINS & CATEGORIES (Admin-Configurable)
+// ============================================
+
+model Domain {
+  id          String  @id @default(cuid())
+  name        String  @unique // Strength, Skill, Endurance, Speed
+  slug        String  @unique
+  description String?
+  icon        String? // Icon name or URL
+  color       String? // Hex color for UI
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categories     Category[]
+  levels         DomainLevel[]
+  xpTransactions XPTransaction[]
+  xpThresholds   XPThreshold[] // Configurable XP per sublevel
+}
+
+// XP required per sublevel, configurable per domain per rank
+model XPThreshold {
+  id         String @id @default(cuid())
+  domainId   String
+  rank       String // F, E, D, C, B, A, S
+  sublevel   Int // 0-9
+  xpRequired Int // XP needed to reach this sublevel
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@unique([domainId, rank, sublevel])
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  domainId    String
+  name        String // e.g., "Balance", "Grip Strength", "Climbing"
+  slug        String
+  description String?
+  icon        String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  domain     Domain      @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  challenges Challenge[]
+
+  @@unique([domainId, slug])
+}
+
+// ============================================
+// CHALLENGES (The Core Content)
+// ============================================
+
+model Challenge {
+  id           String  @id @default(cuid())
+  categoryId   String
+  name         String
+  slug         String
+  description  String  @db.Text
+  instructions String? @db.Text // How to perform/submit
+  demoVideoUrl String? // Vercel Blob URL
+  demoImageUrl String? // Vercel Blob URL
+  baseXP       Int     @default(100) // XP awarded on completion
+  difficulty   Int     @default(1) // 1-10 scale for sorting/filtering
+  isActive     Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  category         Category              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  rankRequirements RankRequirement[]
+  submissions      ChallengeSubmission[]
+
+  @@unique([categoryId, slug])
+}
+
+// ============================================
+// DIVISIONS (Age/Gender - Admin-Configurable)
+// ============================================
+
+model Division {
+  id        String  @id @default(cuid())
+  name      String // e.g., "Youth Male 8-10", "Adult Female"
+  slug      String  @unique
+  gender    String? // Male, Female, or null for any
+  ageMin    Int? // Minimum age (inclusive)
+  ageMax    Int? // Maximum age (inclusive)
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rankRequirements RankRequirement[]
+  rankThresholds   RankThreshold[]
+}
+
+// ============================================
+// RANK REQUIREMENT MATRIX (The Rubric)
+// ============================================
+
+model RankRequirement {
+  id              String  @id @default(cuid())
+  challengeId     String
+  divisionId      String
+  requiredForRank String // F, E, D, C, B, A, S
+  bonusXP         Int     @default(0) // Extra XP for this division
+  isRequired      Boolean @default(true) // vs optional for rank
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  division  Division  @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, divisionId, requiredForRank])
+}
+
+// How many challenges needed per category to advance rank
+model RankThreshold {
+  id              String  @id @default(cuid())
+  divisionId      String
+  domainId        String
+  rank            String // The rank being unlocked (e.g., "C" means moving from D to C)
+  categoryId      String? // If null, applies to whole domain
+  requiredCount   Int // N of M challenges required
+  totalInCategory Int? // M (optional, can be calculated)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  division Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@unique([divisionId, domainId, rank, categoryId])
+}
+
+// ============================================
+// ATHLETE PROGRESS
+// ============================================
+
+model DomainLevel {
+  id        String @id @default(cuid())
+  athleteId String
+  domainId  String
+  letter    String @default("F") // F, E, D, C, B, A, S
+  sublevel  Int    @default(0) // 0-9
+  currentXP Int    @default(0)
+  bankedXP  Int    @default(0) // XP waiting for breakthrough
+  updatedAt DateTime @updatedAt
+
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  domain  Domain  @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@unique([athleteId, domainId])
+}
+
+model XPTransaction {
+  id        String   @id @default(cuid())
+  athleteId String
+  domainId  String
+  amount    Int
+  source    XPSource
+  sourceId  String? // Reference to challenge submission, competition, etc.
+  note      String?
+  createdAt DateTime @default(now())
+
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  domain  Domain  @relation(fields: [domainId], references: [id], onDelete: Cascade)
+}
+
+enum XPSource {
+  CHALLENGE
+  TRAINING
+  COMPETITION
+  EVENT
+  BONUS
+  ADMIN
+}
+
+// ============================================
+// CHALLENGE SUBMISSIONS
+// ============================================
+
+model ChallengeSubmission {
+  id            String           @id @default(cuid())
+  athleteId     String
+  challengeId   String
+  submittedById String // User who submitted (parent or athlete themselves)
+  videoUrl      String? // Vercel Blob URL
+  imageUrl      String? // Vercel Blob URL
+  notes         String?
+  status        SubmissionStatus @default(PENDING)
+  autoApproved  Boolean          @default(false) // True if submitter was Coach/Admin
+  xpAwarded     Int?
+  reviewedBy    String? // User ID of reviewer
+  reviewNotes   String?
+  submittedAt   DateTime         @default(now())
+  reviewedAt    DateTime?
+  version       Int              @default(1) // Increments on resubmission
+
+  athlete   Athlete             @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  challenge Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  history   SubmissionHistory[] // Previous versions
+
+  @@unique([athleteId, challengeId]) // One active submission per challenge per athlete
+}
+
+// Keeps history of resubmissions for audit
+model SubmissionHistory {
+  id           String           @id @default(cuid())
+  submissionId String
+  videoUrl     String?
+  imageUrl     String?
+  notes        String?
+  status       SubmissionStatus
+  reviewedBy   String?
+  reviewNotes  String?
+  submittedAt  DateTime
+  reviewedAt   DateTime?
+  version      Int
+  archivedAt   DateTime         @default(now())
+
+  submission ChallengeSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+// ============================================
+// FUTURE: COMPETITIONS
+// ============================================
+
+model Competition {
+  id        String   @id @default(cuid())
+  name      String
+  date      DateTime
+  location  String?
+  sport     String
+  domains   String[] // Which domains this affects
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  results CompetitionResult[]
+}
+
+model CompetitionResult {
+  id                String   @id @default(cuid())
+  competitionId     String
+  athleteId         String
+  placement         Int
+  totalParticipants Int
+  xpAwarded         Int
+  createdAt         DateTime @default(now())
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+}
