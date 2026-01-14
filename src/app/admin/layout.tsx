@@ -19,9 +19,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-3.5rem)] md:min-h-[calc(100vh-4rem)]">
       <AdminSidebar userRole={user.role} />
-      <main className="flex-1 p-6 overflow-auto">
+      <main className="flex-1 p-4 md:p-6 overflow-auto">
         {children}
       </main>
     </div>

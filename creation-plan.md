@@ -6,14 +6,89 @@
 |----------|--------|
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Database | Neon Postgres |
-| ORM | Prisma |
+| ORM | Prisma 7 |
 | Auth | Clerk |
-| Styling | Tailwind CSS + shadcn/ui |
+| Styling | Tailwind CSS v4 + shadcn/ui |
 | Validation | Zod |
 | Animations | Framer Motion |
 | Hosting | Vercel |
-| Storage | Vercel Blob |
+| Storage | Vercel Blob (images & videos) |
+| Video Compression | FFmpeg.wasm (client-side) |
 | Charts | TBD (Recharts or Tremor) |
+
+---
+
+## Video & Media Infrastructure
+
+### Video Sources
+Challenges support two types of demo videos:
+1. **Uploaded videos** - Stored in Vercel Blob, compressed client-side
+2. **External URLs** - YouTube/Vimeo links embedded via iframe
+
+### Components
+| Component | Purpose |
+|-----------|---------|
+| `VideoUpload` | Upload with client-side compression, progress tracking |
+| `VideoEmbed` | Embed YouTube/Vimeo with privacy-enhanced URLs |
+| `VideoDisplay` | Smart component that auto-detects source type |
+| `VideoPlayer` | Native HTML5 player for uploaded videos |
+| `VideoSkeleton` | Loading skeleton for Suspense fallback |
+| `ImageUpload` | Image upload with cropping (react-image-crop) |
+
+### Video Best Practices (Next.js aligned)
+- `preload="none"` for native controls (don't load until user interacts)
+- `preload="metadata"` for custom controls (load duration only)
+- `loading="lazy"` on iframes for external embeds
+- `playsInline` for iOS compatibility
+- `aria-label` for accessibility
+- Fallback content for unsupported browsers
+- Use `<VideoSkeleton>` with React Suspense for loading states
+
+### Client-Side Compression
+Using FFmpeg.wasm for mobile uploads:
+- Target: 720p, 30fps, H.264/AAC
+- Auto-compress if file exceeds threshold (default 10MB)
+- Shows progress during compression
+- Reduces upload time and storage costs
+
+### External Video Support
+Supported platforms:
+- YouTube (youtube.com, youtu.be, youtube.com/shorts)
+- Vimeo (vimeo.com, player.vimeo.com)
+
+Privacy-enhanced embeds:
+- YouTube: `youtube-nocookie.com` domain
+- Vimeo: `byline=0&portrait=0` params
+
+---
+
+## Design Principles
+
+### Mobile-First Design (CRITICAL)
+All UI must be designed **mobile-first**. Athletes will primarily use this app on their phones at gyms, competitions, and training sessions.
+
+**Key principles:**
+1. **Touch-friendly targets** – Minimum 44px tap targets for all interactive elements
+2. **Single-column layouts on mobile** – Stack content vertically, use horizontal layouts only on larger screens
+3. **Bottom navigation preferred** – Primary actions should be thumb-reachable
+4. **Large, readable text** – Base font size 16px minimum, important info larger
+5. **Swipe gestures** – Support swipe for common actions where appropriate
+6. **Minimal typing** – Use selectors, toggles, and pickers over text input when possible
+7. **Progressive disclosure** – Show essential info first, details on tap/expand
+8. **Fast loading** – Optimize images, lazy load where possible
+9. **Offline-friendly** – Cache key data for offline viewing (future PWA)
+10. **Responsive breakpoints:**
+    - `sm`: 640px (large phones)
+    - `md`: 768px (tablets)
+    - `lg`: 1024px (laptops)
+    - `xl`: 1280px (desktops)
+
+**Component guidelines:**
+- Cards: Full-width on mobile, grid on desktop
+- Forms: Single column, large inputs, sticky submit buttons
+- Tables: Convert to card lists on mobile
+- Modals: Full-screen sheets on mobile, centered modals on desktop
+- Navigation: Bottom tab bar on mobile, sidebar on desktop
 
 ---
 
@@ -656,96 +731,193 @@ model CompetitionResult {
 
 ## Immediate Next Steps
 
-### ✅ COMPLETED
-1. **Scaffold the project** – Next.js 16 + Prisma 7 + Tailwind v4 + shadcn
-2. **Set up Neon database** – Connected via Prisma
-3. **Configure Clerk** – Auth working + webhook for user sync
-4. **Run initial migration** – Database schema live (`prisma db push`)
-5. **Basic auth flow** – Sign-in, sign-up, onboarding (account type + profile creation)
-6. **Dashboard page** – Shows domains, Prime level, XP progress
+### ✅ COMPLETED - Phase 1: Project Setup
+1. ✅ **Scaffold the project** – Next.js 16 + Prisma 7 + Tailwind v4 + shadcn
+2. ✅ **Set up Neon database** – Connected via Prisma
+3. ✅ **Configure Clerk** – Auth working + webhook for user sync
+4. ✅ **Run initial migration** – Database schema live
 
-### 🔨 IN PROGRESS / NEXT UP
+### ✅ COMPLETED - Phase 2: Authentication & Onboarding
+1. ✅ **Sign up / Sign in with Clerk** – Working auth flow
+2. ✅ **Account type selection** – "I'm an athlete" vs "I'm a parent"
+3. ✅ **Athlete onboarding** – DOB, gender, display name, avatar, disciplines
+4. ✅ **Parent onboarding** – Add multiple children with profiles
+5. ✅ **Parent "also compete" option** – Parents can create their own athlete profile
+6. ✅ **Auto-assign division** – Based on age/gender
+7. ✅ **Gym owner onboarding** – Separate flow for gym registration
 
-**Priority 1: Admin Backend (Required before athletes can use the app)**
-Without domains, categories, and challenges configured, athletes see an empty dashboard.
+### ✅ COMPLETED - Phase 3: Admin Backend
+1. ✅ **Admin layout & navigation** – Sidebar with all admin sections
+2. ✅ **Domain CRUD** – Full management (Strength, Skill, Endurance, Speed)
+3. ✅ **Category CRUD** – Categories per domain with icons
+4. ✅ **Division CRUD** – Age/gender divisions with ranges
+5. ✅ **Discipline CRUD** – Sports/activities (Ninja, Calisthenics, etc.)
+6. ✅ **Equipment CRUD** – Master equipment list with icons/images
+7. ✅ **Equipment Packages** – "Standard Ninja Gym", "Standard Gym" quick-add bundles
+8. ✅ **Challenge CRUD** – Full challenge management with:
+   - ✅ AI-generated descriptions & instructions
+   - ✅ AI-suggested XP distribution
+   - ✅ Similar challenge search (duplicate prevention)
+   - ✅ Multi-domain XP distribution (primary/secondary/tertiary)
+   - ✅ Video upload & YouTube/Vimeo embed support
+   - ✅ Image upload with cropping
+   - ✅ Grading types (Pass/Fail, Reps, Time, Distance, Timed Reps)
+   - ✅ Grade matrix by division & rank
+   - ✅ Equipment requirements
+   - ✅ Discipline tagging
+   - ✅ Gym-specific challenges
+9. ✅ **Gym CRUD** – Full gym management with:
+   - ✅ Google Places integration (search & auto-fill address)
+   - ✅ Logo upload with cropping
+   - ✅ Equipment selection with packages
+   - ✅ Discipline associations
+   - ✅ Contact info & social links
+   - ✅ Form validation & completion progress
+10. ✅ **User Management** – Admin can edit users:
+    - ✅ View all users with role badges
+    - ✅ Edit role, account type
+    - ✅ View/manage athlete profiles & managed children
+    - ✅ Avatar upload
 
-1. [ ] **Admin layout & navigation** – Sidebar with admin sections
-2. [ ] **Domain CRUD** – Create/edit/delete the 4 domains (Strength, Skill, Endurance, Speed)
-3. [ ] **Category CRUD** – Create categories under each domain
-4. [ ] **Division CRUD** – Age/gender divisions
-5. [ ] **Challenge CRUD** – Create challenges with demo media
-6. [ ] **XP Threshold config** – Set XP required per rank/sublevel
-7. [ ] **Rank Requirement Matrix** – Set which challenges are required for which rank per division
+### 🔨 NEXT UP - Phase 4: Athlete Experience
 
-**Priority 2: Complete Athlete Experience**
-8. [ ] **Domain browsing** – View domains → categories → challenges
-9. [ ] **Challenge detail page** – View demo, see requirements, submit completion
-10. [ ] **Challenge submission** – Video/image upload via Vercel Blob
-11. [ ] **Submission review queue** – Admin/coach can approve/reject
+**Priority 1: Dashboard Enhancement**
+1. [ ] **Dashboard shows real data** – Currently shows placeholder/mock data
+   - [ ] Fetch actual domain levels from DB
+   - [ ] Calculate Prime level from domains
+   - [ ] Show real XP progress per domain
+   - [ ] Recent activity feed (actual submissions)
 
-**Priority 3: Parent Features**
-12. [ ] **Athlete switcher** – Parents can switch between children
-13. [ ] **Add child flow** – Parents can add more children after onboarding
-14. [ ] **Submit on behalf** – Parents submit for their children
+**Priority 2: Challenge Browsing**
+2. [ ] **Domain browsing page** – `/domains` - View all 4 domains
+3. [ ] **Domain detail page** – `/domains/[slug]` - Categories within domain
+4. [ ] **Category detail page** – `/domains/[slug]/[category]` - Challenges in category
+5. [ ] **Challenge detail page** – `/challenges/[slug]`
+   - Demo video/image player
+   - Description & instructions
+   - XP value & domain distribution
+   - "Required for [Rank]" badge based on athlete's division
+   - Equipment needed
+   - Submit button
 
-### 📋 REMAINING PHASES
+**Priority 3: Challenge Submission**
+6. [ ] **Submission form** – Video/image upload for proof
+7. [ ] **Submission API** – `/api/submissions` - Create submission
+8. [ ] **My submissions page** – View pending/approved/rejected
+9. [ ] **XP calculation on approval** – Tier-based XP awards
 
-**Phase 4: Admin Interface (MVP)**
-- [ ] Domain & Category Management
-- [ ] Challenge Management with media upload
-- [ ] Division Configuration
-- [ ] Rank Requirement Matrix Editor
-- [ ] Submission Review Queue
+**Priority 4: Admin Review**
+10. [ ] **Submission review queue** – `/admin/submissions`
+    - List pending submissions with filters
+    - Video/image viewer
+    - Approve/reject with notes
+    - Auto-approve for coaches/admins
 
-**Phase 5: Polish**
+### 📋 Phase 5: Parent Features
+11. [ ] **Athlete switcher** – Dropdown to switch between managed children
+12. [ ] **Add child flow** – Add more children after onboarding
+13. [ ] **Submit on behalf** – Parents submit for their children
+14. [ ] **Per-child dashboard** – View each child's progress
+
+### 📋 Phase 6: Gym Features
+15. [ ] **Gym dashboard** – `/gym/[slug]` - Public gym page
+16. [ ] **Gym member management** – View/manage members
+17. [ ] **Gym-specific challenges** – Challenges only for gym members
+18. [ ] **Equipment-based challenge filtering** – Show challenges gym can support
+
+### 📋 Phase 7: Polish & Enhancement
 - [ ] Level-up animations (Framer Motion)
-- [ ] Mobile-responsive design
+- [ ] Breakthrough unlock celebrations
+- [ ] Progress notifications
+- [ ] Mobile-responsive refinements
+- [ ] Dark mode polish
 - [ ] PWA support
 
-**Phase 6: Future**
-- [ ] Coach/gym admin roles
-- [ ] Competition integration
-- [ ] Leaderboards
-- [ ] Social features
+### 📋 Phase 8: Future Features
+- [ ] Coach verification workflow
+- [ ] Leaderboards (opt-in by division)
+- [ ] Competition/event integration
+- [ ] Social profiles & following
+- [ ] Team challenges
+- [ ] Training program suggestions
+- [ ] Mobile app (React Native) or enhanced PWA
 
 ---
 
-## Key Admin UI Components Needed
+## Key Admin UI Components (Completed)
 
-### Rubric Matrix Editor
-The most complex UI piece. Needs to show:
-```
-                    | Youth 8-10 | Youth 11-13 | Adult M | Adult F |
------------------------------------------------------------------
-SKILL DOMAIN
-  Balance Category
-    Challenge A     |    F       |     E       |   D     |    D    |
-    Challenge B     |    E       |     D       |   C     |    C    |
-  Climbing Category
-    Challenge C     |    D       |     C       |   B     |    B    |
-```
+### ✅ Challenge Editor (Completed)
+Full-featured challenge form with:
+- AI content generation (description, instructions)
+- AI XP distribution suggestions
+- Similar challenge search (duplicate prevention)
+- Multi-domain XP sliders (primary/secondary/tertiary)
+- Category selection (many-to-many)
+- Discipline tagging
+- Equipment requirements
+- Gym restriction option
+- Grading type selector (Pass/Fail, Reps, Time, Distance, Timed Reps)
+- **Grade Matrix** - Inline table to set targets per division per rank
+- Auto-fill helper for grade progression
+- Video upload with compression OR YouTube/Vimeo embed
+- Image upload with cropping
 
-Features:
-- Click cell to set required rank (or "not required")
-- Filter by domain/category
-- Bulk operations
-- Import/export for backup
+### ✅ Gym Editor (Completed)
+Full-featured gym form with:
+- Google Places search & auto-fill
+- Logo upload with cropping
+- Equipment packages (quick-add bundles)
+- Individual equipment selection
+- Discipline associations
+- Contact info & validation
+- Completion progress tracker
 
-### Challenge Editor
-- Rich form with media upload
-- Preview of demo video/image
-- Category assignment (dropdown filtered by domain)
-- Rank requirement quick-set per division
+### ✅ Equipment Packages (Completed)
+Quick-add bundles for common gym setups:
+- Admin can create packages (e.g., "Standard Ninja Gym")
+- Each package has a list of equipment with quantities
+- Gyms can click to add all equipment from a package
 
 ---
 
 ## Open Questions (RESOLVED)
 
-### 1. XP per sublevel
-**Answer**: Configurable per rank, per domain
-- Each domain can have different XP thresholds
-- Admin UI will allow setting XP required for each sublevel transition
-- Allows fine-tuning difficulty per domain (e.g., Skill might be harder than Endurance)
+### 1. XP System - Tier-Based Awards
+**Answer**: Fixed XP per tier, claimable once per challenge
+
+**Tier XP Awards** (awarded when achieving each tier):
+| Tier | XP Awarded |
+|------|------------|
+| F | 25 |
+| E | 50 |
+| D | 75 |
+| C | 100 |
+| B | 150 |
+| A | 200 |
+| S | 300 |
+
+**XP Required Per Sublevel** (to advance within a rank):
+| Rank | XP per Sublevel | Total for Rank |
+|------|-----------------|----------------|
+| F | 100 | 1,000 (F0→E0) |
+| E | 200 | 2,000 (E0→D0) |
+| D | 400 | 4,000 (D0→C0) |
+| C | 800 | 8,000 (C0→B0) |
+| B | 1,600 | 16,000 (B0→A0) |
+| A | 3,200 | 32,000 (A0→S0) |
+| S | 6,400 | 64,000 (S0→S9) |
+
+**Key mechanics:**
+- Challenges are **graded** with tier targets per division (e.g., "10 pullups = D-tier for Adult Male")
+- Athlete achieves a tier based on performance, earns XP for that tier + all lower unclaimed tiers
+- Each tier can only award XP **once per challenge** (tracked via `claimedTiers`)
+- Encourages improvement: athlete who gets D-tier first, then later achieves B-tier, gets C+B XP on second submission
+- XP is distributed across domains based on challenge's primary/secondary/tertiary percentages
+
+**Implementation:**
+- `src/lib/xp.ts` - All XP constants and calculation functions
+- `ChallengeSubmission.claimedTiers` - Comma-separated list of claimed tiers
+- `ChallengeSubmission.achievedTier` - Current highest tier achieved
 
 ### 2. Breakthrough rules
 **Answer**: Configurable via admin interface
@@ -778,3 +950,27 @@ Features:
 **Answer**: No pre-seeding, fully configurable from scratch
 - Admins create domains, categories, divisions, challenges
 - More flexible for different use cases
+
+### 8. Multi-Domain XP for Challenges
+**Answer**: Challenges can award XP to up to 3 domains
+- **Primary domain**: Required, explicitly set (50-100% of XP)
+- **Secondary domain**: Optional, 0-50% of base XP
+- **Tertiary domain**: Optional, 0-30% of base XP
+- Percentages must sum to 100%
+- Example: Salmon Ladder (100 XP) → Skill 50%, Strength 40%, Speed 10% = 50+40+10 XP across 3 domains
+- On completion, athlete receives separate XP transactions for each domain
+
+### 9. Challenge-Category Relationship
+**Answer**: Many-to-many
+- A challenge can appear in multiple categories (e.g., Salmon Ladder in "Swinging", "Grip Strength", "Climbing")
+- Categories are for **browsing/organization**, not XP distribution
+- XP domains are set explicitly on the challenge, independent of categories
+- Athletes browsing any linked category will see the challenge
+
+### 10. Disciplines (Sports/Activities)
+**Answer**: Separate concept from domains/categories
+- Disciplines = sports/activities (Ninja, Calisthenics, Parkour, CrossFit, Sprinting, etc.)
+- Challenges can belong to multiple disciplines (many-to-many)
+- Used for **filtering**: "Show me all Ninja challenges" or "Show me Calisthenics challenges"
+- Admin-configurable list
+- Example: Salmon Ladder → Disciplines: [Ninja, Calisthenics]

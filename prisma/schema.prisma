@@ -15,21 +15,39 @@ model User {
   id          String      @id @default(cuid())
   clerkId     String      @unique
   email       String      @unique
-  accountType AccountType @default(ATHLETE)
+  accountType AccountType @default(ATHLETE) // Primary mode, but users can be both
   role        Role        @default(ATHLETE)
+  
+  // Suspension
+  suspendedAt    DateTime?  // If set, user is suspended
+  suspendedBy    String?    // ID of admin who suspended
+  suspendReason  String?    // Reason for suspension
+  
+  // Review permissions (for peer reviews on social feed)
+  canReview         Boolean   @default(true)   // Can this user review submissions?
+  reviewBannedAt    DateTime? // When they were banned from reviewing
+  reviewBannedBy    String?   // Admin who banned them
+  reviewBanReason   String?   // Why they were banned
+  reviewCount       Int       @default(0)      // Total reviews given
+  reviewAccuracy    Float?    // % of reviews that matched final outcome (quality metric)
+  
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  // If accountType is ATHLETE, this is their own athlete profile
+  // User's own athlete profile (if they compete themselves)
   athlete Athlete? @relation("UserAthlete")
 
-  // If accountType is PARENT, these are their managed children
+  // Child athletes this user manages (if they're a parent)
   managedAthletes Athlete[] @relation("ParentManaged")
+
+  // Gym relationships
+  gymMemberships GymMember[] // Gyms this user is a member of
+  ownedGyms      Gym[]       @relation("GymOwner") // Gyms this user owns
 }
 
 enum AccountType {
-  ATHLETE // Adult competing for themselves
-  PARENT // Parent managing child athletes
+  ATHLETE // Primarily competing for themselves
+  PARENT  // Primarily managing child athletes (but can also compete)
 }
 
 enum Role {
@@ -62,6 +80,20 @@ model Athlete {
   domainLevels   DomainLevel[]
   xpTransactions XPTransaction[]
   submissions    ChallengeSubmission[]
+  disciplines    AthleteDiscipline[]   // Primary training disciplines
+}
+
+// Join table: Athlete <-> Discipline (many-to-many)
+model AthleteDiscipline {
+  id           String @id @default(cuid())
+  athleteId    String
+  disciplineId String
+  createdAt    DateTime @default(now())
+
+  athlete    Athlete    @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+
+  @@unique([athleteId, disciplineId])
 }
 
 // ============================================
@@ -84,6 +116,11 @@ model Domain {
   levels         DomainLevel[]
   xpTransactions XPTransaction[]
   xpThresholds   XPThreshold[] // Configurable XP per sublevel
+
+  // Challenges that award XP to this domain
+  primaryChallenges   Challenge[] @relation("PrimaryDomain")
+  secondaryChallenges Challenge[] @relation("SecondaryDomain")
+  tertiaryChallenges  Challenge[] @relation("TertiaryDomain")
 }
 
 // XP required per sublevel, configurable per domain per rank
@@ -114,35 +151,222 @@ model Category {
   updatedAt   DateTime @updatedAt
 
   domain     Domain      @relation(fields: [domainId], references: [id], onDelete: Cascade)
-  challenges Challenge[]
+  challenges ChallengeCategory[] // Many-to-many with challenges
 
   @@unique([domainId, slug])
+}
+
+// ============================================
+// DISCIPLINES (Sports/Activities - Admin-Configurable)
+// ============================================
+
+model Discipline {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g., "Ninja", "Calisthenics", "Parkour", "CrossFit"
+  slug        String  @unique
+  description String?
+  icon        String?
+  color       String? // Hex color for UI
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  challenges ChallengeDiscipline[] // Many-to-many with challenges
+  equipment  DisciplineEquipment[] // Many-to-many with equipment
+  gyms       GymDiscipline[]       // Many-to-many with gyms
+  athletes   AthleteDiscipline[]   // Many-to-many with athletes
+}
+
+// ============================================
+// EQUIPMENT (Admin-Configurable)
+// ============================================
+
+model Equipment {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g., "Salmon Ladder", "Warped Wall", "Pull-up Bar"
+  slug        String  @unique
+  description String?
+  icon        String?
+  imageUrl    String? // Photo of the equipment
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  challenges  ChallengeEquipment[]  // Many-to-many with challenges
+  disciplines DisciplineEquipment[] // Many-to-many with disciplines
+  gyms        GymEquipment[]        // Many-to-many with gyms
+  packages    EquipmentPackageItem[] // Many-to-many with packages
+}
+
+// Equipment Package - a preset collection of equipment for easy gym setup
+model EquipmentPackage {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g., "Standard Ninja Gym", "Basic Fitness Center"
+  slug        String  @unique
+  description String? @db.Text
+  icon        String? // Emoji or icon identifier
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items EquipmentPackageItem[]
+}
+
+// Join table: EquipmentPackage <-> Equipment
+model EquipmentPackageItem {
+  id          String @id @default(cuid())
+  packageId   String
+  equipmentId String
+  quantity    Int    @default(1) // Default quantity when package is applied
+  createdAt   DateTime @default(now())
+
+  package   EquipmentPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  equipment Equipment        @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([packageId, equipmentId])
+}
+
+// Join table: Discipline <-> Equipment (many-to-many)
+model DisciplineEquipment {
+  id           String @id @default(cuid())
+  disciplineId String
+  equipmentId  String
+  createdAt    DateTime @default(now())
+
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  equipment  Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([disciplineId, equipmentId])
+}
+
+// Join table: Challenge <-> Equipment (many-to-many)
+model ChallengeEquipment {
+  id          String @id @default(cuid())
+  challengeId String
+  equipmentId String
+  isRequired  Boolean @default(true) // true = required, false = optional/alternative
+  notes       String? // e.g., "Can substitute with rings"
+  createdAt   DateTime @default(now())
+
+  challenge  Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  equipment  Equipment  @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, equipmentId])
 }
 
 // ============================================
 // CHALLENGES (The Core Content)
 // ============================================
 
+// Join table: Challenge <-> Category (many-to-many)
+model ChallengeCategory {
+  id          String @id @default(cuid())
+  challengeId String
+  categoryId  String
+  sortOrder   Int    @default(0) // For ordering within a category
+  createdAt   DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, categoryId])
+}
+
+// Join table: Challenge <-> Discipline (many-to-many)
+model ChallengeDiscipline {
+  id           String @id @default(cuid())
+  challengeId  String
+  disciplineId String
+  createdAt    DateTime @default(now())
+
+  challenge  Challenge  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, disciplineId])
+}
+
+// How a challenge is measured/graded
+enum GradingType {
+  PASS_FAIL   // Simple completion (e.g., "Complete the warped wall")
+  REPS        // Count repetitions (e.g., "Pull-ups")
+  TIME        // Duration in seconds (e.g., "Hold a dead hang for X seconds")
+  DISTANCE    // Distance in meters/feet (e.g., "Broad jump X meters")
+  TIMED_REPS  // Reps within a time limit (e.g., "Max pull-ups in 60 seconds")
+}
+
+// Graded requirements per division and rank
+// Example: Pull-ups for Adult Male at C-rank = 15 reps
+model ChallengeGrade {
+  id           String  @id @default(cuid())
+  challengeId  String
+  divisionId   String
+  rank         String  // F, E, D, C, B, A, S
+  targetValue  Int     // The number to achieve (reps, seconds, etc.)
+  description  String? // Optional override text, e.g., "15 strict pull-ups"
+  bonusXP      Int     @default(0) // Extra XP for this specific grade
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  division  Division  @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, divisionId, rank])
+}
+
 model Challenge {
   id           String  @id @default(cuid())
-  categoryId   String
-  name         String
-  slug         String
+  name         String  @unique
+  slug         String  @unique
   description  String  @db.Text
   instructions String? @db.Text // How to perform/submit
   demoVideoUrl String? // Vercel Blob URL
   demoImageUrl String? // Vercel Blob URL
-  baseXP       Int     @default(100) // XP awarded on completion
-  difficulty   Int     @default(1) // 1-10 scale for sorting/filtering
   isActive     Boolean @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  category         Category              @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Grading configuration
+  gradingType  GradingType @default(PASS_FAIL) // How is this challenge measured?
+  gradingUnit  String?     // e.g., "reps", "seconds", "meters", "feet"
+  timeFormat   String?     // For TIME type: "seconds", "mm:ss", "hh:mm:ss"
+  minRank      String      @default("F") // Lowest rank this challenge is available for
+  maxRank      String      @default("S") // Highest rank this challenge is available for
+
+  // Gym-specific challenge (null = global challenge available to all)
+  gymId String?
+  gym   Gym?    @relation(fields: [gymId], references: [id], onDelete: SetNull)
+
+  // Categories this challenge appears in (many-to-many)
+  categories ChallengeCategory[]
+
+  // Disciplines/sports this challenge belongs to (many-to-many)
+  disciplines ChallengeDiscipline[]
+
+  // Equipment required for this challenge (many-to-many)
+  equipment ChallengeEquipment[]
+
+  // Graded requirements per division/rank
+  grades ChallengeGrade[]
+
+  // Multi-domain XP distribution (up to 3 domains)
+  // Percentages must sum to 100
+  // Example: Skill 50%, Strength 40%, Speed 10%
+  primaryDomainId    String  // Required - main domain for XP
+  primaryXPPercent   Int     @default(100) // 50-100%
+  secondaryDomainId  String? // Optional second domain
+  secondaryXPPercent Int?    // 0-50%
+  tertiaryDomainId   String? // Optional third domain
+  tertiaryXPPercent  Int?    // 0-30%
+
+  primaryDomain   Domain  @relation("PrimaryDomain", fields: [primaryDomainId], references: [id])
+  secondaryDomain Domain? @relation("SecondaryDomain", fields: [secondaryDomainId], references: [id], onDelete: SetNull)
+  tertiaryDomain  Domain? @relation("TertiaryDomain", fields: [tertiaryDomainId], references: [id], onDelete: SetNull)
+
   rankRequirements RankRequirement[]
   submissions      ChallengeSubmission[]
-
-  @@unique([categoryId, slug])
 }
 
 // ============================================
@@ -163,6 +387,7 @@ model Division {
 
   rankRequirements RankRequirement[]
   rankThresholds   RankThreshold[]
+  challengeGrades  ChallengeGrade[]
 }
 
 // ============================================
@@ -259,12 +484,23 @@ model ChallengeSubmission {
   notes         String?
   status        SubmissionStatus @default(PENDING)
   autoApproved  Boolean          @default(false) // True if submitter was Coach/Admin
-  xpAwarded     Int?
   reviewedBy    String? // User ID of reviewer
   reviewNotes   String?
   submittedAt   DateTime         @default(now())
   reviewedAt    DateTime?
-  version       Int              @default(1) // Increments on resubmission
+
+  // For graded challenges: what value did they achieve?
+  achievedValue Int? // e.g., 20 reps, 45 seconds, etc.
+  
+  // Which rank tier did they achieve? (F, E, D, C, B, A, S)
+  achievedRank  String? // Calculated from achievedValue vs ChallengeGrade targets
+  
+  // Which tiers have been claimed for XP? (prevents re-farming)
+  // Stored as comma-separated: "F,E,D,C" means F through C tiers claimed
+  claimedTiers  String  @default("") // Empty = none claimed yet
+  
+  // Total XP awarded across all claimed tiers
+  xpAwarded     Int     @default(0)
 
   athlete   Athlete             @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   challenge Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
@@ -325,4 +561,92 @@ model CompetitionResult {
   createdAt         DateTime @default(now())
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// GYMS
+// ============================================
+
+model Gym {
+  id            String  @id @default(cuid())
+  name          String
+  slug          String  @unique
+  description   String? @db.Text
+  logoUrl       String?
+  bannerUrl     String?
+  website       String?
+  googlePlaceId String? // Google Places API place_id for Maps integration
+  address       String?
+  city          String?
+  state         String?
+  country       String?
+  zipCode       String?
+  phone         String?
+  email         String?
+  isActive      Boolean @default(true)
+  isVerified    Boolean @default(false) // Admin-verified gym
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Owner (the user who created/owns this gym)
+  ownerId String
+  owner   User   @relation("GymOwner", fields: [ownerId], references: [id])
+
+  // Relationships
+  members     GymMember[]      // Users who are members/staff of this gym
+  equipment   GymEquipment[]   // Equipment this gym has
+  disciplines GymDiscipline[]  // Disciplines this gym focuses on
+  challenges  Challenge[]      // Gym-specific challenges
+}
+
+// Gym membership role
+enum GymRole {
+  MEMBER  // Regular member
+  COACH   // Can review submissions
+  MANAGER // Can manage gym settings, equipment, challenges
+  OWNER   // Full control (set automatically for gym creator)
+}
+
+// Join table: User <-> Gym (many-to-many with role)
+model GymMember {
+  id        String   @id @default(cuid())
+  gymId     String
+  userId    String
+  role      GymRole  @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  isActive  Boolean  @default(true)
+
+  gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, userId])
+}
+
+// Join table: Gym <-> Equipment (what equipment the gym has)
+model GymEquipment {
+  id          String   @id @default(cuid())
+  gymId       String
+  equipmentId String
+  quantity    Int      @default(1) // How many of this equipment
+  notes       String?  // e.g., "14ft warped wall"
+  createdAt   DateTime @default(now())
+
+  gym       Gym       @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, equipmentId])
+}
+
+// Join table: Gym <-> Discipline (what disciplines the gym focuses on)
+model GymDiscipline {
+  id           String   @id @default(cuid())
+  gymId        String
+  disciplineId String
+  isPrimary    Boolean  @default(false) // Main discipline for the gym
+  createdAt    DateTime @default(now())
+
+  gym        Gym        @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+
+  @@unique([gymId, disciplineId])
 }

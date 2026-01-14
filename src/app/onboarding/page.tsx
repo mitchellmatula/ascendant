@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export default function OnboardingPage() {
   const router = useRouter();
   const { user } = useUser();
-  const [accountType, setAccountType] = useState<"athlete" | "parent" | null>(null);
+  const [accountType, setAccountType] = useState<"athlete" | "parent" | "gym_owner" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleContinue = async () => {
@@ -17,8 +17,12 @@ export default function OnboardingPage() {
     
     setIsLoading(true);
     
-    // Navigate to profile creation with account type
-    router.push(`/onboarding/profile?type=${accountType}`);
+    // Navigate to appropriate setup page
+    if (accountType === "gym_owner") {
+      router.push("/onboarding/gym");
+    } else {
+      router.push(`/onboarding/profile?type=${accountType}`);
+    }
   };
 
   return (
@@ -80,6 +84,33 @@ export default function OnboardingPage() {
                 <li>• Create profiles for your children</li>
                 <li>• Submit challenges on their behalf</li>
                 <li>• Track all your kids&apos; progress</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          <Card
+            className={`cursor-pointer transition-all ${
+              accountType === "gym_owner"
+                ? "ring-2 ring-primary"
+                : "hover:border-primary/50"
+            }`}
+            onClick={() => setAccountType("gym_owner")}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <span className="text-2xl">🏢</span>
+                I&apos;m a Gym Owner
+              </CardTitle>
+              <CardDescription>
+                I own or manage a training facility
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Register your gym on Ascendant</li>
+                <li>• Create gym-specific challenges</li>
+                <li>• Manage members and coaches</li>
+                <li>• Track your athletes&apos; progress</li>
               </ul>
             </CardContent>
           </Card>

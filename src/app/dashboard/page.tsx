@@ -36,32 +36,32 @@ export default async function DashboardPage() {
   const prime = calculatePrime(domainLevels);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Welcome back, {athlete.displayName}!</h1>
-        <p className="text-muted-foreground">Track your progress across all domains</p>
+    <div className="container mx-auto px-4 py-6 md:py-8">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {athlete.displayName}!</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Track your progress across all domains</p>
       </div>
 
       {/* Prime Level */}
-      <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <span className="text-2xl">⭐</span>
+      <Card className="mb-6 md:mb-8 bg-gradient-to-r from-primary/10 to-primary/5">
+        <CardHeader className="pb-2 md:pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <span className="text-xl md:text-2xl">⭐</span>
             Prime Level
           </CardTitle>
-          <CardDescription>Your overall athletic balance</CardDescription>
+          <CardDescription className="text-xs md:text-sm">Your overall athletic balance</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
             <div
-              className="text-5xl font-bold"
+              className="text-4xl md:text-5xl font-bold"
               style={{ color: getRankColor(prime.letter) }}
             >
               {formatLevel(prime.letter, prime.sublevel)}
             </div>
             <div>
-              <div className="text-lg font-medium">{getRankLabel(prime.letter)}</div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-base md:text-lg font-medium">{getRankLabel(prime.letter)}</div>
+              <div className="text-xs md:text-sm text-muted-foreground">
                 Average of all domains
               </div>
             </div>
@@ -69,8 +69,8 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Domain Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Domain Cards - 2 columns on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {allDomains.map((domain) => {
           const level = domainLevels.find((l) => l.domainId === domain.id);
           const letter = level?.letter ?? "F";
@@ -79,27 +79,27 @@ export default async function DashboardPage() {
 
           return (
             <Card key={domain.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-xl">{domain.icon ?? "🎯"}</span>
-                  {domain.name}
+              <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
+                <CardTitle className="flex items-center gap-1.5 md:gap-2 text-sm md:text-base">
+                  <span className="text-lg md:text-xl">{domain.icon ?? "🎯"}</span>
+                  <span className="truncate">{domain.name}</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
                 <div
-                  className="text-4xl font-bold mb-2"
+                  className="text-3xl md:text-4xl font-bold mb-1 md:mb-2"
                   style={{ color: domain.color ?? getRankColor(letter) }}
                 >
                   {formatLevel(letter, sublevel)}
                 </div>
-                <div className="text-sm text-muted-foreground">
+                <div className="text-xs md:text-sm text-muted-foreground">
                   {getRankLabel(letter)}
                 </div>
-                <div className="mt-2 text-xs text-muted-foreground">
+                <div className="mt-1.5 md:mt-2 text-xs text-muted-foreground">
                   {currentXP.toLocaleString()} XP
                 </div>
                 {/* Progress bar within sublevel */}
-                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="mt-1.5 md:mt-2 h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all"
                     style={{ width: `${((currentXP % 100) / 100) * 100}%` }}
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
 
       {/* Empty state if no domains configured */}
       {allDomains.length === 0 && (
-        <Card className="text-center py-12">
+        <Card className="text-center py-8 md:py-12">
           <CardContent>
             <p className="text-muted-foreground">
               No domains have been configured yet.
