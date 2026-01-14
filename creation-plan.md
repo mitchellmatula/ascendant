@@ -757,15 +757,18 @@ model CompetitionResult {
 8. ✅ **Challenge CRUD** – Full challenge management with:
    - ✅ AI-generated descriptions & instructions
    - ✅ AI-suggested XP distribution
+   - ✅ AI-generated grade matrix (with web search for running benchmarks)
    - ✅ Similar challenge search (duplicate prevention)
    - ✅ Multi-domain XP distribution (primary/secondary/tertiary)
    - ✅ Video upload & YouTube/Vimeo embed support
    - ✅ Image upload with cropping
    - ✅ Grading types (Pass/Fail, Reps, Time, Distance, Timed Reps)
+   - ✅ Time format support (seconds, mm:ss, hh:mm:ss)
    - ✅ Grade matrix by division & rank
    - ✅ Equipment requirements
    - ✅ Discipline tagging
    - ✅ Gym-specific challenges
+   - ✅ Form validation with inline error display
 9. ✅ **Gym CRUD** – Full gym management with:
    - ✅ Google Places integration (search & auto-fill address)
    - ✅ Logo upload with cropping
@@ -778,40 +781,49 @@ model CompetitionResult {
     - ✅ Edit role, account type
     - ✅ View/manage athlete profiles & managed children
     - ✅ Avatar upload
+11. ✅ **Database Seed Script** – `npm run db:seed` populates:
+    - ✅ 4 Domains (Strength, Skill, Endurance, Speed)
+    - ✅ 22 Categories across domains
+    - ✅ 18 Divisions (Kids 5-7 through Masters 60+, M/F)
+    - ✅ 16 Disciplines (Ninja, Calisthenics, Sprint, Marathon, etc.)
+    - ✅ 23 Equipment items
 
 ### 🔨 NEXT UP - Phase 4: Athlete Experience
 
 **Priority 1: Dashboard Enhancement**
-1. [ ] **Dashboard shows real data** – Currently shows placeholder/mock data
-   - [ ] Fetch actual domain levels from DB
-   - [ ] Calculate Prime level from domains
-   - [ ] Show real XP progress per domain
-   - [ ] Recent activity feed (actual submissions)
+1. ✅ **Dashboard shows real data** – Fetches actual domain levels from DB
+   - ✅ Fetch actual domain levels from DB
+   - ✅ Calculate Prime level from domains
+   - ✅ Show real XP progress per domain (with correct XP thresholds)
+   - ✅ Recent activity feed (XP transactions & submissions)
+   - ✅ Quick action links
 
 **Priority 2: Challenge Browsing**
-2. [ ] **Domain browsing page** – `/domains` - View all 4 domains
-3. [ ] **Domain detail page** – `/domains/[slug]` - Categories within domain
-4. [ ] **Category detail page** – `/domains/[slug]/[category]` - Challenges in category
-5. [ ] **Challenge detail page** – `/challenges/[slug]`
-   - Demo video/image player
-   - Description & instructions
-   - XP value & domain distribution
-   - "Required for [Rank]" badge based on athlete's division
-   - Equipment needed
-   - Submit button
+2. ✅ **Domain browsing page** – `/domains` - View all 4 domains with progress
+3. ✅ **Domain detail page** – `/domains/[slug]` - Categories within domain with completion %
+4. ✅ **Category detail page** – `/domains/[slug]/[category]` - Challenges in category
+5. ✅ **Challenge detail page** – `/challenges/[slug]`
+   - ✅ Demo video/image player (VideoDisplay component)
+   - ✅ Description & instructions
+   - ✅ XP value & domain distribution
+   - ✅ "Required for [Rank]" badge based on athlete's division
+   - ✅ Equipment needed
+   - ✅ Tier targets grid
+   - ✅ Submit button (sticky at bottom)
+6. ✅ **Challenge browse page** – `/challenges` - All challenges with filtering by discipline
 
 **Priority 3: Challenge Submission**
-6. [ ] **Submission form** – Video/image upload for proof
-7. [ ] **Submission API** – `/api/submissions` - Create submission
-8. [ ] **My submissions page** – View pending/approved/rejected
-9. [ ] **XP calculation on approval** – Tier-based XP awards
+7. ✅ **Submission form** – `/challenges/[slug]/submit` - Video upload for proof
+8. ✅ **Submission API** – `/api/submissions` - Create/update submissions
+9. ✅ **My submissions page** – `/submissions` - View pending/approved/rejected
+10. ✅ **XP calculation on approval** – Tier-based XP awards with multi-domain distribution
 
 **Priority 4: Admin Review**
-10. [ ] **Submission review queue** – `/admin/submissions`
-    - List pending submissions with filters
-    - Video/image viewer
-    - Approve/reject with notes
-    - Auto-approve for coaches/admins
+11. ✅ **Submission review queue** – `/admin/submissions`
+    - ✅ List pending submissions with filters
+    - ✅ Video/image viewer
+    - ✅ Approve/reject with notes
+    - ✅ Auto-approve for coaches/admins
 
 ### 📋 Phase 5: Parent Features
 11. [ ] **Athlete switcher** – Dropdown to switch between managed children

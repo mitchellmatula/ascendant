@@ -169,13 +169,21 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
   // Calculate remaining XP percentage
   const remainingPercent = 100 - (formData.primaryXPPercent + (formData.secondaryXPPercent || 0) + (formData.tertiaryXPPercent || 0));
 
+  // Check if grading unit is required (REPS, DISTANCE, TIMED_REPS)
+  const needsGradingUnit = formData.gradingType !== "PASS_FAIL" && formData.gradingType !== "TIME";
+  const hasRequiredGradingUnit = !needsGradingUnit || (formData.gradingUnit && formData.gradingUnit.trim().length > 0);
+
+  // Collect validation errors for display
+  const validationErrors: string[] = [];
+  if (formData.name.trim().length < 2) validationErrors.push("Name must be at least 2 characters");
+  if (formData.description.trim().length < 10) validationErrors.push("Description must be at least 10 characters");
+  if (!formData.primaryDomainId) validationErrors.push("Primary domain is required");
+  if (formData.categoryIds.length === 0) validationErrors.push("At least one category is required");
+  if (remainingPercent !== 0) validationErrors.push(`XP percentages must sum to 100% (currently ${100 - remainingPercent}%)`);
+  if (!hasRequiredGradingUnit) validationErrors.push("Unit of measurement is required for this grading type");
+
   // Form validation
-  const isFormValid = 
-    formData.name.trim().length >= 2 &&
-    formData.description.trim().length >= 10 &&
-    formData.primaryDomainId.length > 0 &&
-    formData.categoryIds.length > 0 &&
-    remainingPercent === 0; // XP percentages must sum to 100
+  const isFormValid = validationErrors.length === 0;
 
   // Auto-adjust percentages when domains change
   useEffect(() => {
@@ -681,7 +689,11 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
               required
               minLength={2}
               maxLength={100}
+              className={formData.name.length > 0 && formData.name.trim().length < 2 ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {formData.name.length > 0 && formData.name.trim().length < 2 && (
+              <p className="text-xs text-red-500">Name must be at least 2 characters</p>
+            )}
             
             {/* Similar Challenges Warning */}
             {(isSearchingSimilar || similarChallenges.length > 0) && formData.name.trim().length >= 3 && (
@@ -767,7 +779,11 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
               required
               minLength={10}
               rows={3}
+              className={formData.description.length > 0 && formData.description.trim().length < 10 ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {formData.description.length > 0 && formData.description.trim().length < 10 && (
+              <p className="text-xs text-red-500">Description must be at least 10 characters ({formData.description.trim().length}/10)</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -1158,10 +1174,15 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                 value={formData.gradingUnit}
                 onChange={(e) => setFormData({ ...formData, gradingUnit: e.target.value })}
                 maxLength={20}
+                className={!hasRequiredGradingUnit ? "border-red-500 focus-visible:ring-red-500" : ""}
               />
-              <p className="text-xs text-muted-foreground">
-                e.g., &quot;reps&quot;, &quot;meters&quot;, &quot;reps in 60s&quot;
-              </p>
+              {!hasRequiredGradingUnit ? (
+                <p className="text-xs text-red-500">Unit of measurement is required</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  e.g., &quot;reps&quot;, &quot;meters&quot;, &quot;reps in 60s&quot;
+                </p>
+              )}
             </div>
           )}
 
@@ -1483,7 +1504,19 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
             </div>
           </div>
 
-          <div className="flex gap-3 pt-6">
+          {/* Validation Errors Summary */}
+          {validationErrors.length > 0 && (
+            <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-1">Please fix the following issues:</p>
+              <ul className="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside space-y-0.5">
+                {validationErrors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex gap-3">
             <Button type="submit" disabled={isLoading || !isFormValid} className="min-w-[140px]">
               {isLoading
                 ? mode === "create"
@@ -1500,15 +1533,6 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
             >
               Cancel
             </Button>
-            {!isFormValid && (
-              <span className="text-xs text-muted-foreground self-center">
-                {formData.name.trim().length < 2 && "Name required. "}
-                {formData.description.trim().length < 10 && "Description required. "}
-                {!formData.primaryDomainId && "Primary domain required. "}
-                {formData.categoryIds.length === 0 && "Category required. "}
-                {remainingPercent !== 0 && "XP must total 100%."}
-              </span>
-            )}
           </div>
         </CardContent>
       </Card>
