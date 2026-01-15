@@ -2,20 +2,24 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dumbbell, Trophy, Clock, Target, ChevronRight, Zap, Filter } from "lucide-react";
+import { Dumbbell, Trophy, Clock, Target, ChevronRight, Zap, Filter, Building2, X, Lock } from "lucide-react";
 
 export const metadata = {
   title: "Challenges | Ascendant",
   description: "Browse challenges tailored to your disciplines",
 };
 
-async function ChallengesContent() {
+interface ChallengesContentProps {
+  gymSlug?: string;
+}
+
+async function ChallengesContent({ gymSlug }: ChallengesContentProps) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -27,7 +31,36 @@ async function ChallengesContent() {
     redirect("/onboarding");
   }
 
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
+
+  // If filtering by gym, get gym info and its discipline IDs
+  let filterGym: { id: string; name: string; slug: string; disciplines: { disciplineId: string }[] } | null = null;
+  let gymDisciplineIds: string[] = [];
+  
+  if (gymSlug) {
+    filterGym = await db.gym.findUnique({
+      where: { slug: gymSlug, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        disciplines: { select: { disciplineId: true } },
+      },
+    });
+    if (filterGym) {
+      gymDisciplineIds = filterGym.disciplines.map(d => d.disciplineId);
+    }
+  }
+
+  // Get user's gym memberships to show gym-specific challenges
+  const userGymMemberships = await db.gymMember.findMany({
+    where: { userId: user.id, isActive: true },
+    select: { gymId: true },
+  });
+  const memberGymIds = userGymMemberships.map(m => m.gymId);
 
   // Get athlete's disciplines
   const athleteDisciplines = await db.athleteDiscipline.findMany({
@@ -37,20 +70,77 @@ async function ChallengesContent() {
 
   const disciplineIds = athleteDisciplines.map(ad => ad.disciplineId);
 
-  // Get challenges for athlete's disciplines
-  const myDisciplineChallenges = disciplineIds.length > 0 
+  // Calculate athlete's age for division matching
+  const getAge = (dateOfBirth: Date): number => {
+    const today = new Date();
+    let age = today.getFullYear() - dateOfBirth.getFullYear();
+    const monthDiff = today.getMonth() - dateOfBirth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Get athlete's division
+  const athleteDivision = await db.division.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        { gender: athlete.gender },
+        { gender: null },
+      ],
+      AND: [
+        {
+          OR: [
+            { ageMin: null },
+            { ageMin: { lte: getAge(athlete.dateOfBirth) } },
+          ],
+        },
+        {
+          OR: [
+            { ageMax: null },
+            { ageMax: { gte: getAge(athlete.dateOfBirth) } },
+          ],
+        },
+      ],
+    },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  // Determine which discipline IDs to filter by
+  // If filtering by gym, use gym's disciplines; otherwise use athlete's disciplines
+  const filterDisciplineIds = filterGym ? gymDisciplineIds : disciplineIds;
+
+  // Get challenges for the relevant disciplines
+  // Filter by divisions: show challenges that either have no division restrictions OR include athlete's division
+  // Include: global challenges (gymId=null) OR gym-specific challenges where user is a member
+  const myDisciplineChallenges = filterDisciplineIds.length > 0 
     ? await db.challenge.findMany({
         where: {
           isActive: true,
-          gymId: null, // Only global challenges
           disciplines: {
-            some: { disciplineId: { in: disciplineIds } },
+            some: { disciplineId: { in: filterDisciplineIds } },
           },
+          // Show global challenges OR gym-specific challenges user has access to
+          OR: [
+            { gymId: null }, // Global challenges
+            ...(memberGymIds.length > 0 ? [{ gymId: { in: memberGymIds } }] : []),
+          ],
+          // Division filter: no restrictions OR athlete's division is allowed
+          AND: [
+            {
+              OR: [
+                { allowedDivisions: { none: {} } }, // No division restrictions
+                ...(athleteDivision ? [{ allowedDivisions: { some: { divisionId: athleteDivision.id } } }] : []),
+              ],
+            },
+          ],
         },
         include: {
           primaryDomain: { select: { id: true, name: true, icon: true, color: true } },
           disciplines: { include: { discipline: true } },
           categories: { include: { category: true } },
+          gym: { select: { id: true, name: true, slug: true } },
           _count: { select: { submissions: true } },
         },
         orderBy: { name: "asc" },
@@ -68,7 +158,11 @@ async function ChallengesContent() {
   const discoverChallenges = await db.challenge.findMany({
     where: {
       isActive: true,
-      gymId: null,
+      // Show global challenges OR gym-specific challenges user has access to
+      OR: [
+        { gymId: null },
+        ...(memberGymIds.length > 0 ? [{ gymId: { in: memberGymIds } }] : []),
+      ],
       // Exclude ones already in my disciplines if we have any
       ...(disciplineIds.length > 0 && {
         NOT: {
@@ -77,11 +171,21 @@ async function ChallengesContent() {
           },
         },
       }),
+      // Division filter: no restrictions OR athlete's division is allowed
+      AND: [
+        {
+          OR: [
+            { allowedDivisions: { none: {} } }, // No division restrictions
+            ...(athleteDivision ? [{ allowedDivisions: { some: { divisionId: athleteDivision.id } } }] : []),
+          ],
+        },
+      ],
     },
     include: {
       primaryDomain: { select: { id: true, name: true, icon: true, color: true } },
       disciplines: { include: { discipline: true } },
       categories: { include: { category: true } },
+      gym: { select: { id: true, name: true, slug: true } },
       _count: { select: { submissions: true } },
     },
     orderBy: { submissions: { _count: "desc" } },
@@ -108,6 +212,7 @@ async function ChallengesContent() {
   const ChallengeCard = ({ challenge }: { challenge: typeof myDisciplineChallenges[0] }) => {
     const submission = submissionMap.get(challenge.id);
     const grading = gradingTypeLabels[challenge.gradingType] || { label: challenge.gradingType, icon: null };
+    const isGymExclusive = !!challenge.gym;
 
     return (
       <Link href={`/challenges/${challenge.slug}`} className="block group">
@@ -127,6 +232,16 @@ async function ChallengesContent() {
               </div>
             )}
             
+            {/* Gym exclusive badge */}
+            {isGymExclusive && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="secondary" className="text-xs gap-1 backdrop-blur-sm bg-amber-500/90 text-white border-0">
+                  <Lock className="w-3 h-3" />
+                  {challenge.gym!.name}
+                </Badge>
+              </div>
+            )}
+
             {/* Status badge overlay */}
             {submission && (
               <div className="absolute top-2 right-2">
@@ -200,11 +315,37 @@ async function ChallengesContent() {
 
   return (
     <div className="container mx-auto px-4 py-6 md:py-8">
+      {/* Gym Filter Banner */}
+      {filterGym && (
+        <div className="mb-6 p-4 rounded-lg bg-primary/5 border border-primary/20 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Building2 className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium">
+                Showing challenges for <span className="text-primary">{filterGym.name}</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {myDisciplineChallenges.length} challenge{myDisciplineChallenges.length !== 1 ? "s" : ""} available based on gym disciplines
+              </p>
+            </div>
+          </div>
+          <Link href="/challenges">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <X className="w-4 h-4" />
+              Clear filter
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Challenges</h1>
         <p className="text-muted-foreground">
-          Earn XP by completing challenges tailored to your training
+          {filterGym 
+            ? `Challenges you can train at ${filterGym.name}`
+            : "Earn XP by completing challenges tailored to your training"
+          }
         </p>
       </div>
 
@@ -374,7 +515,13 @@ async function ChallengesContent() {
   );
 }
 
-export default function ChallengesPage() {
+interface ChallengesPageProps {
+  searchParams: Promise<{ gym?: string }>;
+}
+
+export default async function ChallengesPage({ searchParams }: ChallengesPageProps) {
+  const { gym } = await searchParams;
+  
   return (
     <Suspense fallback={
       <div className="container mx-auto px-4 py-8">
@@ -389,7 +536,7 @@ export default function ChallengesPage() {
         </div>
       </div>
     }>
-      <ChallengesContent />
+      <ChallengesContent gymSlug={gym} />
     </Suspense>
   );
 }

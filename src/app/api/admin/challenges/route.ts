@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
       equipmentIds,
       grades,
       gymId,
+      allowedDivisionIds,
     } = parsed.data;
 
     // Generate slug from name
@@ -219,6 +220,16 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // Create allowed division restrictions
+      if (allowedDivisionIds && allowedDivisionIds.length > 0) {
+        await tx.challengeDivision.createMany({
+          data: allowedDivisionIds.map((divisionId) => ({
+            challengeId: newChallenge.id,
+            divisionId,
+          })),
+        });
+      }
+
       // Return with relations
       return tx.challenge.findUnique({
         where: { id: newChallenge.id },
@@ -228,6 +239,7 @@ export async function POST(request: NextRequest) {
           disciplines: { include: { discipline: true } },
           equipment: { include: { equipment: true } },
           grades: { include: { division: { select: { id: true, name: true } } } },
+          allowedDivisions: { include: { division: { select: { id: true, name: true } } } },
         },
       });
     });

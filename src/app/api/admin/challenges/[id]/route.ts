@@ -50,6 +50,11 @@ export async function GET(
           },
           orderBy: [{ divisionId: "asc" }, { rank: "asc" }],
         },
+        allowedDivisions: {
+          include: {
+            division: { select: { id: true, name: true } },
+          },
+        },
         _count: {
           select: { submissions: true, rankRequirements: true },
         },
@@ -122,6 +127,7 @@ export async function PATCH(
       equipmentIds,
       grades,
       gymId,
+      allowedDivisionIds,
     } = parsed.data;
 
     // If name is changing, update the slug
@@ -244,6 +250,23 @@ export async function PATCH(
         }
       }
 
+      // Update allowed division restrictions if provided
+      if (allowedDivisionIds !== undefined) {
+        // Delete existing
+        await tx.challengeDivision.deleteMany({
+          where: { challengeId: id },
+        });
+        // Create new
+        if (allowedDivisionIds.length > 0) {
+          await tx.challengeDivision.createMany({
+            data: allowedDivisionIds.map((divisionId) => ({
+              challengeId: id,
+              divisionId,
+            })),
+          });
+        }
+      }
+
       // Return with relations
       return tx.challenge.findUnique({
         where: { id },
@@ -253,6 +276,7 @@ export async function PATCH(
           disciplines: { include: { discipline: true } },
           equipment: { include: { equipment: true } },
           grades: { include: { division: { select: { id: true, name: true } } } },
+          allowedDivisions: { include: { division: { select: { id: true, name: true } } } },
         },
       });
     });

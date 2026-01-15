@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLevel, getRankColor, getRankLabel, calculatePrime } from "@/lib/levels";
@@ -19,8 +19,11 @@ export default async function DomainsPage() {
     redirect("/onboarding");
   }
 
-  // Get the active athlete
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  // Get the active athlete (respects switcher selection)
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
 
   // Get domain levels for the athlete
   const domainLevels = await db.domainLevel.findMany({

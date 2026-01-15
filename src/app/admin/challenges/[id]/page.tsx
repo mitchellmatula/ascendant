@@ -39,6 +39,11 @@ export default async function EditChallengePage({ params }: EditChallengePagePro
         grades: {
           select: { divisionId: true, rank: true, targetValue: true, description: true, bonusXP: true },
         },
+        allowedDivisions: {
+          include: {
+            division: { select: { id: true, name: true } },
+          },
+        },
       },
     }),
     db.domain.findMany({

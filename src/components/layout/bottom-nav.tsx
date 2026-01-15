@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: "🏠" },
-  { href: "/domains", label: "Domains", icon: "🎯" },
   { href: "/challenges", label: "Challenges", icon: "🏆" },
-  { href: "/progress", label: "Progress", icon: "📈" },
+  { href: "/gyms", label: "Gyms", icon: "🏋️" },
+  { href: "/submissions", label: "Activity", icon: "📈" },
 ];
 
 export function BottomNav() {

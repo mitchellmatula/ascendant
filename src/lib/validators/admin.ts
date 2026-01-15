@@ -187,6 +187,9 @@ const challengeBaseSchema = z.object({
   
   // Gym-specific challenge (optional - null for global challenges)
   gymId: z.string().cuid().optional().nullable(),
+  
+  // Allowed divisions (optional - empty for all divisions)
+  allowedDivisionIds: z.array(z.string().cuid()).optional().default([]),
 });
 
 // Add refinement for XP percentage validation

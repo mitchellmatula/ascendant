@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,10 @@ export default async function CategoryDetailPage({ params }: PageProps) {
   }
 
   const { slug, category: categorySlug } = await params;
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
 
   // Get domain
   const domain = await db.domain.findUnique({

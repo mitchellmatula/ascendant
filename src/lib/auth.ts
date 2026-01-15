@@ -1,6 +1,15 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
-import type { Role } from "../../prisma/generated/prisma/client";
+import type { Role, Athlete } from "../../prisma/generated/prisma/client";
+import { getActiveAthleteId } from "./active-athlete";
+
+// Type for user with athlete relations
+type UserWithAthletes = {
+  id: string;
+  athlete: Athlete | null;
+  managedAthletes: Athlete[];
+  [key: string]: unknown;
+};
 
 /**
  * Get the current user from the database, creating if needed
@@ -81,4 +90,49 @@ export function isAdmin(role: Role): boolean {
  */
 export function isSystemAdmin(role: Role): boolean {
   return role === "SYSTEM_ADMIN";
+}
+
+/**
+ * Get the active athlete for a user.
+ * Respects the stored cookie selection, falling back to:
+ * 1. User's own athlete profile
+ * 2. First managed athlete
+ * Returns null if no athlete available.
+ */
+export async function getActiveAthlete(user: UserWithAthletes): Promise<Athlete | null> {
+  // Collect all athletes this user has access to
+  const allAthletes: Athlete[] = [];
+  if (user.athlete) {
+    allAthletes.push(user.athlete);
+  }
+  allAthletes.push(...user.managedAthletes);
+
+  if (allAthletes.length === 0) {
+    return null;
+  }
+
+  // Check if there's a stored active athlete
+  const storedAthleteId = await getActiveAthleteId();
+  
+  if (storedAthleteId) {
+    const storedAthlete = allAthletes.find((a) => a.id === storedAthleteId);
+    if (storedAthlete) {
+      return storedAthlete;
+    }
+  }
+
+  // Fall back to user's own athlete, then first managed athlete
+  return user.athlete ?? user.managedAthletes[0] ?? null;
+}
+
+/**
+ * Get all athletes accessible to a user (own profile + managed children)
+ */
+export function getAllAthletes(user: UserWithAthletes): Athlete[] {
+  const athletes: Athlete[] = [];
+  if (user.athlete) {
+    athletes.push(user.athlete);
+  }
+  athletes.push(...user.managedAthletes);
+  return athletes;
 }

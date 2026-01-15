@@ -4,10 +4,9 @@ import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { ImagePlus, X, Loader2, Check, ZoomOut, ZoomIn } from "lucide-react";
+import { ImagePlus, X, Loader2, Check, Maximize } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -51,8 +50,7 @@ function centerAspectCrop(
 async function getCroppedImage(
   image: HTMLImageElement,
   crop: PixelCrop,
-  fileName: string,
-  zoom: number
+  fileName: string
 ): Promise<File> {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -61,26 +59,80 @@ async function getCroppedImage(
     throw new Error("No 2d context");
   }
 
-  // Account for zoom - the displayed image is scaled, so we need to adjust
-  const zoomFactor = zoom / 100;
-  const scaleX = image.naturalWidth / (image.width * zoomFactor);
-  const scaleY = image.naturalHeight / (image.height * zoomFactor);
+  // image.width/height = displayed size (set by CSS)
+  // image.naturalWidth/Height = actual image dimensions
+  // crop coordinates are in displayed pixels
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
 
-  // Set canvas size to crop dimensions (at natural resolution)
-  canvas.width = crop.width * scaleX;
-  canvas.height = crop.height * scaleY;
+  // Calculate the natural coordinates of the crop
+  const naturalCropX = crop.x * scaleX;
+  const naturalCropY = crop.y * scaleY;
+  const naturalCropWidth = crop.width * scaleX;
+  const naturalCropHeight = crop.height * scaleY;
 
+  // Set canvas to the cropped size
+  canvas.width = naturalCropWidth;
+  canvas.height = naturalCropHeight;
+
+  // Draw the cropped portion
   ctx.drawImage(
     image,
-    crop.x * scaleX,
-    crop.y * scaleY,
-    crop.width * scaleX,
-    crop.height * scaleY,
+    naturalCropX,
+    naturalCropY,
+    naturalCropWidth,
+    naturalCropHeight,
     0,
     0,
-    canvas.width,
-    canvas.height
+    naturalCropWidth,
+    naturalCropHeight
   );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("Canvas is empty"));
+          return;
+        }
+        const file = new File([blob], fileName, { type: "image/jpeg" });
+        resolve(file);
+      },
+      "image/jpeg",
+      0.9
+    );
+  });
+}
+
+// Fit entire image into a square with padding (white background)
+async function getFittedImage(
+  image: HTMLImageElement,
+  fileName: string,
+  backgroundColor: string = "#ffffff"
+): Promise<File> {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error("No 2d context");
+  }
+
+  const { naturalWidth, naturalHeight } = image;
+  
+  // Create a square canvas based on the larger dimension
+  const size = Math.max(naturalWidth, naturalHeight);
+  canvas.width = size;
+  canvas.height = size;
+
+  // Fill with background color
+  ctx.fillStyle = backgroundColor;
+  ctx.fillRect(0, 0, size, size);
+
+  // Center the image
+  const x = (size - naturalWidth) / 2;
+  const y = (size - naturalHeight) / 2;
+  
+  ctx.drawImage(image, x, y, naturalWidth, naturalHeight);
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -120,7 +172,6 @@ export function ImageUpload({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const imgRef = useRef<HTMLImageElement>(null);
   const [originalFileName, setOriginalFileName] = useState<string>("");
-  const [zoom, setZoom] = useState(100); // 100 = original size, lower = zoomed out
 
   const displayImage = preview || currentImageUrl;
 
@@ -150,7 +201,6 @@ export function ImageUpload({
 
     // Store filename and open crop dialog
     setOriginalFileName(file.name);
-    setZoom(100); // Reset zoom for new image
     const reader = new FileReader();
     reader.onloadend = () => {
       setImageToCrop(reader.result as string);
@@ -173,8 +223,7 @@ export function ImageUpload({
       const croppedFile = await getCroppedImage(
         imgRef.current,
         completedCrop,
-        originalFileName.replace(/\.[^/.]+$/, ".jpg"),
-        zoom
+        originalFileName.replace(/\.[^/.]+$/, ".jpg")
       );
 
       // Show preview
@@ -215,6 +264,55 @@ export function ImageUpload({
     setImageToCrop(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  // Fit entire image into a square with white padding
+  const handleFitToSquare = async () => {
+    if (!imgRef.current) {
+      setError("Image not loaded");
+      return;
+    }
+
+    setCropDialogOpen(false);
+    setIsUploading(true);
+
+    try {
+      const fittedFile = await getFittedImage(
+        imgRef.current,
+        originalFileName.replace(/\.[^/.]+$/, ".jpg")
+      );
+
+      // Show preview
+      const previewUrl = URL.createObjectURL(fittedFile);
+      setPreview(previewUrl);
+
+      // Upload fitted image
+      const response = await fetch(
+        `${uploadEndpoint}?filename=${encodeURIComponent(fittedFile.name)}`,
+        {
+          method: "POST",
+          body: fittedFile,
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const data = await response.json();
+      onUpload(data.url);
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError(err instanceof Error ? err.message : "Failed to upload image");
+      setPreview(null);
+    } finally {
+      setIsUploading(false);
+      setImageToCrop(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -308,34 +406,19 @@ export function ImageUpload({
         <DialogHeader>
           <DialogTitle>Crop Image</DialogTitle>
           <DialogDescription>
-            Adjust the crop area. Use the slider to zoom out if needed.
+            Drag and resize the crop area, or fit the entire image into a square.
           </DialogDescription>
         </DialogHeader>
         
         <div className="flex flex-col gap-4">
-          {/* Zoom slider */}
-          <div className="flex items-center gap-3 px-1">
-            <ZoomOut className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <Slider
-              value={[zoom]}
-              onValueChange={([value]) => setZoom(value)}
-              min={30}
-              max={100}
-              step={5}
-              className="flex-1"
-            />
-            <ZoomIn className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          </div>
-
           {/* Crop area */}
-          <div className="flex justify-center overflow-hidden rounded-lg bg-muted/50 p-2">
+          <div className="flex justify-center overflow-auto rounded-lg bg-muted/50 p-2 max-h-[60vh]">
             {imageToCrop && (
               <ReactCrop
                 crop={crop}
                 onChange={(_, percentCrop) => setCrop(percentCrop)}
                 onComplete={(c) => setCompletedCrop(c)}
                 aspect={aspectRatio}
-                className="max-h-[50vh]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -344,10 +427,10 @@ export function ImageUpload({
                   alt="Crop preview"
                   onLoad={onImageLoad}
                   style={{ 
-                    maxHeight: "50vh", 
-                    width: "auto",
-                    transform: `scale(${zoom / 100})`,
-                    transformOrigin: "center center"
+                    maxHeight: "55vh", 
+                    maxWidth: "100%",
+                    height: "auto",
+                    width: "auto"
                   }}
                 />
               </ReactCrop>
@@ -355,10 +438,16 @@ export function ImageUpload({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button type="button" variant="outline" onClick={handleCropCancel}>
             Cancel
           </Button>
+          {aspectRatio === 1 && (
+            <Button type="button" variant="secondary" onClick={handleFitToSquare}>
+              <Maximize className="h-4 w-4 mr-1.5" />
+              Fit to Square
+            </Button>
+          )}
           <Button type="button" onClick={handleCropConfirm}>
             <Check className="h-4 w-4 mr-1.5" />
             Crop & Upload

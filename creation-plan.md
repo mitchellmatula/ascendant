@@ -825,19 +825,139 @@ model CompetitionResult {
     - ✅ Approve/reject with notes
     - ✅ Auto-approve for coaches/admins
 
-### 📋 Phase 5: Parent Features
-11. [ ] **Athlete switcher** – Dropdown to switch between managed children
-12. [ ] **Add child flow** – Add more children after onboarding
-13. [ ] **Submit on behalf** – Parents submit for their children
-14. [ ] **Per-child dashboard** – View each child's progress
+### ✅ COMPLETED - Phase 5: Parent Features
+11. ✅ **Athlete switcher** – Dropdown to switch between managed children (header + mobile menu)
+12. ✅ **Add child flow** – `/settings/children` - Add more children after onboarding
+13. ✅ **Submit on behalf** – Parents submit for their children (uses active athlete)
+14. ✅ **Per-child dashboard** – View each child's progress (athlete switcher changes context)
+15. ✅ **Settings pages** – Accessible via Clerk UserButton menu:
+    - ✅ Profile editing (`/settings/profile`) - display name, DOB, gender, avatar with 1:1 crop, disciplines
+    - ✅ Unsaved changes indicator with scroll-to-save
+    - ✅ Avatar syncs to Clerk profile
+    - ✅ Children management (`/settings/children`) - add/edit/remove managed athletes
+    - ✅ Connections placeholder (`/settings/connections`) for future Strava/Garmin
+16. ✅ **Challenge division restrictions** – Challenges can be limited to specific age divisions:
+    - ✅ Admin can select allowed divisions per challenge
+    - ✅ Grading table auto-filters to selected divisions
+    - ✅ Challenge listings filter by athlete's division
+    - ✅ Challenge detail shows restriction warning if not allowed
 
-### 📋 Phase 6: Gym Features
-15. [ ] **Gym dashboard** – `/gym/[slug]` - Public gym page
-16. [ ] **Gym member management** – View/manage members
-17. [ ] **Gym-specific challenges** – Challenges only for gym members
-18. [ ] **Equipment-based challenge filtering** – Show challenges gym can support
+### 🔨 CURRENT - Phase 6: Gym Features
+16. [x] **Gym dashboard** – `/gym/[slug]` - Public gym page
+    - ✅ Shows gym logo, name, address, description
+    - ✅ Displays owner (privacy-respecting - only if isPublicProfile)
+    - ✅ Lists disciplines and equipment
+    - ✅ Shows public member count and list (privacy-first)
+    - ✅ Contact info (website, phone, email)
+    - ✅ Shows matching challenges count with samples
+    - ✅ "View all challenges" link to filtered `/challenges?gym=slug`
+17. [x] **Gym membership** – Join/leave gyms with privacy controls
+    - ✅ `isPublicProfile` on Athlete (COPPA-compliant for minors)
+    - ✅ `isPublicMember` on GymMember (per-gym visibility toggle)
+    - ✅ POST/DELETE/PATCH `/api/gyms/[slug]/membership`
+    - ✅ Join/Leave button with confirmation dialog
+    - ✅ Toggle to show/hide self on gym's public member list
+18. [x] **Gym discovery** – `/gyms` - Find gyms page
+    - ✅ Search by name or location
+    - ✅ Filter by discipline
+    - ✅ Shows member count, verified badge
+    - ✅ CTA for gym owners to register
+    - ✅ Added to main navigation (bottom nav + header)
+    - ✅ Dashboard shows "My Gyms" section
+19. [x] **Gym-based challenge filtering** – `/challenges?gym=slug`
+    - ✅ Challenges page accepts gym query parameter
+    - ✅ Filters by gym's disciplines
+    - ✅ Shows gym filter banner with clear option
+    - ✅ Challenge count displayed
+20. [x] **Gym member management** – `/gym/[slug]/members`
+    - ✅ Owner/manager can view ALL members (including private ones)
+    - ✅ Role management (MEMBER → COACH → MANAGER)
+    - ✅ Remove members with confirmation dialog
+    - ✅ Role permissions explained in UI
+    - ✅ "Manage" button on gym page Community card (only for owner/manager)
+    - ✅ API: PATCH/DELETE `/api/gyms/[slug]/members/[memberId]`
+21. [x] **Gym-specific challenges** – Challenges only for gym members (private to gym)
+    - ✅ Challenges with `gymId` set are exclusive to that gym's members
+    - ✅ Challenges page shows gym-specific challenges only to members
+    - ✅ Challenge detail page blocks non-members with friendly message
+    - ✅ Gym page shows exclusive challenge count and badges
+    - ✅ Non-members see "Join to access X exclusive challenges" prompt
+    - ✅ Lock icon badge on exclusive challenges in listings
+22. [ ] **Equipment-based challenge filtering** – Show challenges gym can support
 
-### 📋 Phase 7: Polish & Enhancement
+### 📋 Phase 7: Fitness App Integrations (Strava/Garmin)
+For running, cycling, and outdoor endurance challenges, athletes can link their fitness accounts to submit verified activities.
+
+**Admin: Challenge Form Updates**
+21. [ ] **Proof type selector** – Challenge can accept: Video, Image, Strava, Garmin, Manual
+22. [ ] **Activity validation rules** – For Strava/Garmin challenges:
+    - [ ] Activity type filter (Run, Ride, Swim, Hike, etc.)
+    - [ ] Distance range (min/max in km/miles)
+    - [ ] Elevation gain minimum (for hill/mountain challenges)
+    - [ ] Pace requirements (optional)
+    - [ ] Heart rate requirements (optional, proves effort)
+    - [ ] Must be outdoor/GPS (vs treadmill)
+23. [ ] **Update challenge form UI** – New "Activity Requirements" section for Strava/Garmin-enabled challenges
+
+**Athlete: Account Linking**
+24. [ ] **Strava OAuth flow** – Connect/disconnect Strava account
+    - [ ] Store `stravaAccessToken`, `stravaRefreshToken`, `stravaAthleteId` on User
+    - [ ] Token refresh logic
+25. [ ] **Garmin OAuth flow** – Connect/disconnect Garmin account (future)
+25. [ ] **Settings page** – `/settings/connections` - Manage linked accounts ✅ (placeholder created)
+
+**Athlete: Activity-Based Submission**
+26. [ ] **Activity picker component** – Browse/search Strava activities
+    - [ ] Filter by type, date range
+    - [ ] Show distance, time, elevation, date
+    - [ ] Validate against challenge requirements
+27. [ ] **Submit from activity** – Select activity → auto-populate achievedValue
+28. [ ] **Store activity proof** – Save Strava activity ID, URL, cached metrics
+29. [ ] **Auto-approve Strava submissions** – Verified data = high trust
+
+**Schema Changes**
+```prisma
+// On User model - fitness app connections
+stravaAthleteId      String?   @unique
+stravaAccessToken    String?
+stravaRefreshToken   String?
+stravaConnectedAt    DateTime?
+garminUserId         String?   @unique
+garminAccessToken    String?
+garminRefreshToken   String?
+garminConnectedAt    DateTime?
+
+// On Challenge model - activity validation rules
+proofTypes           String[]  @default(["VIDEO"]) // VIDEO, IMAGE, STRAVA, GARMIN, MANUAL
+activityType         String?   // Run, Ride, Swim, Hike, etc.
+minDistance          Float?    // meters
+maxDistance          Float?    // meters (for "3K time trial" = 2900-3200m)
+minElevationGain     Float?    // meters
+requiresGPS          Boolean   @default(false) // Must be outdoor, not treadmill
+requiresHeartRate    Boolean   @default(false) // Proves genuine effort
+
+// On ChallengeSubmission model - activity proof
+proofType            ProofType @default(VIDEO)
+stravaActivityId     String?
+stravaActivityUrl    String?
+garminActivityId     String?
+garminActivityUrl    String?
+activityDistance     Float?    // cached from API
+activityTime         Int?      // cached from API (seconds)
+activityElevation    Float?    // cached from API
+activityDate         DateTime? // when the activity occurred
+
+enum ProofType {
+  VIDEO
+  IMAGE
+  STRAVA
+  GARMIN
+  RACE_RESULT
+  MANUAL
+}
+```
+
+### 📋 Phase 8: Polish & Enhancement
 - [ ] Level-up animations (Framer Motion)
 - [ ] Breakthrough unlock celebrations
 - [ ] Progress notifications
@@ -845,7 +965,7 @@ model CompetitionResult {
 - [ ] Dark mode polish
 - [ ] PWA support
 
-### 📋 Phase 8: Future Features
+### 📋 Phase 9: Future Features
 - [ ] Coach verification workflow
 - [ ] Leaderboards (opt-in by division)
 - [ ] Competition/event integration

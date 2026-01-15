@@ -1,12 +1,12 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VideoDisplay } from "@/components/ui/video-display";
-import { formatSecondsToTime, type TimeFormat } from "@/components/ui/time-input";
+import { formatSecondsToTime, type TimeFormat } from "@/lib/time";
 import { 
   ChevronLeft, 
   CheckCircle, 
@@ -17,7 +17,8 @@ import {
   Target,
   Trophy,
   Upload,
-  Sparkles
+  Sparkles,
+  Lock
 } from "lucide-react";
 import { XP_PER_TIER } from "@/lib/xp";
 
@@ -38,7 +39,10 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
   }
 
   const { slug } = await params;
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
 
   // Get challenge with all related data
   const challenge = await db.challenge.findUnique({
@@ -65,11 +69,61 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
         include: { division: { select: { id: true, name: true } } },
       },
       gym: { select: { id: true, name: true, slug: true } },
+      allowedDivisions: {
+        include: { division: { select: { id: true, name: true } } },
+      },
     },
   });
 
   if (!challenge) {
     notFound();
+  }
+
+  // Check gym-specific access: if challenge belongs to a gym, user must be a member
+  let isGymMember = false;
+  if (challenge.gym) {
+    const membership = await db.gymMember.findUnique({
+      where: {
+        gymId_userId: {
+          gymId: challenge.gym.id,
+          userId: user.id,
+        },
+      },
+    });
+    isGymMember = membership?.isActive ?? false;
+    
+    if (!isGymMember) {
+      // User is not a member of this gym - show access denied
+      return (
+        <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl">
+          <Card className="text-center py-12">
+            <CardContent className="space-y-4">
+              <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                <Lock className="w-8 h-8 text-amber-600" />
+              </div>
+              <CardTitle className="text-xl">Gym-Exclusive Challenge</CardTitle>
+              <CardDescription className="max-w-md mx-auto">
+                This challenge is exclusive to members of <strong>{challenge.gym.name}</strong>.
+                Join the gym to access this challenge.
+              </CardDescription>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center pt-4">
+                <Button variant="outline" asChild>
+                  <Link href="/challenges">
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Back to Challenges
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link href={`/gym/${challenge.gym.slug}`}>
+                    View Gym
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
   }
 
   // Get athlete's submission for this challenge
@@ -108,10 +162,27 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
     orderBy: { sortOrder: "asc" },
   });
 
-  // Filter grades to athlete's division
-  const relevantGrades = athleteDivision 
+  // Check if athlete's division is allowed (if restrictions exist)
+  const hasDivisionRestrictions = challenge.allowedDivisions.length > 0;
+  const athleteDivisionAllowed = !hasDivisionRestrictions || 
+    (athleteDivision && challenge.allowedDivisions.some(ad => ad.divisionId === athleteDivision.id));
+
+  // Filter grades to athlete's division, or show all if no match
+  let relevantGrades = athleteDivision 
     ? challenge.grades.filter(g => g.divisionId === athleteDivision.id)
     : [];
+  
+  // If no grades for this division but grades exist, show all unique grades (first division's grades as fallback)
+  const hasAnyGrades = challenge.grades.length > 0;
+  let showingFallbackGrades = false;
+  if (relevantGrades.length === 0 && hasAnyGrades) {
+    // Get unique grades from the first division that has them
+    const firstDivisionId = challenge.grades[0]?.divisionId;
+    if (firstDivisionId) {
+      relevantGrades = challenge.grades.filter(g => g.divisionId === firstDivisionId);
+      showingFallbackGrades = true;
+    }
+  }
 
   // Get first category for back link
   const firstCategory = challenge.categories[0]?.category;
@@ -175,6 +246,16 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
           {challenge.gym && (
             <Badge variant="secondary" className="text-sm bg-amber-500/20 text-amber-600">
               🏢 {challenge.gym.name} only
+            </Badge>
+          )}
+          {hasDivisionRestrictions && (
+            <Badge 
+              variant="secondary" 
+              className={`text-sm ${athleteDivisionAllowed 
+                ? "bg-blue-500/20 text-blue-600" 
+                : "bg-red-500/20 text-red-600"}`}
+            >
+              👥 {challenge.allowedDivisions.length} division{challenge.allowedDivisions.length !== 1 ? "s" : ""}
             </Badge>
           )}
         </div>
@@ -246,14 +327,27 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
             <CardTitle className="text-lg flex items-center gap-2">
               <Trophy className="w-5 h-5" />
               Tier Targets
-              {athleteDivision && (
+              {athleteDivision && !showingFallbackGrades && (
                 <Badge variant="outline" className="ml-2 text-xs font-normal">
                   {athleteDivision.name}
                 </Badge>
               )}
+              {showingFallbackGrades && (
+                <Badge variant="secondary" className="ml-2 text-xs font-normal">
+                  {relevantGrades[0]?.division?.name || "Sample"}
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>
-              Achieve higher tiers for more XP. Measured in {challenge.gradingUnit || "units"}.
+              Achieve higher tiers for more XP. 
+              {challenge.gradingType === "TIME" 
+                ? " Complete in faster time for higher tiers."
+                : ` Measured in ${challenge.gradingUnit || "units"}.`}
+              {showingFallbackGrades && (
+                <span className="block text-amber-500 mt-1">
+                  Note: Showing targets for {relevantGrades[0]?.division?.name}. Your division may differ.
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -368,30 +462,111 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Example calculation */}
+            {/* Example calculation - show tier-based breakdown for graded challenges */}
             <div className="pt-3 mt-3 border-t border-border">
-              <p className="text-xs text-muted-foreground mb-2">Example: If you earn 100 XP</p>
-              <div className="flex flex-wrap gap-2">
-                <Badge 
-                  variant="secondary" 
-                  style={{ 
-                    backgroundColor: `${challenge.primaryDomain.color}20` || undefined,
-                    color: challenge.primaryDomain.color || undefined,
-                  }}
-                >
-                  {challenge.primaryDomain.icon} +{challenge.primaryXPPercent} XP
-                </Badge>
-                {challenge.secondaryDomain && challenge.secondaryXPPercent && challenge.secondaryXPPercent > 0 && (
-                  <Badge variant="outline">
-                    {challenge.secondaryDomain.icon} +{challenge.secondaryXPPercent} XP
-                  </Badge>
-                )}
-                {challenge.tertiaryDomain && challenge.tertiaryXPPercent && challenge.tertiaryXPPercent > 0 && (
-                  <Badge variant="outline">
-                    {challenge.tertiaryDomain.icon} +{challenge.tertiaryXPPercent} XP
-                  </Badge>
-                )}
-              </div>
+              {challenge.gradingType !== "PASS_FAIL" && relevantGrades.length > 0 ? (
+                <>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Hit these targets to earn XP
+                    {showingFallbackGrades 
+                      ? ` (${relevantGrades[0]?.division?.name || "sample division"}):`
+                      : ` (${athleteDivision?.name || "Your Division"}):`
+                    }
+                  </p>
+                  <div className="space-y-2">
+                    {["S", "A", "B", "C", "D", "E", "F"].map(rank => {
+                      const grade = relevantGrades.find(g => g.rank === rank);
+                      if (!grade) return null;
+                      
+                      const tierXP = XP_PER_TIER[rank as keyof typeof XP_PER_TIER];
+                      const primaryXP = Math.round(tierXP * (challenge.primaryXPPercent / 100));
+                      const secondaryXP = challenge.secondaryXPPercent 
+                        ? Math.round(tierXP * (challenge.secondaryXPPercent / 100)) 
+                        : 0;
+                      const tertiaryXP = challenge.tertiaryXPPercent 
+                        ? Math.round(tierXP * (challenge.tertiaryXPPercent / 100)) 
+                        : 0;
+                      
+                      // Format target value based on grading type
+                      const formatTargetValue = (value: number) => {
+                        if (challenge.gradingType === "TIME" && challenge.timeFormat && challenge.timeFormat !== "seconds") {
+                          return formatSecondsToTime(value, challenge.timeFormat as TimeFormat);
+                        }
+                        return value.toString();
+                      };
+                      
+                      const targetDisplay = formatTargetValue(grade.targetValue);
+                      const unitLabel = challenge.gradingType === "TIME" 
+                        ? "" 
+                        : ` ${challenge.gradingUnit || ""}`.trimEnd();
+                      
+                      return (
+                        <div key={rank} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                          <span className="font-bold text-base w-6">{rank}</span>
+                          <span className="text-muted-foreground hidden sm:inline">•</span>
+                          <span className="font-medium text-foreground min-w-[60px]">
+                            {targetDisplay}{unitLabel}
+                          </span>
+                          <span className="text-muted-foreground mx-1">→</span>
+                          <div className="flex items-center gap-1.5 flex-wrap flex-1 justify-end">
+                            <Badge 
+                              variant="secondary" 
+                              className="text-xs"
+                              style={{ 
+                                backgroundColor: `${challenge.primaryDomain.color}20` || undefined,
+                                color: challenge.primaryDomain.color || undefined,
+                              }}
+                            >
+                              {challenge.primaryDomain.icon} +{primaryXP}
+                            </Badge>
+                            {challenge.secondaryDomain && secondaryXP > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {challenge.secondaryDomain.icon} +{secondaryXP}
+                              </Badge>
+                            )}
+                            {challenge.tertiaryDomain && tertiaryXP > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {challenge.tertiaryDomain.icon} +{tertiaryXP}
+                              </Badge>
+                            )}
+                            <span className="text-xs text-muted-foreground ml-1">
+                              = {tierXP} XP
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 italic">
+                    💡 Beat a higher tier on your first attempt to earn all the XP at once!
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-muted-foreground mb-2">Completing this challenge earns you:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge 
+                      variant="secondary" 
+                      style={{ 
+                        backgroundColor: `${challenge.primaryDomain.color}20` || undefined,
+                        color: challenge.primaryDomain.color || undefined,
+                      }}
+                    >
+                      {challenge.primaryDomain.icon} +{Math.round(XP_PER_TIER.F * (challenge.primaryXPPercent / 100))} XP
+                    </Badge>
+                    {challenge.secondaryDomain && challenge.secondaryXPPercent && challenge.secondaryXPPercent > 0 && (
+                      <Badge variant="outline">
+                        {challenge.secondaryDomain.icon} +{Math.round(XP_PER_TIER.F * (challenge.secondaryXPPercent / 100))} XP
+                      </Badge>
+                    )}
+                    {challenge.tertiaryDomain && challenge.tertiaryXPPercent && challenge.tertiaryXPPercent > 0 && (
+                      <Badge variant="outline">
+                        {challenge.tertiaryDomain.icon} +{Math.round(XP_PER_TIER.F * (challenge.tertiaryXPPercent / 100))} XP
+                      </Badge>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -454,21 +629,35 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
       <div className="sticky bottom-4 z-10">
         <Card className="shadow-lg">
           <CardContent className="py-4">
-            <Link href={`/challenges/${challenge.slug}/submit`}>
-              <Button size="lg" className="w-full gap-2">
-                <Upload className="w-5 h-5" />
-                {submission 
-                  ? submission.status === "APPROVED" 
-                    ? "Submit New Attempt"
-                    : "Update Submission"
-                  : "Submit Attempt"
-                }
-              </Button>
-            </Link>
-            {submission?.status === "APPROVED" && (
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                Submit again to try for a higher tier!
-              </p>
+            {!athleteDivisionAllowed ? (
+              <>
+                <div className="text-center py-2 text-amber-600 dark:text-amber-400 mb-3">
+                  <AlertTriangle className="w-5 h-5 inline-block mr-2" />
+                  This challenge is not available for your age division
+                </div>
+                <div className="text-xs text-center text-muted-foreground">
+                  Available for: {challenge.allowedDivisions.map(ad => ad.division.name).join(", ")}
+                </div>
+              </>
+            ) : (
+              <>
+                <Link href={`/challenges/${challenge.slug}/submit`}>
+                  <Button size="lg" className="w-full gap-2">
+                    <Upload className="w-5 h-5" />
+                    {submission 
+                      ? submission.status === "APPROVED" 
+                        ? "Submit New Attempt"
+                        : "Update Submission"
+                      : "Submit Attempt"
+                    }
+                  </Button>
+                </Link>
+                {submission?.status === "APPROVED" && (
+                  <p className="text-xs text-center text-muted-foreground mt-2">
+                    Submit again to try for a higher tier!
+                  </p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

@@ -74,6 +74,10 @@ model Athlete {
   gender      String // Maps to division
   avatarUrl   String?
   isMinor     Boolean  @default(false) // Calculated from DOB, for quick filtering
+  
+  // Privacy settings (COPPA compliance for minors)
+  isPublicProfile Boolean @default(false) // Can appear in public lists (leaderboards, gym members)
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -261,6 +265,19 @@ model ChallengeEquipment {
 // CHALLENGES (The Core Content)
 // ============================================
 
+// Join table: Challenge <-> Division (many-to-many for allowed divisions)
+model ChallengeDivision {
+  id          String @id @default(cuid())
+  challengeId String
+  divisionId  String
+  createdAt   DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  division  Division  @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, divisionId])
+}
+
 // Join table: Challenge <-> Category (many-to-many)
 model ChallengeCategory {
   id          String @id @default(cuid())
@@ -351,6 +368,9 @@ model Challenge {
   // Graded requirements per division/rank
   grades ChallengeGrade[]
 
+  // Divisions allowed to attempt this challenge (empty = all divisions)
+  allowedDivisions ChallengeDivision[]
+
   // Multi-domain XP distribution (up to 3 domains)
   // Percentages must sum to 100
   // Example: Skill 50%, Strength 40%, Speed 10%
@@ -388,6 +408,9 @@ model Division {
   rankRequirements RankRequirement[]
   rankThresholds   RankThreshold[]
   challengeGrades  ChallengeGrade[]
+  
+  // Challenges that are allowed for this division
+  allowedChallenges ChallengeDivision[]
 }
 
 // ============================================
@@ -615,6 +638,10 @@ model GymMember {
   role      GymRole  @default(MEMBER)
   joinedAt  DateTime @default(now())
   isActive  Boolean  @default(true)
+  
+  // Privacy: whether to show on public gym member list
+  // Only applies if user's athlete profile also has isPublicProfile=true
+  isPublicMember Boolean @default(false)
 
   gym  Gym  @relation(fields: [gymId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

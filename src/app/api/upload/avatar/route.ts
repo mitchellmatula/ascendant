@@ -10,28 +10,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const filename = searchParams.get("filename");
+    // Handle FormData upload
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
 
-    if (!filename) {
-      return NextResponse.json({ error: "No filename provided" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file extension
-    const extension = filename.split(".").pop()?.toLowerCase();
-    const allowedExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
-    if (!extension || !allowedExtensions.includes(extension)) {
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: jpg, png, webp, gif" },
+        { error: "Invalid file type. Must be an image." },
+        { status: 400 }
+      );
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large. Max 5MB." },
         { status: 400 }
       );
     }
 
     // Generate a unique path for the avatar
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const blobFilename = `avatars/${userId}/${Date.now()}.${extension}`;
 
-    // Upload to Vercel Blob (streaming the request body directly)
-    const blob = await put(blobFilename, request.body!, {
+    // Upload to Vercel Blob
+    const blob = await put(blobFilename, file, {
       access: "public",
     });
 
@@ -39,9 +47,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       url: blob.url,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("Avatar upload error:", error);
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      { error: "Failed to upload avatar" },
       { status: 500 }
     );
   }

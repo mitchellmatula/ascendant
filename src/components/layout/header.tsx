@@ -4,10 +4,11 @@ import {
   SignUpButton,
   SignedIn,
   SignedOut,
-  UserButton,
 } from "@clerk/nextjs";
-import { getCurrentUser, isAdmin } from "@/lib/auth";
+import { getCurrentUser, isAdmin, getActiveAthlete, getAllAthletes } from "@/lib/auth";
 import { MobileMenu } from "./mobile-menu";
+import { AthleteSwitcher } from "./athlete-switcher";
+import { UserMenu } from "./user-menu";
 import { NAV_ITEMS } from "@/lib/navigation";
 import { db } from "@/lib/db";
 import { calculatePrime, formatLevel, getRankColor } from "@/lib/levels";
@@ -16,17 +17,51 @@ export async function Header() {
   const user = await getCurrentUser();
   const showAdminLink = user && isAdmin(user.role);
   
-  // Get athlete's Prime level if they have a profile
-  let primeLevel: { letter: string; sublevel: number } | null = null;
-  if (user?.athlete) {
+  // Get the active athlete (respects switcher selection)
+  const activeAthlete = user ? await getActiveAthlete(user) : null;
+  const allAthletes = user ? getAllAthletes(user) : [];
+  const isParent = user?.accountType === "PARENT";
+  const hasMultipleAthletes = allAthletes.length > 1;
+  
+  // Get Prime levels for all athletes (for the switcher display)
+  let athletesWithLevels: Array<{
+    id: string;
+    displayName: string;
+    level: { letter: string; sublevel: number } | null;
+    isOwnProfile: boolean;
+  }> = [];
+  
+  if (user && allAthletes.length > 0) {
+    const athleteIds = allAthletes.map((a) => a.id);
     const domainLevels = await db.domainLevel.findMany({
-      where: { athleteId: user.athlete.id },
+      where: { athleteId: { in: athleteIds } },
     });
-    if (domainLevels.length > 0) {
-      primeLevel = calculatePrime(domainLevels);
-    } else {
-      primeLevel = { letter: "F", sublevel: 0 };
+    
+    // Group domain levels by athlete
+    const levelsByAthlete = new Map<string, typeof domainLevels>();
+    for (const level of domainLevels) {
+      const existing = levelsByAthlete.get(level.athleteId) ?? [];
+      existing.push(level);
+      levelsByAthlete.set(level.athleteId, existing);
     }
+    
+    athletesWithLevels = allAthletes.map((athlete) => {
+      const levels = levelsByAthlete.get(athlete.id) ?? [];
+      const prime = levels.length > 0 ? calculatePrime(levels) : { letter: "F", sublevel: 0 };
+      return {
+        id: athlete.id,
+        displayName: athlete.displayName,
+        level: prime,
+        isOwnProfile: athlete.id === user.athlete?.id,
+      };
+    });
+  }
+  
+  // Get active athlete's Prime level for the badge
+  let primeLevel: { letter: string; sublevel: number } | null = null;
+  if (activeAthlete) {
+    const activeLevelData = athletesWithLevels.find((a) => a.id === activeAthlete.id);
+    primeLevel = activeLevelData?.level ?? { letter: "F", sublevel: 0 };
   }
 
   return (
@@ -72,6 +107,16 @@ export async function Header() {
           </SignUpButton>
         </SignedOut>
         <SignedIn>
+          {/* Athlete Switcher - always show for users who can add children */}
+          {activeAthlete && (
+            <div className="hidden sm:block">
+              <AthleteSwitcher
+                athletes={athletesWithLevels}
+                activeAthleteId={activeAthlete.id}
+                showAddChild={true}
+              />
+            </div>
+          )}
           {/* Prime Level Badge */}
           {primeLevel && (
             <Link 
@@ -81,22 +126,21 @@ export async function Header() {
                 backgroundColor: `${getRankColor(primeLevel.letter)}20`,
                 color: getRankColor(primeLevel.letter),
               }}
-              title="Your Prime Level"
+              title={activeAthlete ? `${activeAthlete.displayName}'s Prime Level` : "Your Prime Level"}
             >
               <span className="text-xs">⭐</span>
               <span>{formatLevel(primeLevel.letter, primeLevel.sublevel)}</span>
             </Link>
           )}
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "h-8 w-8 md:h-9 md:w-9",
-              },
-            }}
-          />
+          <UserMenu />
           {/* Mobile hamburger menu */}
-          <MobileMenu showAdminLink={showAdminLink ?? false} primeLevel={primeLevel} />
+          <MobileMenu 
+            showAdminLink={showAdminLink ?? false} 
+            primeLevel={primeLevel}
+            athletes={athletesWithLevels}
+            activeAthleteId={activeAthlete?.id ?? null}
+            isParent={isParent}
+          />
         </SignedIn>
       </div>
     </header>

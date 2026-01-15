@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLevel, getRankColor, getRankLabel, calculatePrime, type Rank } from "@/lib/levels";
 import { XP_PER_SUBLEVEL, CUMULATIVE_XP_TO_RANK } from "@/lib/xp-constants";
 import Link from "next/link";
+import { Building2 } from "lucide-react";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -19,8 +20,11 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  // Get the active athlete (either the user's own profile or first managed athlete)
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  // Get the active athlete (respects switcher selection)
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
 
   // Get domain levels for the athlete
   const domainLevels = await db.domainLevel.findMany({
@@ -54,6 +58,22 @@ export default async function DashboardPage() {
     },
     orderBy: { submittedAt: "desc" },
     take: 5,
+  });
+
+  // Get user's gym memberships
+  const gymMemberships = await db.gymMember.findMany({
+    where: { userId: user.id, isActive: true },
+    include: {
+      gym: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logoUrl: true,
+        },
+      },
+    },
+    orderBy: { joinedAt: "desc" },
   });
 
   // Calculate Prime
@@ -263,6 +283,41 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* My Gyms Section */}
+      {gymMemberships.length > 0 && (
+        <Card className="mt-6 md:mt-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              My Gyms
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm">Gyms you&apos;ve joined</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {gymMemberships.map((membership) => (
+                <Link
+                  key={membership.gym.id}
+                  href={`/gym/${membership.gym.slug}`}
+                  className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+                >
+                  {membership.gym.logoUrl ? (
+                    <img
+                      src={membership.gym.logoUrl}
+                      alt={membership.gym.name}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <Building2 className="w-5 h-5 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-medium">{membership.gym.name}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <Card className="mt-6 md:mt-8">

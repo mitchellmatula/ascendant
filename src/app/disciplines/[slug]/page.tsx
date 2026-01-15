@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,10 @@ async function DisciplineChallengesContent({ params }: PageProps) {
     redirect("/onboarding");
   }
 
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
   const { slug } = await params;
 
   // Get the discipline

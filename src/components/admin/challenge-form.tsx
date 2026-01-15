@@ -107,6 +107,7 @@ interface ChallengeFormProps {
     disciplines: { discipline: Discipline }[];
     equipment: { equipment: Equipment }[];
     grades?: { divisionId: string; rank: string; targetValue: number; description: string | null; bonusXP: number }[];
+    allowedDivisions?: { division: Division }[];
   };
   domains: Domain[];
   categories: Category[];
@@ -162,6 +163,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
     equipmentIds: challenge?.equipment?.map(e => e.equipment.id) ?? [],
     grades: challenge?.grades ?? [] as ChallengeGrade[],
     gymId: challenge?.gymId ?? "",
+    allowedDivisionIds: challenge?.allowedDivisions?.map(d => d.division.id) ?? [],
   });
 
   const [isExtractingThumbnail, setIsExtractingThumbnail] = useState(false);
@@ -442,6 +444,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         tertiaryXPPercent: formData.tertiaryDomainId ? formData.tertiaryXPPercent : null,
         grades: formData.gradingType !== "PASS_FAIL" ? formData.grades : [],
         gymId: formData.gymId || null,
+        allowedDivisionIds: formData.allowedDivisionIds,
       };
       
       let response: Response;
@@ -595,7 +598,11 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
             minRank: formData.minRank,
             maxRank: formData.maxRank,
             primaryDomain: primaryDomain?.name,
-            divisions: divisions.map(d => ({
+            // Only send allowed divisions if restrictions are set, otherwise all divisions
+            divisions: (formData.allowedDivisionIds.length > 0
+              ? divisions.filter(d => formData.allowedDivisionIds.includes(d.id))
+              : divisions
+            ).map(d => ({
               id: d.id,
               name: d.name,
               gender: d.gender,
@@ -1128,6 +1135,56 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         </CardContent>
       </Card>
 
+      {/* Allowed Divisions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Allowed Divisions</CardTitle>
+          <CardDescription>
+            Restrict which age/gender divisions can attempt this challenge. Leave empty to allow all divisions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {divisions.map((division) => {
+                const isSelected = formData.allowedDivisionIds.includes(division.id);
+                return (
+                  <Badge
+                    key={division.id}
+                    variant={isSelected ? "default" : "outline"}
+                    className="cursor-pointer text-sm py-1.5 px-3 transition-colors"
+                    onClick={() => {
+                      setFormData({
+                        ...formData,
+                        allowedDivisionIds: isSelected
+                          ? formData.allowedDivisionIds.filter(id => id !== division.id)
+                          : [...formData.allowedDivisionIds, division.id],
+                      });
+                    }}
+                  >
+                    {division.name}
+                    {division.ageMin !== null && division.ageMax !== null && (
+                      <span className="ml-1 text-xs opacity-70">
+                        ({division.ageMin}-{division.ageMax})
+                      </span>
+                    )}
+                  </Badge>
+                );
+              })}
+            </div>
+            {formData.allowedDivisionIds.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                🌍 All divisions can attempt this challenge.
+              </p>
+            ) : (
+              <p className="text-xs text-amber-600">
+                ⚠️ Only {formData.allowedDivisionIds.length} selected division(s) can see and attempt this challenge.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Grading Configuration */}
       <Card>
         <CardHeader>
@@ -1328,7 +1385,11 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                   </tr>
                 </thead>
                 <tbody>
-                  {divisions.map(division => (
+                  {/* Filter to allowed divisions if any are selected, otherwise show all */}
+                  {(formData.allowedDivisionIds.length > 0 
+                    ? divisions.filter(d => formData.allowedDivisionIds.includes(d.id))
+                    : divisions
+                  ).map(division => (
                     <tr key={division.id} className="border-b last:border-0">
                       <td className="py-2 pr-4 font-medium whitespace-nowrap">{division.name}</td>
                       {getAvailableRanks().map(rank => {
@@ -1360,6 +1421,11 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                 </tbody>
               </table>
             </div>
+            {formData.allowedDivisionIds.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-3">
+                💡 Only showing divisions selected in "Allowed Divisions" above.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}

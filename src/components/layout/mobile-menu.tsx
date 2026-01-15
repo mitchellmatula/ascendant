@@ -1,20 +1,68 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "@/lib/navigation";
 import { formatLevel, getRankColor } from "@/lib/levels";
+import { Check, ChevronDown, UserPlus } from "lucide-react";
+
+interface AthleteOption {
+  id: string;
+  displayName: string;
+  level: { letter: string; sublevel: number } | null;
+  isOwnProfile: boolean;
+}
 
 interface MobileMenuProps {
   showAdminLink: boolean;
   primeLevel: { letter: string; sublevel: number } | null;
+  athletes?: AthleteOption[];
+  activeAthleteId?: string | null;
+  isParent?: boolean;
 }
 
-export function MobileMenu({ showAdminLink, primeLevel }: MobileMenuProps) {
+export function MobileMenu({ 
+  showAdminLink, 
+  primeLevel,
+  athletes = [],
+  activeAthleteId = null,
+  isParent = false,
+}: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAthleteList, setShowAthleteList] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
+  const router = useRouter();
+
+  const activeAthlete = athletes.find((a) => a.id === activeAthleteId);
+  const hasMultipleAthletes = athletes.length > 1;
+
+  const handleSwitchAthlete = async (athleteId: string) => {
+    if (athleteId === activeAthleteId) {
+      setShowAthleteList(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/athletes/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ athleteId }),
+      });
+
+      if (response.ok) {
+        setShowAthleteList(false);
+        setIsOpen(false);
+        startTransition(() => {
+          router.refresh();
+        });
+      }
+    } catch (error) {
+      console.error("Failed to switch athlete:", error);
+    }
+  };
 
   return (
     <>
@@ -60,6 +108,86 @@ export function MobileMenu({ showAdminLink, primeLevel }: MobileMenuProps) {
         )}
       >
         <nav className="flex flex-col p-4">
+          {/* Athlete Switcher - show for any user with athlete profile */}
+          {activeAthlete && (
+            <div className="mb-4">
+              <button
+                onClick={() => setShowAthleteList(!showAthleteList)}
+                disabled={isPending}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-muted text-left"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Viewing as:</span>
+                  <span className="font-medium">{activeAthlete.displayName}</span>
+                </div>
+                <ChevronDown className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform",
+                  showAthleteList && "rotate-180"
+                )} />
+              </button>
+              
+              {showAthleteList && (
+                <div className="mt-1 border border-border rounded-lg overflow-hidden">
+                  {athletes.map((athlete) => (
+                    <button
+                      key={athlete.id}
+                      onClick={() => handleSwitchAthlete(athlete.id)}
+                      disabled={isPending}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3 text-left transition-colors",
+                        athlete.id === activeAthleteId 
+                          ? "bg-primary/10" 
+                          : "hover:bg-muted"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {athlete.isOwnProfile && <span className="text-xs">🏃</span>}
+                        <span className={athlete.id === activeAthleteId ? "font-medium" : ""}>
+                          {athlete.displayName}
+                        </span>
+                        {athlete.isOwnProfile && (
+                          <span className="text-xs text-muted-foreground">(me)</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {athlete.level && (
+                          <span
+                            className="text-xs font-bold px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: `${getRankColor(athlete.level.letter)}20`,
+                              color: getRankColor(athlete.level.letter),
+                            }}
+                          >
+                            {formatLevel(athlete.level.letter, athlete.level.sublevel)}
+                          </span>
+                        )}
+                        {athlete.id === activeAthleteId && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  
+                  {/* Always show Add Child option */}
+                  <>
+                    <div className="h-px bg-border" />
+                    <Link
+                      href="/athletes/add"
+                      onClick={() => {
+                        setShowAthleteList(false);
+                        setIsOpen(false);
+                      }}
+                      className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-muted transition-colors"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Add Child
+                    </Link>
+                  </>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Prime Level at top of mobile menu */}
           {primeLevel && (
             <Link

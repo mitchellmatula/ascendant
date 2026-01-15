@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { ChevronLeft } from "lucide-react";
 import { SubmitChallengeForm } from "./submit-form";
@@ -22,7 +22,10 @@ export default async function SubmitChallengePage({ params }: PageProps) {
   }
 
   const { slug } = await params;
-  const athlete = user.athlete ?? user.managedAthletes[0];
+  const athlete = await getActiveAthlete(user);
+  if (!athlete) {
+    redirect("/onboarding");
+  }
 
   // Get challenge
   const challenge = await db.challenge.findUnique({
