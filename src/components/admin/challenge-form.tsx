@@ -82,6 +82,19 @@ const GRADING_TYPES = [
 
 const RANKS = ["F", "E", "D", "C", "B", "A", "S"] as const;
 
+const PROOF_TYPES = [
+  { value: "VIDEO", label: "Video Upload", icon: "🎥", description: "Athlete uploads a video" },
+  { value: "IMAGE", label: "Image Upload", icon: "📷", description: "Athlete uploads a photo" },
+  { value: "STRAVA", label: "Strava Activity", icon: "🏃", description: "Link a Strava activity" },
+  { value: "GARMIN", label: "Garmin Activity", icon: "⌚", description: "Link a Garmin activity" },
+  { value: "MANUAL", label: "Manual Entry", icon: "✍️", description: "Coach/admin verified" },
+] as const;
+
+const ACTIVITY_TYPES = [
+  "Run", "Trail Run", "Ride", "Mountain Bike", "Swim", "Open Water Swim",
+  "Walk", "Hike", "Row", "Kayak", "Cross-Country Ski", "Other"
+] as const;
+
 interface ChallengeFormProps {
   challenge?: {
     id: string;
@@ -103,6 +116,14 @@ interface ChallengeFormProps {
     tertiaryDomainId: string | null;
     tertiaryXPPercent: number | null;
     gymId: string | null;
+    // Proof types & activity validation
+    proofTypes?: string[];
+    activityType?: string | null;
+    minDistance?: number | null;
+    maxDistance?: number | null;
+    minElevationGain?: number | null;
+    requiresGPS?: boolean;
+    requiresHeartRate?: boolean;
     categories: { category: Category }[];
     disciplines: { discipline: Discipline }[];
     equipment: { equipment: Equipment }[];
@@ -164,7 +185,18 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
     grades: challenge?.grades ?? [] as ChallengeGrade[],
     gymId: challenge?.gymId ?? "",
     allowedDivisionIds: challenge?.allowedDivisions?.map(d => d.division.id) ?? [],
+    // Proof types & activity validation
+    proofTypes: challenge?.proofTypes ?? ["VIDEO"],
+    activityType: challenge?.activityType ?? "",
+    minDistance: challenge?.minDistance ?? null,
+    maxDistance: challenge?.maxDistance ?? null,
+    minElevationGain: challenge?.minElevationGain ?? null,
+    requiresGPS: challenge?.requiresGPS ?? false,
+    requiresHeartRate: challenge?.requiresHeartRate ?? false,
   });
+
+  // Check if activity-based proof types are selected
+  const hasActivityProof = formData.proofTypes.includes("STRAVA") || formData.proofTypes.includes("GARMIN");
 
   const [isExtractingThumbnail, setIsExtractingThumbnail] = useState(false);
 
@@ -445,59 +477,100 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         grades: formData.gradingType !== "PASS_FAIL" ? formData.grades : [],
         gymId: formData.gymId || null,
         allowedDivisionIds: formData.allowedDivisionIds,
+        // Proof types & activity validation
+        proofTypes: formData.proofTypes,
+        activityType: hasActivityProof && formData.activityType ? formData.activityType : null,
+        minDistance: hasActivityProof ? formData.minDistance : null,
+        maxDistance: hasActivityProof ? formData.maxDistance : null,
+        minElevationGain: hasActivityProof ? formData.minElevationGain : null,
+        requiresGPS: hasActivityProof ? formData.requiresGPS : false,
+        requiresHeartRate: hasActivityProof ? formData.requiresHeartRate : false,
       };
       
-      let response: Response;
-      try {
-        response = await fetch(url, {
-          method: mode === "create" ? "POST" : "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(submitData),
-        });
-      } catch (networkError) {
-        console.error("Network error:", networkError);
-        throw new Error("Network error - please check your connection and try again");
-      }
+      // Retry logic for intermittent auth issues
+      const maxRetries = 3;
+      let lastError: Error | null = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, {
+            method: mode === "create" ? "POST" : "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(submitData),
+          });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        // Response wasn't JSON - might be a server error
-        if (!response.ok) {
-          throw new Error(`Server error (${response.status}) - please try again`);
-        }
-        data = {};
-      }
-
-      if (!response.ok) {
-        let errorMessage = "Something went wrong";
-        
-        if (data.error) {
-          errorMessage = data.error;
-        }
-        
-        // Parse field-specific errors from Zod validation
-        if (data.details?.fieldErrors) {
-          const fieldErrors = Object.entries(data.details.fieldErrors)
-            .filter(([, errors]) => (errors as string[]).length > 0)
-            .map(([field, errors]) => `${field}: ${(errors as string[]).join(", ")}`)
-            .join("; ");
-          if (fieldErrors) {
-            errorMessage = fieldErrors;
+          let data;
+          try {
+            data = await response.json();
+          } catch {
+            // Response wasn't JSON - might be a server error
+            if (!response.ok) {
+              throw new Error(`Server error (${response.status}) - please try again`);
+            }
+            data = {};
           }
-        }
-        
-        // Parse form-level errors
-        if (data.details?.formErrors?.length > 0) {
-          errorMessage = data.details.formErrors.join("; ");
-        }
-        
-        throw new Error(errorMessage);
-      }
 
-      router.push("/admin/challenges");
-      router.refresh();
+          if (!response.ok) {
+            // If it's an auth error (401) and we have retries left, wait and retry
+            if (response.status === 401 && attempt < maxRetries) {
+              console.log(`Auth error on attempt ${attempt}, retrying...`);
+              await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+              continue;
+            }
+            
+            let errorMessage = "Something went wrong";
+            
+            if (data.error) {
+              errorMessage = data.error;
+            }
+            
+            // Parse field-specific errors from Zod validation
+            if (data.details?.fieldErrors) {
+              const fieldErrors = Object.entries(data.details.fieldErrors)
+                .filter(([, errors]) => (errors as string[]).length > 0)
+                .map(([field, errors]) => `${field}: ${(errors as string[]).join(", ")}`)
+                .join("; ");
+              if (fieldErrors) {
+                errorMessage = fieldErrors;
+              }
+            }
+            
+            // Parse form-level errors
+            if (data.details?.formErrors?.length > 0) {
+              errorMessage = data.details.formErrors.join("; ");
+            }
+            
+            throw new Error(errorMessage);
+          }
+
+          // Success! Navigate away
+          router.push("/admin/challenges");
+          router.refresh();
+          return;
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error("Unknown error");
+          
+          // If it's a network error and we have retries left, retry
+          if (attempt < maxRetries && lastError.message.includes("fetch")) {
+            console.log(`Network error on attempt ${attempt}, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+            continue;
+          }
+          
+          // If it's not the last attempt and it's an "Unauthorized" error, retry
+          if (attempt < maxRetries && lastError.message === "Unauthorized") {
+            console.log(`Unauthorized on attempt ${attempt}, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+            continue;
+          }
+          
+          // Otherwise, throw the error
+          throw lastError;
+        }
+      }
+      
+      // If we get here, all retries failed
+      throw lastError || new Error("Failed after multiple attempts");
     } catch (err) {
       console.error("Challenge form error:", err);
       setError(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -1327,6 +1400,191 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
           <p className="text-sm text-muted-foreground">
             This challenge is available for ranks: <strong>{getAvailableRanks().join(", ")}</strong>
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Proof Types & Activity Requirements */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Proof Types</CardTitle>
+          <CardDescription>
+            How athletes can prove they completed this challenge. Select all that apply.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Proof Type Selection */}
+          <div className="space-y-3">
+            <Label>Accepted Proof Types *</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {PROOF_TYPES.map((type) => {
+                const isSelected = formData.proofTypes.includes(type.value);
+                return (
+                  <div
+                    key={type.value}
+                    className={`
+                      flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors
+                      ${isSelected 
+                        ? "border-primary bg-primary/5" 
+                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      }
+                    `}
+                    onClick={() => {
+                      const newProofTypes = isSelected
+                        ? formData.proofTypes.filter(t => t !== type.value)
+                        : [...formData.proofTypes, type.value];
+                      // Ensure at least one type is selected
+                      if (newProofTypes.length > 0) {
+                        setFormData({ ...formData, proofTypes: newProofTypes });
+                      }
+                    }}
+                  >
+                    <div className="text-xl">{type.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{type.label}</span>
+                        {isSelected && (
+                          <Badge variant="secondary" className="text-xs">Selected</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">{type.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {formData.proofTypes.length === 0 && (
+              <p className="text-xs text-red-500">At least one proof type is required</p>
+            )}
+          </div>
+
+          {/* Activity Validation Rules (only when Strava or Garmin selected) */}
+          {hasActivityProof && (
+            <div className="space-y-4 pt-4 border-t">
+              <div>
+                <h4 className="font-medium text-sm mb-1">Activity Validation Rules</h4>
+                <p className="text-xs text-muted-foreground">
+                  Configure requirements for Strava/Garmin activities. Leave blank for no restriction.
+                </p>
+              </div>
+
+              {/* Activity Type */}
+              <div className="space-y-2">
+                <Label>Activity Type</Label>
+                <Select
+                  value={formData.activityType || "any"}
+                  onValueChange={(val) => setFormData({ ...formData, activityType: val === "any" ? "" : val })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any activity type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any activity type</SelectItem>
+                    {ACTIVITY_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Filter by activity type (Run, Ride, Swim, etc.)</p>
+              </div>
+
+              {/* Distance Range */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="minDistance">Minimum Distance (meters)</Label>
+                  <Input
+                    id="minDistance"
+                    type="number"
+                    min={0}
+                    step={100}
+                    placeholder="e.g., 5000"
+                    value={formData.minDistance ?? ""}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      minDistance: e.target.value ? parseFloat(e.target.value) : null 
+                    })}
+                  />
+                  <p className="text-xs text-muted-foreground">5000 = 5K</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxDistance">Maximum Distance (meters)</Label>
+                  <Input
+                    id="maxDistance"
+                    type="number"
+                    min={0}
+                    step={100}
+                    placeholder="e.g., 5500"
+                    value={formData.maxDistance ?? ""}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      maxDistance: e.target.value ? parseFloat(e.target.value) : null 
+                    })}
+                  />
+                  <p className="text-xs text-muted-foreground">For time trials (e.g., 5K = 4900-5200m)</p>
+                </div>
+              </div>
+
+              {/* Elevation Gain */}
+              <div className="space-y-2">
+                <Label htmlFor="minElevationGain">Minimum Elevation Gain (meters)</Label>
+                <Input
+                  id="minElevationGain"
+                  type="number"
+                  min={0}
+                  step={50}
+                  placeholder="e.g., 500"
+                  value={formData.minElevationGain ?? ""}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    minElevationGain: e.target.value ? parseFloat(e.target.value) : null 
+                  })}
+                />
+                <p className="text-xs text-muted-foreground">For hill/mountain challenges. 500m = ~1,640ft</p>
+              </div>
+
+              {/* GPS & Heart Rate Requirements */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg border flex-1">
+                  <Switch
+                    id="requiresGPS"
+                    checked={formData.requiresGPS}
+                    onCheckedChange={(checked) => setFormData({ ...formData, requiresGPS: checked })}
+                  />
+                  <div>
+                    <Label htmlFor="requiresGPS" className="cursor-pointer">Requires GPS</Label>
+                    <p className="text-xs text-muted-foreground">Must be outdoor (no treadmill)</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 rounded-lg border flex-1">
+                  <Switch
+                    id="requiresHeartRate"
+                    checked={formData.requiresHeartRate}
+                    onCheckedChange={(checked) => setFormData({ ...formData, requiresHeartRate: checked })}
+                  />
+                  <div>
+                    <Label htmlFor="requiresHeartRate" className="cursor-pointer">Requires Heart Rate</Label>
+                    <p className="text-xs text-muted-foreground">Proves genuine effort</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview of Rules */}
+              {(formData.activityType || formData.minDistance || formData.maxDistance || formData.minElevationGain || formData.requiresGPS || formData.requiresHeartRate) && (
+                <div className="p-3 rounded-lg bg-muted">
+                  <p className="text-sm font-medium mb-2">Activity Requirements Summary</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    {formData.activityType && <li>• Activity type: <strong>{formData.activityType}</strong></li>}
+                    {formData.minDistance && <li>• Min distance: <strong>{(formData.minDistance / 1000).toFixed(1)} km</strong></li>}
+                    {formData.maxDistance && <li>• Max distance: <strong>{(formData.maxDistance / 1000).toFixed(1)} km</strong></li>}
+                    {formData.minElevationGain && <li>• Min elevation: <strong>{formData.minElevationGain} m</strong></li>}
+                    {formData.requiresGPS && <li>• ✅ GPS required (outdoor only)</li>}
+                    {formData.requiresHeartRate && <li>• ✅ Heart rate data required</li>}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

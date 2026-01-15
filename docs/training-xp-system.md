@@ -10,6 +10,28 @@
 
 The Training XP System allows athletes to earn XP from regular training activities (runs, rides, swims) synced from Strava or Garmin. This supplements the existing Challenge-based XP system to ensure endurance athletes can progress at a fair rate compared to skill-based disciplines.
 
+---
+
+## Rank Progression Reference
+
+For context, here's how much XP is required to advance through each rank:
+
+| Rank | XP per Sublevel | Total XP to Complete Rank |
+|------|-----------------|---------------------------|
+| F (F0→F9) | 100 XP | 1,000 XP |
+| E (E0→E9) | 200 XP | 2,000 XP |
+| D (D0→D9) | 400 XP | 4,000 XP |
+| C (C0→C9) | 800 XP | 8,000 XP |
+| B (B0→B9) | 1,600 XP | 16,000 XP |
+| A (A0→A9) | 3,200 XP | 32,000 XP |
+| S (S0→S9) | 6,400 XP | 64,000 XP |
+
+**Key points:**
+- Each rank has 10 sublevels (0-9)
+- XP requirements double with each rank
+- Total XP from F0 to S9: **127,000 XP**
+- Breakthrough Challenges are required to advance between letter ranks (see below)
+
 ### Goals
 1. **Fair progression** – Runners/cyclists who train 3-4 days/week should progress comparably to ninja/strength athletes
 2. **Reward consistency** – Weekly active day bonuses encourage regular training

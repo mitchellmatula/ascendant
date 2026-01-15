@@ -1,10 +1,23 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Metadata } from "next";
 import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLevel, getRankColor, getRankLabel, calculatePrime } from "@/lib/levels";
 import { Badge } from "@/components/ui/badge";
+
+export const metadata: Metadata = {
+  title: "Domains",
+  description: "Track your progress across four athletic domains: Strength, Skill, Endurance, and Speed. Each domain has its own rank from F to S.",
+  openGraph: {
+    title: "Domains | Ascendant",
+    description: "Track your athletic progress across Strength, Skill, Endurance, and Speed.",
+  },
+  alternates: {
+    canonical: "/domains",
+  },
+};
 
 export default async function DomainsPage() {
   const user = await getCurrentUser();

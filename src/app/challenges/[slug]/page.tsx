@@ -1,5 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { Metadata } from "next";
 import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,36 @@ import { XP_PER_TIER } from "@/lib/xp";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+// Generate dynamic metadata for SEO
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const challenge = await db.challenge.findUnique({
+    where: { slug, isActive: true },
+    include: {
+      primaryDomain: { select: { name: true } },
+    },
+  });
+
+  if (!challenge) {
+    return {
+      title: "Challenge Not Found",
+    };
+  }
+
+  return {
+    title: challenge.name,
+    description: challenge.description.slice(0, 160),
+    openGraph: {
+      title: `${challenge.name} | Ascendant Challenge`,
+      description: challenge.description.slice(0, 160),
+      images: challenge.demoImageUrl ? [challenge.demoImageUrl] : undefined,
+    },
+    alternates: {
+      canonical: `/challenges/${slug}`,
+    },
+  };
 }
 
 export default async function ChallengeDetailPage({ params }: PageProps) {

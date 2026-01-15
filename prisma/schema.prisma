@@ -31,6 +31,19 @@ model User {
   reviewCount       Int       @default(0)      // Total reviews given
   reviewAccuracy    Float?    // % of reviews that matched final outcome (quality metric)
   
+  // Fitness app connections (Strava/Garmin)
+  stravaAthleteId     String?   @unique
+  stravaAccessToken   String?
+  stravaRefreshToken  String?
+  stravaConnectedAt   DateTime?
+  garminUserId        String?   @unique
+  garminAccessToken   String?
+  garminRefreshToken  String?
+  garminConnectedAt   DateTime?
+  
+  // Unit preferences for training display
+  unitSystem          String    @default("metric") // "metric" or "imperial"
+  
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -352,6 +365,17 @@ model Challenge {
   minRank      String      @default("F") // Lowest rank this challenge is available for
   maxRank      String      @default("S") // Highest rank this challenge is available for
 
+  // Proof/submission types allowed for this challenge
+  proofTypes   String[]    @default(["VIDEO"]) // VIDEO, IMAGE, STRAVA, GARMIN, MANUAL
+  
+  // Activity validation rules (for Strava/Garmin challenges)
+  activityType      String?   // Run, Ride, Swim, Hike, Walk, etc.
+  minDistance       Float?    // Minimum distance in meters
+  maxDistance       Float?    // Maximum distance in meters (for time trials)
+  minElevationGain  Float?    // Minimum elevation gain in meters
+  requiresGPS       Boolean   @default(false) // Must be outdoor GPS activity, not treadmill
+  requiresHeartRate Boolean   @default(false) // Must have HR data (proves genuine effort)
+
   // Gym-specific challenge (null = global challenge available to all)
   gymId String?
   gym   Gym?    @relation(fields: [gymId], references: [id], onDelete: SetNull)
@@ -493,6 +517,16 @@ enum XPSource {
   ADMIN
 }
 
+// How the submission was proven
+enum ProofType {
+  VIDEO       // Video upload
+  IMAGE       // Image upload
+  STRAVA      // Strava activity
+  GARMIN      // Garmin activity
+  RACE_RESULT // Official race result
+  MANUAL      // Manual entry (coach/admin approved)
+}
+
 // ============================================
 // CHALLENGE SUBMISSIONS
 // ============================================
@@ -512,6 +546,26 @@ model ChallengeSubmission {
   submittedAt   DateTime         @default(now())
   reviewedAt    DateTime?
 
+  // Proof type used for this submission
+  proofType     ProofType        @default(VIDEO)
+  
+  // Strava activity proof
+  stravaActivityId  String?
+  stravaActivityUrl String?
+  
+  // Garmin activity proof
+  garminActivityId  String?
+  garminActivityUrl String?
+  
+  // Cached activity metrics (from Strava/Garmin API)
+  activityDistance   Float?    // Distance in meters
+  activityTime       Int?      // Duration in seconds
+  activityElevation  Float?    // Elevation gain in meters
+  activityDate       DateTime? // When the activity occurred
+  activityType       String?   // Run, Ride, Swim, etc.
+  activityAvgHR      Int?      // Average heart rate
+  activityMaxHR      Int?      // Max heart rate
+
   // For graded challenges: what value did they achieve?
   achievedValue Int? // e.g., 20 reps, 45 seconds, etc.
   
@@ -524,6 +578,10 @@ model ChallengeSubmission {
   
   // Total XP awarded across all claimed tiers
   xpAwarded     Int     @default(0)
+
+  // Privacy settings
+  isPublic       Boolean @default(true)  // Show on public feeds/leaderboards
+  hideExactValue Boolean @default(false) // Hide achievedValue but still show rank
 
   athlete   Athlete             @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   challenge Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)

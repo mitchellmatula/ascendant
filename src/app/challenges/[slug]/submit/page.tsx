@@ -38,6 +38,9 @@ export default async function SubmitChallengePage({ params }: PageProps) {
     },
   });
 
+  // Check if user has Strava connected
+  const hasStravaConnected = !!user.stravaAthleteId;
+
   if (!challenge) {
     notFound();
   }
@@ -101,7 +104,15 @@ export default async function SubmitChallengePage({ params }: PageProps) {
           slug: challenge.slug,
           gradingType: challenge.gradingType,
           gradingUnit: challenge.gradingUnit,
+          timeFormat: challenge.timeFormat,
           primaryDomain: challenge.primaryDomain,
+          proofTypes: challenge.proofTypes,
+          activityType: challenge.activityType,
+          minDistance: challenge.minDistance,
+          maxDistance: challenge.maxDistance,
+          minElevationGain: challenge.minElevationGain,
+          requiresGPS: challenge.requiresGPS,
+          requiresHeartRate: challenge.requiresHeartRate,
         }}
         athleteId={athlete.id}
         existingSubmission={existingSubmission ? {
@@ -110,12 +121,18 @@ export default async function SubmitChallengePage({ params }: PageProps) {
           notes: existingSubmission.notes,
           achievedValue: existingSubmission.achievedValue,
           status: existingSubmission.status,
+          proofType: existingSubmission.proofType,
+          stravaActivityId: existingSubmission.stravaActivityId,
+          stravaActivityUrl: existingSubmission.stravaActivityUrl,
+          isPublic: existingSubmission.isPublic,
+          hideExactValue: existingSubmission.hideExactValue,
         } : null}
         grades={relevantGrades.map(g => ({
           rank: g.rank,
           targetValue: g.targetValue,
         }))}
         divisionName={athleteDivision?.name || null}
+        hasStravaConnected={hasStravaConnected}
       />
     </div>
   );

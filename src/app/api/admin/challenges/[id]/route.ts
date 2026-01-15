@@ -128,6 +128,14 @@ export async function PATCH(
       grades,
       gymId,
       allowedDivisionIds,
+      // Proof types & activity validation
+      proofTypes,
+      activityType,
+      minDistance,
+      maxDistance,
+      minElevationGain,
+      requiresGPS,
+      requiresHeartRate,
     } = parsed.data;
 
     // If name is changing, update the slug
@@ -174,6 +182,14 @@ export async function PATCH(
           ...(minRank !== undefined && { minRank }),
           ...(maxRank !== undefined && { maxRank }),
           ...(gymId !== undefined && { gymId }),
+          // Proof types & activity validation
+          ...(proofTypes !== undefined && { proofTypes }),
+          ...(activityType !== undefined && { activityType }),
+          ...(minDistance !== undefined && { minDistance }),
+          ...(maxDistance !== undefined && { maxDistance }),
+          ...(minElevationGain !== undefined && { minElevationGain }),
+          ...(requiresGPS !== undefined && { requiresGPS }),
+          ...(requiresHeartRate !== undefined && { requiresHeartRate }),
         },
       });
 

@@ -43,12 +43,14 @@ export async function GET(req: NextRequest) {
       // If not own athlete and not admin, only show approved
       if (!isOwnAthlete && !isAdminOrCoach) {
         where.status = "APPROVED";
+        where.isPublic = true; // Respect privacy for non-owners
       } else if (status && status !== "ALL") {
         where.status = status;
       }
     } else {
-      // Public feed - only approved submissions
+      // Public feed - only approved and public submissions
       where.status = "APPROVED";
+      where.isPublic = true;
     }
 
     if (challengeId) {
@@ -93,8 +95,31 @@ export async function GET(req: NextRequest) {
       db.challengeSubmission.count({ where }),
     ]);
 
+    // Determine if we need to apply privacy transformations
+    // (when viewing someone else's submissions)
+    const isOwnData = athleteId && (
+      user?.athlete?.id === athleteId ||
+      user?.managedAthletes.some(a => a.id === athleteId)
+    );
+    const isAdminOrCoach = user && ["SYSTEM_ADMIN", "GYM_ADMIN", "COACH"].includes(user.role);
+    const canSeePrivateData = isOwnData || isAdminOrCoach;
+
+    // Transform submissions to hide achievedValue if hideExactValue is true
+    const transformedSubmissions = submissions.map(submission => {
+      if (canSeePrivateData || !submission.hideExactValue) {
+        return submission;
+      }
+      // Hide the exact value but keep the rank
+      return {
+        ...submission,
+        achievedValue: null,
+        activityTime: null,
+        activityDistance: null,
+      };
+    });
+
     return NextResponse.json({
-      submissions,
+      submissions: transformedSubmissions,
       pagination: {
         page,
         limit,
@@ -125,10 +150,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createSubmissionSchema.parse(body);
 
+    // If athleteId not provided, use user's own athlete or first managed athlete
+    let athleteId = data.athleteId;
+    if (!athleteId) {
+      athleteId = user.athlete?.id || user.managedAthletes[0]?.id;
+      if (!athleteId) {
+        return NextResponse.json(
+          { error: "No athlete profile found" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Verify the athlete belongs to this user (or is managed by them)
     const athlete = await db.athlete.findFirst({
       where: {
-        id: data.athleteId,
+        id: athleteId,
         OR: [
           { userId: user.id },
           { parentId: user.id },
@@ -165,11 +202,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This challenge is no longer active" }, { status: 400 });
     }
 
+    // Validate that the proof type is allowed for this challenge
+    if (!challenge.proofTypes.includes(data.proofType)) {
+      return NextResponse.json(
+        { error: `Proof type ${data.proofType} is not allowed for this challenge` },
+        { status: 400 }
+      );
+    }
+
     // Check if athlete already has a submission for this challenge
     const existingSubmission = await db.challengeSubmission.findUnique({
       where: {
         athleteId_challengeId: {
-          athleteId: data.athleteId,
+          athleteId: athlete.id,
           challengeId: data.challengeId,
         },
       },
@@ -202,6 +247,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Build the submission data object
+    const submissionData = {
+      videoUrl: data.videoUrl || null,
+      imageUrl: data.imageUrl || null,
+      notes: data.notes || null,
+      achievedValue: data.achievedValue || null,
+      achievedRank,
+      proofType: data.proofType as "VIDEO" | "IMAGE" | "STRAVA" | "GARMIN" | "RACE_RESULT" | "MANUAL",
+      // Strava activity data
+      stravaActivityId: data.stravaActivityId || null,
+      stravaActivityUrl: data.stravaActivityUrl || null,
+      // Garmin activity data
+      garminActivityId: data.garminActivityId || null,
+      garminActivityUrl: data.garminActivityUrl || null,
+      // Cached activity metrics
+      activityDistance: data.activityDistance || null,
+      activityTime: data.activityTime || null,
+      activityElevation: data.activityElevation || null,
+      activityDate: data.activityDate ? new Date(data.activityDate) : null,
+      activityType: data.activityType || null,
+      activityAvgHR: data.activityAvgHR || null,
+      activityMaxHR: data.activityMaxHR || null,
+      // Privacy settings
+      isPublic: data.isPublic ?? true,
+      hideExactValue: data.hideExactValue ?? false,
+      status: autoApproved ? "APPROVED" as const : "PENDING" as const,
+      autoApproved,
+    };
+
     if (existingSubmission) {
       // Archive old submission to history
       await db.submissionHistory.create({
@@ -223,13 +297,7 @@ export async function POST(req: NextRequest) {
       const updated = await db.challengeSubmission.update({
         where: { id: existingSubmission.id },
         data: {
-          videoUrl: data.videoUrl || null,
-          imageUrl: data.imageUrl || null,
-          notes: data.notes || null,
-          achievedValue: data.achievedValue || null,
-          achievedRank,
-          status: autoApproved ? "APPROVED" : "PENDING",
-          autoApproved,
+          ...submissionData,
           submittedAt: new Date(),
           reviewedAt: autoApproved ? new Date() : null,
           reviewedBy: autoApproved ? user.id : null,
@@ -256,16 +324,10 @@ export async function POST(req: NextRequest) {
     // Create new submission
     const submission = await db.challengeSubmission.create({
       data: {
-        athleteId: data.athleteId,
+        athleteId: athlete.id,
         challengeId: data.challengeId,
         submittedById: user.id,
-        videoUrl: data.videoUrl || null,
-        imageUrl: data.imageUrl || null,
-        notes: data.notes || null,
-        achievedValue: data.achievedValue || null,
-        achievedRank,
-        status: autoApproved ? "APPROVED" : "PENDING",
-        autoApproved,
+        ...submissionData,
         reviewedAt: autoApproved ? new Date() : null,
         reviewedBy: autoApproved ? user.id : null,
       },

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { Metadata } from "next";
 import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,9 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dumbbell, Trophy, Clock, Target, ChevronRight, Zap, Filter, Building2, X, Lock } from "lucide-react";
 
-export const metadata = {
-  title: "Challenges | Ascendant",
-  description: "Browse challenges tailored to your disciplines",
+export const metadata: Metadata = {
+  title: "Challenges",
+  description: "Browse athletic challenges across Strength, Skill, Endurance, and Speed. Complete challenges to earn XP and progress through ranks from F to S.",
+  openGraph: {
+    title: "Challenges | Ascendant",
+    description: "Browse athletic challenges and earn XP to level up your fitness.",
+  },
+  alternates: {
+    canonical: "/challenges",
+  },
 };
 
 interface ChallengesContentProps {

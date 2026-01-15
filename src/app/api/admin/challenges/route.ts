@@ -131,6 +131,14 @@ export async function POST(request: NextRequest) {
       grades,
       gymId,
       allowedDivisionIds,
+      // Proof types & activity validation
+      proofTypes,
+      activityType,
+      minDistance,
+      maxDistance,
+      minElevationGain,
+      requiresGPS,
+      requiresHeartRate,
     } = parsed.data;
 
     // Generate slug from name
@@ -172,6 +180,14 @@ export async function POST(request: NextRequest) {
           tertiaryDomainId,
           tertiaryXPPercent,
           gymId,
+          // Proof types & activity validation
+          proofTypes,
+          activityType,
+          minDistance,
+          maxDistance,
+          minElevationGain,
+          requiresGPS,
+          requiresHeartRate,
         },
       });
 

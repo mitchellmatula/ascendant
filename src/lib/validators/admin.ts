@@ -137,6 +137,17 @@ export type GradingType = typeof gradingTypes[number];
 export const timeFormats = ["seconds", "mm:ss", "hh:mm:ss"] as const;
 export type TimeFormat = typeof timeFormats[number];
 
+// Proof types for challenge submissions
+export const proofTypes = ["VIDEO", "IMAGE", "STRAVA", "GARMIN", "MANUAL"] as const;
+export type ProofType = typeof proofTypes[number];
+
+// Activity types for Strava/Garmin validation
+export const activityTypes = [
+  "Run", "Trail Run", "Ride", "Mountain Bike", "Swim", "Open Water Swim",
+  "Walk", "Hike", "Row", "Kayak", "Cross-Country Ski", "Other"
+] as const;
+export type ActivityType = typeof activityTypes[number];
+
 // Challenge Grade validators (per division/rank requirements)
 export const challengeGradeSchema = z.object({
   divisionId: z.string().cuid(),
@@ -164,6 +175,15 @@ const challengeBaseSchema = z.object({
   timeFormat: z.enum(timeFormats).optional().nullable(), // For TIME type: display format
   minRank: z.enum(RANKS as unknown as [string, ...string[]]).default("F"),
   maxRank: z.enum(RANKS as unknown as [string, ...string[]]).default("S"),
+  
+  // Proof types & activity validation (Strava/Garmin integration)
+  proofTypes: z.array(z.enum(proofTypes)).min(1, "At least one proof type is required").default(["VIDEO"]),
+  activityType: z.string().max(50).optional().nullable(), // Run, Ride, Swim, etc.
+  minDistance: z.number().min(0).optional().nullable(), // meters
+  maxDistance: z.number().min(0).optional().nullable(), // meters
+  minElevationGain: z.number().min(0).optional().nullable(), // meters
+  requiresGPS: z.boolean().default(false), // Must be outdoor GPS activity
+  requiresHeartRate: z.boolean().default(false), // Must have HR data
   
   // Primary domain (required)
   primaryDomainId: z.string().cuid("Primary domain is required"),

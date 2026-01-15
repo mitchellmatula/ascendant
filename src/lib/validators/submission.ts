@@ -1,16 +1,63 @@
 import { z } from "zod";
 
+// Proof type enum
+const proofTypeEnum = z.enum(["VIDEO", "IMAGE", "STRAVA", "GARMIN", "RACE_RESULT", "MANUAL"]);
+
 // Create a new submission
 export const createSubmissionSchema = z.object({
-  athleteId: z.string().cuid(),
+  athleteId: z.string().cuid().optional(), // Optional now - will use active athlete if not provided
   challengeId: z.string().cuid(),
+  proofType: proofTypeEnum.default("VIDEO"),
+  
+  // Traditional proof
   videoUrl: z.string().url().optional().or(z.literal("")),
   imageUrl: z.string().url().optional().or(z.literal("")),
   notes: z.string().max(2000).optional(),
-  achievedValue: z.number().int().positive().optional().nullable(), // For graded challenges (reps, time, etc.)
+  
+  // Strava activity proof
+  stravaActivityId: z.string().optional(),
+  stravaActivityUrl: z.string().url().optional(),
+  
+  // Garmin activity proof
+  garminActivityId: z.string().optional(),
+  garminActivityUrl: z.string().url().optional(),
+  
+  // Cached activity metrics (from Strava/Garmin API)
+  activityDistance: z.number().positive().optional(), // Distance in meters
+  activityTime: z.number().int().positive().optional(), // Duration in seconds
+  activityElevation: z.number().positive().optional(), // Elevation gain in meters
+  activityType: z.string().optional(), // Run, Ride, Swim, etc.
+  activityDate: z.string().datetime().optional(), // When the activity occurred
+  activityAvgHR: z.number().int().positive().optional(), // Average heart rate
+  activityMaxHR: z.number().int().positive().optional(), // Max heart rate
+  
+  // For graded challenges (reps, time, etc.)
+  achievedValue: z.number().positive().optional().nullable(),
+  
+  // Privacy settings
+  isPublic: z.boolean().default(true), // Show on public feeds/leaderboards
+  hideExactValue: z.boolean().default(false), // Hide achievedValue but still show rank
 }).refine(
-  (data) => data.videoUrl || data.imageUrl,
-  { message: "Either a video or image is required", path: ["videoUrl"] }
+  (data) => {
+    // Validate that appropriate proof is provided based on proofType
+    switch (data.proofType) {
+      case "VIDEO":
+        return !!data.videoUrl;
+      case "IMAGE":
+        return !!data.imageUrl;
+      case "STRAVA":
+        return !!data.stravaActivityId;
+      case "GARMIN":
+        return !!data.garminActivityId;
+      case "RACE_RESULT":
+        return !!data.imageUrl || !!data.videoUrl; // Usually an image of the result
+      case "MANUAL":
+        return true; // No proof required for manual entries
+      default:
+        return false;
+    }
+  },
+  { message: "Proof is required for the selected proof type", path: ["proofType"] }
 );
 
 export type CreateSubmissionInput = z.infer<typeof createSubmissionSchema>;
