@@ -2,10 +2,12 @@ import { redirect } from "next/navigation";
 import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatLevel, getRankColor, getRankLabel, calculatePrime, type Rank } from "@/lib/levels";
-import { XP_PER_SUBLEVEL, CUMULATIVE_XP_TO_RANK } from "@/lib/xp-constants";
+import { formatLevel, getRankColor, getRankLabel, calculatePrime, type Rank, getNextRank } from "@/lib/levels";
+import { XP_PER_SUBLEVEL, CUMULATIVE_XP_TO_RANK, XP_PER_RANK } from "@/lib/xp-constants";
+import { getAllBreakthroughProgress } from "@/lib/breakthroughs";
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Building2, Lock, Unlock, Sparkles } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -59,6 +61,9 @@ export default async function DashboardPage() {
     orderBy: { submittedAt: "desc" },
     take: 5,
   });
+
+  // Get breakthrough progress for all domains
+  const breakthroughProgress = await getAllBreakthroughProgress(athlete.id);
 
   // Get user's gym memberships
   const gymMemberships = await db.gymMember.findMany({
@@ -129,18 +134,32 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {allDomains.map((domain) => {
           const level = domainLevels.find((l) => l.domainId === domain.id);
-          const letter = level?.letter ?? "F";
+          const letter = (level?.letter ?? "F") as Rank;
           const sublevel = level?.sublevel ?? 0;
           const currentXP = level?.currentXP ?? 0;
-          const { progress, xpToNext, xpPerSublevel } = calculateProgress(letter, sublevel, currentXP);
+          const bankedXP = level?.bankedXP ?? 0;
+          const breakthroughReady = level?.breakthroughReady ?? false;
+          const { progress, xpToNext } = calculateProgress(letter, sublevel, currentXP);
+          
+          // Get breakthrough progress for this domain
+          const domainBreakthrough = breakthroughProgress.find(b => b.domainId === domain.id);
+          const btProgress = domainBreakthrough?.progress;
+          const nextRank = getNextRank(letter);
+          const atMaxSublevel = sublevel === 9;
+          const needsBreakthrough = atMaxSublevel && nextRank;
 
           return (
             <Link href={`/domains/${domain.slug}`} key={domain.id}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+              <Card className={`hover:shadow-lg transition-shadow cursor-pointer h-full ${
+                breakthroughReady ? "ring-2 ring-amber-500/50" : ""
+              }`}>
                 <CardHeader className="pb-1 md:pb-2 px-3 md:px-6 pt-3 md:pt-6">
                   <CardTitle className="flex items-center gap-1.5 md:gap-2 text-sm md:text-base">
                     <span className="text-lg md:text-xl">{domain.icon ?? "🎯"}</span>
                     <span className="truncate">{domain.name}</span>
+                    {breakthroughReady && (
+                      <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-3 md:px-6 pb-3 md:pb-6">
@@ -154,29 +173,151 @@ export default async function DashboardPage() {
                     {getRankLabel(letter)}
                   </div>
                   <div className="mt-1.5 md:mt-2 text-xs text-muted-foreground">
-                    {currentXP.toLocaleString()} XP total
+                    {currentXP.toLocaleString()} XP
+                    {bankedXP > 0 && (
+                      <span className="text-amber-600 dark:text-amber-400"> (+{bankedXP.toLocaleString()} banked)</span>
+                    )}
                   </div>
+                  
                   {/* Progress bar within sublevel */}
-                  <div className="mt-1.5 md:mt-2">
-                    <div className="h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full transition-all"
-                        style={{ 
-                          width: `${progress}%`,
-                          backgroundColor: domain.color ?? getRankColor(letter)
-                        }}
-                      />
+                  {!needsBreakthrough ? (
+                    <div className="mt-1.5 md:mt-2">
+                      <div className="h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full transition-all"
+                          style={{ 
+                            width: `${progress}%`,
+                            backgroundColor: domain.color ?? getRankColor(letter)
+                          }}
+                        />
+                      </div>
+                      <div className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
+                        {xpToNext.toLocaleString()} XP to next level
+                      </div>
                     </div>
-                    <div className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
-                      {xpToNext.toLocaleString()} XP to next level
+                  ) : (
+                    /* Breakthrough progress indicator */
+                    <div className="mt-1.5 md:mt-2">
+                      {btProgress && (
+                        <>
+                          <div className="flex items-center gap-1 text-[10px] md:text-xs mb-1">
+                            {btProgress.isComplete ? (
+                              <Unlock className="w-3 h-3 text-green-500" />
+                            ) : (
+                              <Lock className="w-3 h-3 text-amber-500" />
+                            )}
+                            <span className={btProgress.isComplete ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}>
+                              {btProgress.currentProgress}/{btProgress.challengeCount} for {nextRank}
+                            </span>
+                          </div>
+                          <div className="h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full transition-all"
+                              style={{ 
+                                width: `${Math.min(100, (btProgress.currentProgress / btProgress.challengeCount) * 100)}%`,
+                                backgroundColor: btProgress.isComplete ? "#22c55e" : "#f59e0b"
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </Link>
           );
         })}
       </div>
+
+      {/* Breakthrough Progress Section - Only show for domains at max sublevel */}
+      {breakthroughProgress.some(b => {
+        const level = domainLevels.find(l => l.domainId === b.domainId);
+        const atMaxSublevel = (level?.sublevel ?? 0) === 9;
+        return atMaxSublevel && b.progress && b.progress.challengeCount > 0;
+      }) && (
+        <Card className="mt-6 md:mt-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-500" />
+              Breakthrough Progress
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm">
+              Achieve challenges at higher tiers to unlock the next rank
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {breakthroughProgress.map((bp) => {
+                const level = domainLevels.find(l => l.domainId === bp.domainId);
+                const sublevel = level?.sublevel ?? 0;
+                const atMaxSublevel = sublevel === 9;
+                
+                // Only show breakthrough progress for domains at max sublevel
+                if (!atMaxSublevel || !bp.progress || bp.progress.challengeCount === 0) return null;
+                
+                const letter = (level?.letter ?? "F") as Rank;
+                const domain = allDomains.find(d => d.id === bp.domainId);
+                
+                return (
+                  <div key={bp.domainId} className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{domain?.icon ?? "🎯"}</span>
+                        <span className="font-medium text-sm">{bp.domainName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {formatLevel(letter, sublevel)} → {bp.progress.toRank}0
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {bp.progress.isComplete ? (
+                          <span className="text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <Unlock className="w-3.5 h-3.5" />
+                            Ready!
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            {bp.progress.currentProgress}/{bp.progress.challengeCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <Progress 
+                      value={Math.min(100, (bp.progress.currentProgress / bp.progress.challengeCount) * 100)} 
+                      className="h-2"
+                    />
+                    
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Achieve <span className="font-medium" style={{ color: getRankColor(bp.progress.tierRequired) }}>
+                        {bp.progress.tierRequired}-tier
+                      </span> or higher on {bp.progress.challengeCount} {bp.domainName} challenges
+                    </p>
+                    
+                    {bp.progress.qualifyingChallenges.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {bp.progress.qualifyingChallenges.slice(0, 5).map((c) => (
+                          <span 
+                            key={c.challengeId}
+                            className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          >
+                            {c.challengeName} ({c.achievedTier})
+                          </span>
+                        ))}
+                        {bp.progress.qualifyingChallenges.length > 5 && (
+                          <span className="text-[10px] text-muted-foreground">
+                            +{bp.progress.qualifyingChallenges.length - 5} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Empty state if no domains configured */}
       {allDomains.length === 0 && (

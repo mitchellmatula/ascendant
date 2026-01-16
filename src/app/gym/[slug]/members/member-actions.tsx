@@ -59,6 +59,7 @@ export function MemberActions({
         const response = await fetch(`/api/gyms/${gymSlug}/members/${memberId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ role: newRole }),
         });
 
@@ -82,6 +83,7 @@ export function MemberActions({
       try {
         const response = await fetch(`/api/gyms/${gymSlug}/members/${memberId}`, {
           method: "DELETE",
+          credentials: "include",
         });
 
         if (!response.ok) {

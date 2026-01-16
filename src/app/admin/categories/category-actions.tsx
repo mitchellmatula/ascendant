@@ -50,7 +50,7 @@ export function CategoryActions({ category }: CategoryActionsProps) {
         ? `/api/admin/categories/${category.id}?force=true`
         : `/api/admin/categories/${category.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {

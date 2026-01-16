@@ -41,7 +41,7 @@ export default async function EditChallengePage({ params }: EditChallengePagePro
         },
         allowedDivisions: {
           include: {
-            division: { select: { id: true, name: true } },
+            division: { select: { id: true, name: true, gender: true, ageMin: true, ageMax: true } },
           },
         },
       },

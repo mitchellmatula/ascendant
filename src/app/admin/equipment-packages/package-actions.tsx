@@ -47,6 +47,7 @@ export function EquipmentPackageActions({ package: pkg }: EquipmentPackageAction
     try {
       const response = await fetch(`/api/admin/equipment-packages/${pkg.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
       const data = await response.json();
 

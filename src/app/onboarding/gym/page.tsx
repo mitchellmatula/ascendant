@@ -33,7 +33,7 @@ export default function GymOnboardingPage() {
 
   // Fetch disciplines
   useEffect(() => {
-    fetch("/api/disciplines")
+    fetch("/api/disciplines", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -62,6 +62,7 @@ export default function GymOnboardingPage() {
       const response = await fetch("/api/onboarding/gym", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 

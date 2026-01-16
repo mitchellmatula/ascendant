@@ -49,7 +49,7 @@ export function DomainActions({ domain }: DomainActionsProps) {
         ? `/api/admin/domains/${domain.id}?force=true`
         : `/api/admin/domains/${domain.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {

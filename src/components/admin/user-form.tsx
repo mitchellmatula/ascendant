@@ -175,7 +175,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
     try {
       const res = await fetch(
         `/api/upload/avatar?filename=${encodeURIComponent(file.name)}`,
-        { method: "POST", body: file }
+        { method: "POST", credentials: "include", body: file }
       );
       if (res.ok) {
         const data = await res.json();
@@ -236,6 +236,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           role,
           accountType,
@@ -273,6 +274,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
     try {
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -301,6 +303,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
       const response = await fetch(`/api/admin/users/${user.id}/suspend`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ reason: suspendReason.trim() }),
       });
 
@@ -325,6 +328,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
     try {
       const response = await fetch(`/api/admin/users/${user.id}/suspend`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -352,6 +356,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
       const response = await fetch(`/api/admin/users/${user.id}/review-ban`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "ban", reason: reviewBanReason.trim() }),
       });
 
@@ -378,6 +383,7 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
       const response = await fetch(`/api/admin/users/${user.id}/review-ban`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ action: "unban" }),
       });
 

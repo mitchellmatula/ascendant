@@ -16,19 +16,36 @@ interface StravaTokenResponse {
 interface StravaActivity {
   id: number;
   name: string;
+  description?: string;
   type: string;
   sport_type: string;
   start_date: string;
   start_date_local: string;
+  timezone: string;
   distance: number; // meters
   moving_time: number; // seconds
   elapsed_time: number; // seconds
   total_elevation_gain: number; // meters
+  elev_high?: number;
+  elev_low?: number;
   average_speed: number; // m/s
   max_speed: number; // m/s
+  average_cadence?: number;
+  average_watts?: number;
+  max_watts?: number;
+  weighted_average_watts?: number;
+  kilojoules?: number;
+  calories?: number;
   average_heartrate?: number;
   max_heartrate?: number;
   has_heartrate: boolean;
+  commute?: boolean;
+  kudos_count?: number;
+  comment_count?: number;
+  achievement_count?: number;
+  gear_id?: string;
+  splits_metric?: unknown;
+  splits_standard?: unknown;
   start_latlng?: [number, number];
   end_latlng?: [number, number];
   map?: {
@@ -38,7 +55,6 @@ interface StravaActivity {
   manual: boolean; // true if manually entered
   private: boolean;
   visibility: string;
-  timezone: string;
   athlete: {
     id: number;
   };

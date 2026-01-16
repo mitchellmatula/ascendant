@@ -49,7 +49,7 @@ export function DivisionActions({ division }: DivisionActionsProps) {
         ? `/api/admin/divisions/${division.id}?force=true`
         : `/api/admin/divisions/${division.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {

@@ -10,9 +10,9 @@ export const createSubmissionSchema = z.object({
   proofType: proofTypeEnum.default("VIDEO"),
   
   // Traditional proof
-  videoUrl: z.string().url().optional().or(z.literal("")),
-  imageUrl: z.string().url().optional().or(z.literal("")),
-  notes: z.string().max(2000).optional(),
+  videoUrl: z.string().url().optional().nullable().or(z.literal("")),
+  imageUrl: z.string().url().optional().nullable().or(z.literal("")),
+  notes: z.string().max(2000).optional().nullable(),
   
   // Strava activity proof
   stravaActivityId: z.string().optional(),
@@ -37,6 +37,10 @@ export const createSubmissionSchema = z.object({
   // Privacy settings
   isPublic: z.boolean().default(true), // Show on public feeds/leaderboards
   hideExactValue: z.boolean().default(false), // Hide achievedValue but still show rank
+  
+  // Manual entry supervisor (required for MANUAL proof type)
+  supervisorId: z.string().cuid().optional(), // User ID of supervising coach
+  supervisorName: z.string().optional(), // Cached name for display
 }).refine(
   (data) => {
     // Validate that appropriate proof is provided based on proofType
@@ -52,7 +56,7 @@ export const createSubmissionSchema = z.object({
       case "RACE_RESULT":
         return !!data.imageUrl || !!data.videoUrl; // Usually an image of the result
       case "MANUAL":
-        return true; // No proof required for manual entries
+        return !!data.supervisorId; // Requires supervisor selection
       default:
         return false;
     }

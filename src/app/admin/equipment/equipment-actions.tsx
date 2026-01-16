@@ -49,7 +49,7 @@ export function EquipmentActions({ equipment }: EquipmentActionsProps) {
         ? `/api/admin/equipment/${equipment.id}?force=true`
         : `/api/admin/equipment/${equipment.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {

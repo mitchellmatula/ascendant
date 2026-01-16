@@ -196,7 +196,9 @@ export function StravaActivityPicker({
         params.set("after", String(after));
       }
 
-      const response = await fetch(`/api/strava/activities?${params}`);
+      const response = await fetch(`/api/strava/activities?${params}`, {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (!response.ok) {

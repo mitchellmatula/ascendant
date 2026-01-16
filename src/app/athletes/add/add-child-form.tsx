@@ -59,7 +59,7 @@ export function AddChildForm({ disciplines }: AddChildFormProps) {
     try {
       const res = await fetch(
         `/api/upload/avatar?filename=${encodeURIComponent(file.name)}`,
-        { method: "POST", body: file }
+        { method: "POST", credentials: "include", body: file }
       );
       if (res.ok) {
         const data = await res.json();
@@ -90,6 +90,7 @@ export function AddChildForm({ disciplines }: AddChildFormProps) {
       const response = await fetch("/api/athletes/children", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           displayName: formData.displayName,
           dateOfBirth: formData.dateOfBirth?.toISOString(),
@@ -127,7 +128,7 @@ export function AddChildForm({ disciplines }: AddChildFormProps) {
           {/* Avatar */}
           <div className="flex justify-center">
             <AvatarUpload
-              onFileSelect={setAvatarFile}
+              onImageSelect={(file) => setAvatarFile(file)}
               currentImageUrl={null}
               size="lg"
             />
@@ -151,8 +152,8 @@ export function AddChildForm({ disciplines }: AddChildFormProps) {
           <div className="space-y-2">
             <Label>Date of Birth *</Label>
             <DatePicker
-              date={formData.dateOfBirth}
-              onSelect={(date) =>
+              value={formData.dateOfBirth}
+              onChange={(date) =>
                 setFormData((prev) => ({ ...prev, dateOfBirth: date }))
               }
               placeholder="Select date of birth"

@@ -61,7 +61,9 @@ export default function SubmissionsPage() {
   async function fetchSubmissions() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/submissions?status=${statusFilter}&page=${page}&limit=20`);
+      const res = await fetch(`/api/admin/submissions?status=${statusFilter}&page=${page}&limit=20`, {
+        credentials: "include",
+      });
       const data = await res.json();
       setSubmissions(data.submissions || []);
       setTotalPages(data.totalPages || 1);

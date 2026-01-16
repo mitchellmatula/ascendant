@@ -105,6 +105,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
         avatarFormData.append("file", avatarFile);
         const uploadRes = await fetch("/api/upload/avatar", {
           method: "POST",
+          credentials: "include",
           body: avatarFormData,
         });
         if (uploadRes.ok) {
@@ -117,6 +118,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
       const response = await fetch(`/api/athletes/${athlete.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           ...formData,
           dateOfBirth: formData.dateOfBirth?.toISOString(),

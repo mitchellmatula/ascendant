@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { 
   Package, Dumbbell, Plus, Minus, X, CheckCircle2, Loader2, Search 
 } from "lucide-react";
@@ -130,6 +131,7 @@ export function EquipmentPackageForm({
       const response = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(submitData),
       });
 
@@ -147,9 +149,6 @@ export function EquipmentPackageForm({
       setIsLoading(false);
     }
   };
-
-  // Common emoji icons for packages
-  const iconOptions = ["📦", "🏋️", "🥷", "💪", "🎯", "⚡", "🔥", "🏆"];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
@@ -175,23 +174,10 @@ export function EquipmentPackageForm({
             {/* Icon Picker */}
             <div className="space-y-2">
               <Label>Icon</Label>
-              <div className="flex flex-wrap gap-2">
-                {iconOptions.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    className={cn(
-                      "w-10 h-10 text-xl rounded-lg border transition-all",
-                      formData.icon === emoji
-                        ? "bg-primary/10 border-primary ring-2 ring-primary"
-                        : "bg-muted hover:bg-accent"
-                    )}
-                    onClick={() => setFormData({ ...formData, icon: emoji })}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
+              <EmojiPicker
+                value={formData.icon}
+                onChange={(emoji) => setFormData({ ...formData, icon: emoji })}
+              />
             </div>
 
             {/* Name */}

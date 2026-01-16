@@ -201,6 +201,7 @@ export function calculateLevelFromXP(totalXP: number): { letter: Rank; sublevel:
 
 /**
  * Award XP to an athlete for a specific domain
+ * Handles breakthrough gating - XP is banked if athlete needs to breakthrough
  */
 export async function awardXP(params: {
   athleteId: string;
@@ -209,7 +210,18 @@ export async function awardXP(params: {
   source: "CHALLENGE" | "TRAINING" | "COMPETITION" | "EVENT" | "BONUS" | "ADMIN";
   sourceId?: string;
   note?: string;
-}) {
+}): Promise<{
+  domainLevel: { 
+    id: string; 
+    letter: string; 
+    sublevel: number; 
+    currentXP: number;
+    bankedXP: number;
+    breakthroughReady: boolean;
+  };
+  leveledUp: boolean;
+  breakthroughRequired: boolean;
+}> {
   const { athleteId, domainId, amount, source, sourceId, note } = params;
 
   // Create XP transaction
@@ -224,55 +236,88 @@ export async function awardXP(params: {
     },
   });
 
-  // Update domain level
-  const domainLevel = await db.domainLevel.upsert({
+  // Get or create domain level
+  let domainLevel = await db.domainLevel.findUnique({
     where: {
       athleteId_domainId: {
         athleteId,
         domainId,
       },
     },
-    create: {
-      athleteId,
-      domainId,
-      currentXP: amount,
-      letter: "F",
-      sublevel: 0,
-    },
-    update: {
-      currentXP: {
-        increment: amount,
-      },
-    },
   });
 
-  // Recalculate level based on new XP
-  const newXP = domainLevel.currentXP + (domainLevel.id ? 0 : amount); // If created, amount already included
-  const newLevel = calculateLevelFromXP(newXP);
-  
-  // Update if level changed (respecting breakthrough system - only update sublevel within same letter)
-  if (newLevel.letter === domainLevel.letter && newLevel.sublevel > domainLevel.sublevel) {
-    await db.domainLevel.update({
-      where: { id: domainLevel.id },
-      data: { sublevel: newLevel.sublevel },
+  if (!domainLevel) {
+    domainLevel = await db.domainLevel.create({
+      data: {
+        athleteId,
+        domainId,
+        currentXP: 0,
+        letter: "F",
+        sublevel: 0,
+        bankedXP: 0,
+        breakthroughReady: false,
+      },
     });
-  } else if (toNumericLevel(newLevel.letter, newLevel.sublevel) > toNumericLevel(domainLevel.letter as Rank, domainLevel.sublevel)) {
-    // XP exceeds current letter - bank it for breakthrough
-    const currentLetterMaxXP = CUMULATIVE_XP_TO_RANK[domainLevel.letter as Rank] + XP_PER_RANK[domainLevel.letter as Rank];
-    const bankedAmount = newXP - currentLetterMaxXP;
-    
-    if (bankedAmount > 0) {
-      await db.domainLevel.update({
-        where: { id: domainLevel.id },
-        data: {
-          sublevel: 9, // Cap at x9
-          bankedXP: { increment: bankedAmount },
-        },
-      });
+  }
+
+  const currentRank = domainLevel.letter as Rank;
+  const xpPerSublevel = XP_PER_SUBLEVEL[currentRank];
+  const maxXPForRank = XP_PER_RANK[currentRank]; // Total XP to complete this rank
+
+  // Calculate new XP total
+  const newCurrentXP = domainLevel.currentXP + amount;
+  
+  // Calculate how many sublevels this XP represents
+  const potentialSublevel = Math.floor(newCurrentXP / xpPerSublevel);
+  
+  let newSublevel = domainLevel.sublevel;
+  let newBankedXP = domainLevel.bankedXP;
+  let breakthroughReady = domainLevel.breakthroughReady;
+  let leveledUp = false;
+
+  if (potentialSublevel > domainLevel.sublevel) {
+    // We can level up within this rank
+    if (potentialSublevel <= 9) {
+      // Normal sublevel advancement
+      newSublevel = potentialSublevel;
+      leveledUp = true;
+    } else {
+      // Hit the rank ceiling (sublevel 9) - need breakthrough
+      newSublevel = 9;
+      leveledUp = domainLevel.sublevel < 9;
+      
+      // Bank any excess XP beyond what's needed for sublevel 9
+      const xpFor9 = 9 * xpPerSublevel;
+      const excessXP = newCurrentXP - xpFor9;
+      
+      if (excessXP > 0) {
+        newBankedXP = domainLevel.bankedXP + excessXP;
+        breakthroughReady = true;
+      }
     }
   }
 
-  return domainLevel;
+  // Check if we're at sublevel 9 and have max XP
+  if (newSublevel === 9 && newCurrentXP >= maxXPForRank) {
+    breakthroughReady = true;
+  }
+
+  // Update domain level
+  const updatedLevel = await db.domainLevel.update({
+    where: { id: domainLevel.id },
+    data: {
+      currentXP: Math.min(newCurrentXP, maxXPForRank), // Cap at max for rank
+      sublevel: newSublevel,
+      bankedXP: newBankedXP,
+      breakthroughReady,
+    },
+  });
+
+  return {
+    domainLevel: updatedLevel,
+    leveledUp,
+    breakthroughRequired: breakthroughReady,
+  };
 }
 
 /**

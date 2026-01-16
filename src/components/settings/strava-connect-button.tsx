@@ -34,6 +34,7 @@ export function StravaConnectButton({ connected }: StravaConnectButtonProps) {
     try {
       const response = await fetch("/api/auth/strava/disconnect", {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (response.ok) {

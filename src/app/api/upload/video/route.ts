@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+// Route segment config - allow large file uploads
+export const runtime = "nodejs";
+export const maxDuration = 60; // 60 seconds for large uploads
 
 // Video upload limits
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB max (before compression kicks in client-side)
+const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB max
 const ALLOWED_TYPES = [
   "video/mp4",
   "video/quicktime", // .mov
@@ -22,6 +27,9 @@ export async function POST(request: NextRequest) {
     // Parse form data
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+    const title = formData.get("title") as string | null;
+    const athleteId = formData.get("athleteId") as string | null;
+    const saveToLibrary = formData.get("saveToLibrary") === "true";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -45,12 +53,12 @@ export async function POST(request: NextRequest) {
 
     // Get context from form data (for organizing uploads)
     const context = formData.get("context") as string || "submission";
-    const athleteId = formData.get("athleteId") as string || user.id;
+    const uploadAthleteId = athleteId || user.athlete?.id || user.id;
 
     // Generate unique filename
     const timestamp = Date.now();
     const extension = file.name.split(".").pop() || "mp4";
-    const filename = `videos/${context}/${athleteId}/${timestamp}.${extension}`;
+    const filename = `videos/${context}/${uploadAthleteId}/${timestamp}.${extension}`;
 
     // Upload to Vercel Blob
     const blob = await put(filename, file, {
@@ -58,11 +66,35 @@ export async function POST(request: NextRequest) {
       addRandomSuffix: true, // Prevents filename conflicts
     });
 
+    // If saveToLibrary is true and we have an athleteId, save to Video library
+    let videoRecord = null;
+    if (saveToLibrary && athleteId) {
+      // Require title for library videos
+      if (!title) {
+        return NextResponse.json(
+          { error: "Title is required when saving to library" },
+          { status: 400 }
+        );
+      }
+
+      videoRecord = await db.video.create({
+        data: {
+          athleteId,
+          title,
+          url: blob.url,
+          fileSize: file.size,
+          mimeType: file.type,
+        },
+      });
+    }
+
     return NextResponse.json({
       url: blob.url,
       pathname: blob.pathname,
       size: file.size,
       type: file.type,
+      videoId: videoRecord?.id || null,
+      videoTitle: videoRecord?.title || null,
     });
   } catch (error) {
     console.error("Video upload error:", error);
@@ -72,10 +104,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// Configure route segment for large uploads
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

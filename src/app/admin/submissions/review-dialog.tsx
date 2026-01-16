@@ -73,6 +73,7 @@ export function ReviewDialog({
       const res = await fetch(`/api/submissions/${submission.id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           status,
           reviewNotes: reviewNotes || null,

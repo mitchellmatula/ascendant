@@ -49,6 +49,7 @@ export function MobileMenu({
       const response = await fetch("/api/athletes/switch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ athleteId }),
       });
 

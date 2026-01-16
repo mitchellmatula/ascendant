@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -15,9 +15,67 @@ import { VideoUpload } from "@/components/ui/video-upload";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { StravaActivityPicker } from "@/components/strava/strava-activity-picker";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, Loader2, Info, Video, Image as ImageIcon, Zap, CheckCircle2, ExternalLink, Settings2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Upload, Loader2, Info, Video, Image as ImageIcon, Zap, CheckCircle2, ExternalLink, Settings2, UserCheck } from "lucide-react";
 import { XP_PER_TIER } from "@/lib/xp-constants";
+
+// Tier order from lowest to highest
+const TIER_ORDER = ["F", "E", "D", "C", "B", "A", "S"] as const;
+
+/**
+ * Calculate cumulative XP for all tiers from F up to the target tier
+ * When you achieve B, you get XP for F + E + D + C + B (if unclaimed)
+ */
+function calculateCumulativeTierXP(
+  targetTier: string,
+  claimedTiers: string[] = []
+): number {
+  const targetIndex = TIER_ORDER.indexOf(targetTier as typeof TIER_ORDER[number]);
+  if (targetIndex === -1) return 0;
+
+  let totalXP = 0;
+  for (let i = 0; i <= targetIndex; i++) {
+    const tier = TIER_ORDER[i];
+    // Only add XP for tiers not already claimed
+    if (!claimedTiers.includes(tier)) {
+      totalXP += XP_PER_TIER[tier];
+    }
+  }
+  return totalXP;
+}
+
+function parseClaimedTiers(claimedTiers: string | null | undefined): string[] {
+  if (!claimedTiers) return [];
+
+  // Backwards/robust parsing: some rows may be stored as comma-separated,
+  // some as JSON. Prefer JSON if it looks like an array.
+  const trimmed = claimedTiers.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((v) => typeof v === "string");
+      }
+    } catch {
+      // fall through to CSV parsing
+    }
+  }
+
+  return trimmed
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
 import { formatSecondsToTime, type TimeFormat } from "@/lib/time";
+import type { ProofType as PrismaProofType } from "@/generated/prisma/enums";
 
 // Dynamically import map to avoid SSR issues with Leaflet
 const StravaRouteMap = dynamic(
@@ -25,7 +83,16 @@ const StravaRouteMap = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-32 w-full rounded-lg" /> }
 );
 
-type ProofType = "VIDEO" | "IMAGE" | "STRAVA" | "GARMIN" | "MANUAL";
+type ProofType = PrismaProofType;
+type SupportedProofType = ProofType;
+
+// Coach type for supervisor selection
+interface Coach {
+  id: string;
+  name: string;
+  email: string;
+  gyms: { id: string; name: string; role: string }[];
+}
 
 interface SubmitChallengeFormProps {
   challenge: {
@@ -61,6 +128,7 @@ interface SubmitChallengeFormProps {
     stravaActivityUrl: string | null;
     isPublic: boolean;
     hideExactValue: boolean;
+    claimedTiers: string;
   } | null;
   grades: {
     rank: string;
@@ -139,6 +207,49 @@ export function SubmitChallengeForm({
       : null
   );
 
+  // If a Strava activity is selected for TIME/DISTANCE challenges, keep achievedValue
+  // in sync so the tier + XP preview updates.
+  useEffect(() => {
+    if (proofType !== "STRAVA" || !stravaActivity) return;
+
+    if (challenge.gradingType === "TIME") {
+      setAchievedValue(String(stravaActivity.movingTime));
+      return;
+    }
+
+    if (challenge.gradingType === "DISTANCE") {
+      // grading is usually stored in meters for distance challenges
+      setAchievedValue(String(stravaActivity.distance));
+    }
+  }, [proofType, stravaActivity, challenge.gradingType]);
+
+  // Supervisor selection for manual entry
+  const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [loadingCoaches, setLoadingCoaches] = useState(false);
+  const [coachesFetched, setCoachesFetched] = useState(false);
+  const [supervisorId, setSupervisorId] = useState<string>("");
+  const [supervisorName, setSupervisorName] = useState<string>("");
+
+  // Fetch coaches when MANUAL proof type is selected
+  useEffect(() => {
+    if (proofType === "MANUAL" && !coachesFetched && !loadingCoaches) {
+      setLoadingCoaches(true);
+      fetch("/api/coaches", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          setCoaches(data.coaches || []);
+          setCoachesFetched(true);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch coaches:", err);
+          setCoachesFetched(true); // Mark as fetched even on error to prevent loop
+        })
+        .finally(() => {
+          setLoadingCoaches(false);
+        });
+    }
+  }, [proofType, coachesFetched, loadingCoaches]);
+
   const isGraded = challenge.gradingType !== "PASS_FAIL";
   const isResubmission = !!existingSubmission;
 
@@ -148,21 +259,43 @@ export function SubmitChallengeForm({
     const value = parseFloat(achievedValue);
     if (isNaN(value)) return null;
 
+    // For TIME challenges, lower is better (faster times).
+    // For everything else (REPS, DISTANCE, etc.), higher is better.
+    const lowerIsBetter = challenge.gradingType === "TIME";
+
     // Find highest tier achieved
     let highestTier: string | null = null;
-    const sortedGrades = [...grades].sort((a, b) => a.targetValue - b.targetValue);
-    
-    for (const grade of sortedGrades) {
-      if (value >= grade.targetValue) {
-        highestTier = grade.rank;
+
+    if (lowerIsBetter) {
+      // Sort descending by targetValue so we iterate from hardest (lowest target) to easiest
+      const sortedGrades = [...grades].sort((a, b) => b.targetValue - a.targetValue);
+      for (const grade of sortedGrades) {
+        // Athlete beats this tier if their time is <= the target
+        if (value <= grade.targetValue) {
+          highestTier = grade.rank;
+        }
+      }
+    } else {
+      // Higher is better (default): sort ascending by targetValue
+      const sortedGrades = [...grades].sort((a, b) => a.targetValue - b.targetValue);
+      for (const grade of sortedGrades) {
+        if (value >= grade.targetValue) {
+          highestTier = grade.rank;
+        }
       }
     }
-    
+
     return highestTier;
   };
 
   const potentialTier = getPotentialTier();
-  const potentialXP = potentialTier ? XP_PER_TIER[potentialTier as keyof typeof XP_PER_TIER] : null;
+  // Calculate cumulative XP for all tiers from F up to the potential tier
+  // Exclude tiers already claimed from previous submissions
+  const claimedTiersList = parseClaimedTiers(existingSubmission?.claimedTiers);
+
+  const potentialXP = potentialTier
+    ? calculateCumulativeTierXP(potentialTier, claimedTiersList)
+    : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,11 +324,15 @@ export function SubmitChallengeForm({
         body.activityTime = stravaActivity.movingTime;
         body.activityElevation = stravaActivity.elevationGain;
         body.activityType = stravaActivity.type;
+      } else if (proofType === "MANUAL" && supervisorId) {
+        body.supervisorId = supervisorId;
+        body.supervisorName = supervisorName;
       }
 
       const response = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(body),
       });
 
@@ -226,7 +363,7 @@ export function SubmitChallengeForm({
       case "GARMIN":
         return false; // Not implemented yet
       case "MANUAL":
-        return true; // No proof required
+        return !!supervisorId; // Requires supervisor selection
       default:
         return false;
     }
@@ -264,6 +401,11 @@ export function SubmitChallengeForm({
       icon: <Settings2 className="h-4 w-4" />,
       label: "Manual",
       description: "Coach/admin verified",
+    },
+    RACE_RESULT: {
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      label: "Race Result",
+      description: "Submit an official race/meet result",
     },
   };
 
@@ -382,18 +524,21 @@ export function SubmitChallengeForm({
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Video Proof *</CardTitle>
             <CardDescription>
-              Upload a video showing your attempt. Keep it under 60 seconds.
+              Upload a video showing your attempt. Keep it under 2 minutes.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <VideoUpload
               value={videoUrl || null}
-              onUpload={setVideoUrl}
+              onUpload={(url) => setVideoUrl(url)}
               onRemove={() => setVideoUrl("")}
-              maxDurationSeconds={60}
-              maxSizeMB={100}
+              maxDurationSeconds={120}
+              maxSizeMB={250}
               enableCompression={true}
               compressionThresholdMB={10}
+              athleteId={athleteId}
+              requireTitle={true}
+              showLibrary={true}
             />
           </CardContent>
         </Card>
@@ -410,9 +555,10 @@ export function SubmitChallengeForm({
           </CardHeader>
           <CardContent>
             <ImageUpload
-              value={imageUrl || null}
+              currentImageUrl={imageUrl || null}
               onUpload={setImageUrl}
               onRemove={() => setImageUrl("")}
+              uploadEndpoint="/api/upload/image"
             />
           </CardContent>
         </Card>
@@ -610,6 +756,88 @@ export function SubmitChallengeForm({
         </Card>
       )}
 
+      {/* Manual Entry - Supervisor Selection */}
+      {proofType === "MANUAL" && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <UserCheck className="h-5 w-5" />
+              Supervisor *
+            </CardTitle>
+            <CardDescription>
+              Select the coach who supervised your attempt. They will be notified to verify your submission.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loadingCoaches ? (
+              <div className="p-4 rounded-lg border border-dashed text-center">
+                <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground mt-2">Loading coaches...</p>
+              </div>
+            ) : coaches.length === 0 ? (
+              <div className="p-4 rounded-lg border border-dashed text-center">
+                <UserCheck className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="font-medium">No coaches available</p>
+                <p className="text-sm text-muted-foreground">
+                  You need to be a member of a gym with coaches to use manual entry.
+                </p>
+                <Link href="/gyms" className="text-primary hover:underline text-sm mt-2 inline-block">
+                  Find a gym →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="supervisor">Supervising Coach</Label>
+                <Select
+                  value={supervisorId}
+                  onValueChange={(value) => {
+                    setSupervisorId(value);
+                    const coach = coaches.find((c) => c.id === value);
+                    setSupervisorName(coach?.name || "");
+                  }}
+                >
+                  <SelectTrigger id="supervisor">
+                    <SelectValue placeholder="Select a coach..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {coaches.map((coach) => (
+                      <SelectItem key={coach.id} value={coach.id}>
+                        <div className="flex flex-col">
+                          <span>{coach.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {coach.gyms.map((g) => g.name).join(", ")}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Selected supervisor display */}
+            {supervisorId && (
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <span className="font-medium">{supervisorName}</span>
+                  <span className="text-sm text-muted-foreground">will verify your submission</span>
+                </div>
+              </div>
+            )}
+
+            <div className="p-3 rounded-lg bg-muted text-sm">
+              <p className="font-medium mb-1">How manual entry works:</p>
+              <ul className="text-muted-foreground space-y-0.5 text-xs">
+                <li>• Your selected coach will receive a notification</li>
+                <li>• They will verify they witnessed your attempt</li>
+                <li>• Once approved, you'll earn XP for this challenge</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Achieved Value (for graded challenges) */}
       {isGraded && (
         <Card>
@@ -690,12 +918,26 @@ export function SubmitChallengeForm({
             )}
 
             {/* Potential XP Preview */}
-            {potentialTier && potentialXP && (
+            {potentialTier && potentialXP && potentialXP > 0 && (
               <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">
-                    Potential tier: <span className="font-bold">{potentialTier}</span>
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm">
+                      Potential tier: <span className="font-bold">{potentialTier}</span>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {(() => {
+                        const claimedTiers = parseClaimedTiers(existingSubmission?.claimedTiers);
+                        const targetIndex = TIER_ORDER.indexOf(potentialTier as (typeof TIER_ORDER)[number]);
+                        const tierBreakdown = TIER_ORDER.slice(0, targetIndex + 1)
+                          .filter((tier) => !claimedTiers.includes(tier))
+                          .map((tier) => `${tier}: ${XP_PER_TIER[tier]}`);
+                        return tierBreakdown.length > 1 
+                          ? `XP from tiers: ${tierBreakdown.join(" + ")}`
+                          : null;
+                      })()}
+                    </span>
+                  </div>
                   <span className="text-sm font-bold text-green-600 dark:text-green-400">
                     +{potentialXP} XP
                   </span>

@@ -57,6 +57,11 @@ const navItems = [
     icon: "📦",
   },
   {
+    title: "Breakthroughs",
+    href: "/admin/breakthroughs",
+    icon: "✨",
+  },
+  {
     title: "Gyms",
     href: "/admin/gyms",
     icon: "🏢",

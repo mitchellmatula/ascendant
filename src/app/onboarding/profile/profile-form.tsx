@@ -78,7 +78,7 @@ function ProfileFormContent() {
 
   // Fetch disciplines
   useEffect(() => {
-    fetch("/api/disciplines")
+    fetch("/api/disciplines", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -155,7 +155,7 @@ function ProfileFormContent() {
     try {
       const res = await fetch(
         `/api/upload/avatar?filename=${encodeURIComponent(file.name)}`,
-        { method: "POST", body: file }
+        { method: "POST", credentials: "include", body: file }
       );
       if (res.ok) {
         const data = await res.json();
@@ -205,6 +205,7 @@ function ProfileFormContent() {
         const response = await fetch("/api/onboarding", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             accountType,
             children: childrenWithAvatars,
@@ -228,6 +229,7 @@ function ProfileFormContent() {
         const response = await fetch("/api/onboarding", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             accountType,
             displayName: formData.displayName,

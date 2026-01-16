@@ -296,6 +296,7 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
       const response = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(submitData),
       });
 

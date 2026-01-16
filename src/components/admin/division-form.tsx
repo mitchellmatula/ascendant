@@ -103,6 +103,7 @@ export function DivisionForm({ division, mode }: DivisionFormProps) {
       const response = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
       });
 

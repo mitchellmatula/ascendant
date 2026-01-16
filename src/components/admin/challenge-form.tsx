@@ -251,7 +251,9 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         params.set("excludeId", challenge.id);
       }
       
-      const response = await fetch(`/api/admin/challenges/search?${params}`);
+      const response = await fetch(`/api/admin/challenges/search?${params}`, {
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         setSimilarChallenges(data);
@@ -286,6 +288,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
       const response = await fetch("/api/admin/ai/generate-challenge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           name: formData.name.trim(),
           gradingType: formData.gradingType,
@@ -334,6 +337,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         response = await fetch("/api/admin/ai/suggest-xp-distribution", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             name: formData.name.trim(),
             description: formData.description.trim(),
@@ -496,6 +500,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
           const response = await fetch(url, {
             method: mode === "create" ? "POST" : "PATCH",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify(submitData),
           });
 
@@ -660,6 +665,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         response = await fetch("/api/admin/ai/generate-grades", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             name: formData.name,
             description: formData.description,

@@ -38,6 +38,7 @@ export function UserRoleSelect({ userId, currentRole, isCurrentUser }: UserRoleS
       const res = await fetch("/api/admin/users/role", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ userId, role: newRole }),
       });
 

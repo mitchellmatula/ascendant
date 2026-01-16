@@ -4,6 +4,17 @@ const nextConfig: NextConfig = {
   // Turbopack is now the default in Next.js 16
   // cacheComponents: true, // Enable when ready - see next16.md for migration notes
   
+  // Allow ngrok domain for development
+  allowedDevOrigins: ["https://proven-fine-baboon.ngrok-free.app"],
+  
+  // Allow larger file uploads (250MB for videos)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "300mb",
+    },
+    proxyClientMaxBodySize: "300mb",
+  },
+  
   // Disable aggressive caching in development
   headers: async () => {
     return [

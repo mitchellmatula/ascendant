@@ -272,6 +272,9 @@ export async function POST(req: NextRequest) {
       // Privacy settings
       isPublic: data.isPublic ?? true,
       hideExactValue: data.hideExactValue ?? false,
+      // Manual entry supervisor
+      supervisorId: data.supervisorId || null,
+      supervisorName: data.supervisorName || null,
       status: autoApproved ? "APPROVED" as const : "PENDING" as const,
       autoApproved,
     };

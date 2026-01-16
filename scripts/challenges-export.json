@@ -1,0 +1,2451 @@
+[
+  {
+    "name": "5k Time Trial",
+    "slug": "5k-time-trial",
+    "description": "The '5k Time Trial' challenge tests your endurance and pacing strategies as you aim to complete a 5-kilometer run as quickly as possible. This challenge is designed to push your cardiovascular limits and improve your overall running performance.",
+    "instructions": "To complete the challenge, find a flat, measured course or track, and time yourself as you run the full 5 kilometers. Aim to maintain a steady pace and record your time to track your progress.",
+    "demoVideoUrl": null,
+    "demoImageUrl": "https://ylwisvzq9rnsswjn.public.blob.vercel-storage.com/images/1768498460045-images-kYPI69PjzcOwBHIR8xqVx8ZUzXMfyy.jpg",
+    "gradingType": "TIME",
+    "gradingUnit": "time (mm:ss)",
+    "timeFormat": "mm:ss",
+    "minRank": "F",
+    "maxRank": "S",
+    "proofTypes": [
+      "STRAVA",
+      "GARMIN"
+    ],
+    "activityType": null,
+    "minDistance": 5000,
+    "maxDistance": 5200,
+    "minElevationGain": 0,
+    "requiresGPS": true,
+    "requiresHeartRate": true,
+    "primaryDomain": "endurance",
+    "primaryXPPercent": 90,
+    "secondaryDomain": "speed",
+    "secondaryXPPercent": 10,
+    "tertiaryXPPercent": null,
+    "categories": [
+      "running"
+    ],
+    "disciplines": [
+      "functional-fitness",
+      "middle-distance",
+      "sprinting",
+      "running"
+    ],
+    "equipment": [],
+    "allowedDivisions": [
+      "youth-male-11-13",
+      "youth-female-11-13",
+      "teen-male-14-17",
+      "teen-female-14-17",
+      "adult-male-21-39",
+      "young-adult-female-18-20",
+      "young-adult-male-18-20",
+      "adult-female-21-39",
+      "masters-male-40",
+      "masters-male-40-49",
+      "masters-female-40-49",
+      "masters-female-50",
+      "masters-male-50-59",
+      "masters-female-60",
+      "masters-male-50",
+      "masters-male-60",
+      "masters-female-50-59",
+      "masters-female-40"
+    ],
+    "grades": [
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "A",
+        "targetValue": 1116,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "B",
+        "targetValue": 1246,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "C",
+        "targetValue": 1423,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "D",
+        "targetValue": 1663,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "E",
+        "targetValue": 1989,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "F",
+        "targetValue": 2280,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "S",
+        "targetValue": 932,
+        "description": null,
+        "bonusXP": 0
+      }
+    ]
+  },
+  {
+    "name": "Strict Pullups",
+    "slug": "strict-pullups",
+    "description": "The Strict Pullups challenge tests upper body strength and control by requiring you to lift your body weight from a hanging position to a complete chin-over-bar position without using momentum. This exercise is fundamental for developing the pulling strength necessary for advanced ninja warrior obstacles.",
+    "instructions": "Begin in a dead hang with your hands shoulder-width apart, palms facing away. Pull your body up until your chin clears the bar, keeping your core engaged and legs straight, then lower yourself back to the starting position with control arms fully locked out at the bottom each time.",
+    "demoVideoUrl": "https://youtu.be/HRV5YKKaeVw",
+    "demoImageUrl": "https://img.youtube.com/vi/HRV5YKKaeVw/maxresdefault.jpg",
+    "gradingType": "REPS",
+    "gradingUnit": "reps",
+    "timeFormat": null,
+    "minRank": "F",
+    "maxRank": "S",
+    "proofTypes": [
+      "VIDEO"
+    ],
+    "activityType": null,
+    "minDistance": null,
+    "maxDistance": null,
+    "minElevationGain": null,
+    "requiresGPS": false,
+    "requiresHeartRate": false,
+    "primaryDomain": "strength",
+    "primaryXPPercent": 100,
+    "secondaryXPPercent": null,
+    "tertiaryXPPercent": null,
+    "categories": [
+      "grip-strength",
+      "upper-body-pull"
+    ],
+    "disciplines": [
+      "ninja",
+      "calisthenics",
+      "parkour",
+      "ocr",
+      "functional-fitness"
+    ],
+    "equipment": [
+      {
+        "slug": "pull-up-bar",
+        "isRequired": true,
+        "notes": null
+      }
+    ],
+    "allowedDivisions": [],
+    "grades": [
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "A",
+        "targetValue": 6,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "S",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "A",
+        "targetValue": 6,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "S",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "A",
+        "targetValue": 6,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "S",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "B",
+        "targetValue": 56,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "A",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "S",
+        "targetValue": 89,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "F",
+        "targetValue": 12,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "E",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "D",
+        "targetValue": 456,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "C",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "B",
+        "targetValue": 89,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "S",
+        "targetValue": 78,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "S",
+        "targetValue": 11,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "C",
+        "targetValue": 11,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "S",
+        "targetValue": 11,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "A",
+        "targetValue": 11,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "A",
+        "targetValue": 6,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "S",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "B",
+        "targetValue": 56,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "A",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "S",
+        "targetValue": 8,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "A",
+        "targetValue": 6,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "B",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "S",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "D",
+        "targetValue": 3,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "A",
+        "targetValue": 6,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "S",
+        "targetValue": 7,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "E",
+        "targetValue": 2,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "D",
+        "targetValue": 33,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "A",
+        "targetValue": 67,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "S",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "D",
+        "targetValue": 23,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "C",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "B",
+        "targetValue": 5,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "A",
+        "targetValue": 4,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "F",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "E",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "D",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "C",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "B",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "A",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "S",
+        "targetValue": 1,
+        "description": null,
+        "bonusXP": 0
+      }
+    ]
+  },
+  {
+    "name": "3K Time Trial",
+    "slug": "3k-time-trial",
+    "description": "The 3K Time Trial is a test of your endurance and speed, challenging you to complete a 3-kilometer run as quickly as possible. This challenge evaluates your cardiovascular fitness and overall stamina.",
+    "instructions": "Warm up with dynamic stretches, then start the timer and run the 3 kilometers on a flat, measured course. Aim to maintain a steady pace, and record your time when you cross the finish line.",
+    "demoVideoUrl": null,
+    "demoImageUrl": "https://ylwisvzq9rnsswjn.public.blob.vercel-storage.com/images/1768413647153-images-NLTxuDh8RxBXozlgfTEJHBYJ52AJlp.jpg",
+    "gradingType": "TIME",
+    "gradingUnit": "time (mm:ss)",
+    "timeFormat": "mm:ss",
+    "minRank": "F",
+    "maxRank": "S",
+    "proofTypes": [
+      "GARMIN",
+      "STRAVA"
+    ],
+    "activityType": null,
+    "minDistance": 3000,
+    "maxDistance": 3200,
+    "minElevationGain": 0,
+    "requiresGPS": true,
+    "requiresHeartRate": true,
+    "primaryDomain": "endurance",
+    "primaryXPPercent": 80,
+    "secondaryDomain": "speed",
+    "secondaryXPPercent": 20,
+    "tertiaryXPPercent": null,
+    "categories": [
+      "sprint",
+      "running"
+    ],
+    "disciplines": [
+      "middle-distance",
+      "running",
+      "distance-running"
+    ],
+    "equipment": [],
+    "allowedDivisions": [
+      "masters-male-40",
+      "adult-female-21-39",
+      "young-adult-female-18-20",
+      "young-adult-male-18-20",
+      "youth-male-11-13",
+      "youth-female-11-13",
+      "teen-male-14-17",
+      "teen-female-14-17",
+      "adult-male-21-39",
+      "masters-male-40-49",
+      "masters-female-40-49",
+      "masters-female-50",
+      "masters-male-50-59",
+      "masters-female-60",
+      "masters-male-60",
+      "masters-male-50",
+      "masters-female-40",
+      "masters-female-50-59"
+    ],
+    "grades": [
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "F",
+        "targetValue": 1800,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "E",
+        "targetValue": 1500,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "D",
+        "targetValue": 1200,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "C",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "B",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "A",
+        "targetValue": 600,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-5-7",
+        "rank": "S",
+        "targetValue": 510,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "F",
+        "targetValue": 1080,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "E",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "D",
+        "targetValue": 780,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "C",
+        "targetValue": 690,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "B",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "A",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-men",
+        "rank": "S",
+        "targetValue": 440,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "F",
+        "targetValue": 2400,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "E",
+        "targetValue": 2100,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "D",
+        "targetValue": 1800,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "C",
+        "targetValue": 1500,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "B",
+        "targetValue": 1320,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "A",
+        "targetValue": 1200,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-5-7",
+        "rank": "S",
+        "targetValue": 1110,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "F",
+        "targetValue": 1680,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "E",
+        "targetValue": 1380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "D",
+        "targetValue": 1080,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "C",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "B",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "A",
+        "targetValue": 630,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-male-8-10",
+        "rank": "S",
+        "targetValue": 540,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "F",
+        "targetValue": 1680,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "E",
+        "targetValue": 1380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "D",
+        "targetValue": 1080,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "C",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "B",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "A",
+        "targetValue": 630,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "kids-female-8-10",
+        "rank": "S",
+        "targetValue": 540,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "F",
+        "targetValue": 1080,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "E",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "D",
+        "targetValue": 780,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "C",
+        "targetValue": 690,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "B",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "A",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-male-11-13",
+        "rank": "S",
+        "targetValue": 440,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "F",
+        "targetValue": 1080,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "E",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "D",
+        "targetValue": 780,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "C",
+        "targetValue": 690,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "B",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "A",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "youth-female-11-13",
+        "rank": "S",
+        "targetValue": 440,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "F",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "E",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "D",
+        "targetValue": 660,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "C",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "B",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "A",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-male-14-17",
+        "rank": "S",
+        "targetValue": 380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "F",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "E",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "D",
+        "targetValue": 660,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "C",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "B",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "A",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "teen-female-14-17",
+        "rank": "S",
+        "targetValue": 380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "F",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "E",
+        "targetValue": 630,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "D",
+        "targetValue": 540,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "C",
+        "targetValue": 450,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "B",
+        "targetValue": 390,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "A",
+        "targetValue": 330,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-male-18-20",
+        "rank": "S",
+        "targetValue": 290,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "F",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "E",
+        "targetValue": 630,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "D",
+        "targetValue": 540,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "C",
+        "targetValue": 450,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "B",
+        "targetValue": 390,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "A",
+        "targetValue": 330,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "young-adult-female-18-20",
+        "rank": "S",
+        "targetValue": 290,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "F",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "E",
+        "targetValue": 600,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "D",
+        "targetValue": 510,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "C",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "B",
+        "targetValue": 360,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "A",
+        "targetValue": 300,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-male-21-39",
+        "rank": "S",
+        "targetValue": 260,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "F",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "E",
+        "targetValue": 600,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "D",
+        "targetValue": 510,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "C",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "B",
+        "targetValue": 360,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "A",
+        "targetValue": 300,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "adult-female-21-39",
+        "rank": "S",
+        "targetValue": 260,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "F",
+        "targetValue": 1500,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "E",
+        "targetValue": 1162,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "D",
+        "targetValue": 969,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "C",
+        "targetValue": 826,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "B",
+        "targetValue": 721,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "A",
+        "targetValue": 644,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40",
+        "rank": "S",
+        "targetValue": 487,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "F",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "E",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "D",
+        "targetValue": 660,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "C",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "B",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "A",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-40-49",
+        "rank": "S",
+        "targetValue": 380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "F",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "E",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "D",
+        "targetValue": 660,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "C",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "B",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "A",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40-49",
+        "rank": "S",
+        "targetValue": 380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "F",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "E",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "D",
+        "targetValue": 660,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "C",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "B",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "A",
+        "targetValue": 420,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-40",
+        "rank": "S",
+        "targetValue": 380,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "F",
+        "targetValue": 1200,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "E",
+        "targetValue": 1020,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "D",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "C",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "B",
+        "targetValue": 630,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "A",
+        "targetValue": 540,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50",
+        "rank": "S",
+        "targetValue": 450,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "F",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "E",
+        "targetValue": 600,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "D",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "C",
+        "targetValue": 400,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "B",
+        "targetValue": 320,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "A",
+        "targetValue": 280,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-50-59",
+        "rank": "S",
+        "targetValue": 240,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "F",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "E",
+        "targetValue": 600,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "D",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "C",
+        "targetValue": 400,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "B",
+        "targetValue": 320,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "A",
+        "targetValue": 280,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50",
+        "rank": "S",
+        "targetValue": 240,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "F",
+        "targetValue": 720,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "E",
+        "targetValue": 600,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "D",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "C",
+        "targetValue": 400,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "B",
+        "targetValue": 320,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "A",
+        "targetValue": 280,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-50-59",
+        "rank": "S",
+        "targetValue": 240,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "F",
+        "targetValue": 1080,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "E",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "D",
+        "targetValue": 780,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "C",
+        "targetValue": 660,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "B",
+        "targetValue": 570,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "A",
+        "targetValue": 480,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-male-60",
+        "rank": "S",
+        "targetValue": 390,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "F",
+        "targetValue": 1200,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "E",
+        "targetValue": 1020,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "D",
+        "targetValue": 900,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "C",
+        "targetValue": 750,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "B",
+        "targetValue": 630,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "A",
+        "targetValue": 540,
+        "description": null,
+        "bonusXP": 0
+      },
+      {
+        "divisionSlug": "masters-female-60",
+        "rank": "S",
+        "targetValue": 450,
+        "description": null,
+        "bonusXP": 0
+      }
+    ]
+  }
+]

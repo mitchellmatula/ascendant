@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 import {
   Select,
   SelectContent,
@@ -37,8 +38,7 @@ interface CategoryFormProps {
   mode: "create" | "edit";
 }
 
-// Common emoji icons for categories
-const ICON_OPTIONS = ["📦", "🏋️", "🧗", "⚖️", "🎪", "🤸", "🏃", "💨", "🔥", "⚡", "🎯", "🏆"];
+
 
 export function CategoryForm({ category, domains, defaultDomainId, mode }: CategoryFormProps) {
   const router = useRouter();
@@ -82,6 +82,7 @@ export function CategoryForm({ category, domains, defaultDomainId, mode }: Categ
       const response = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
@@ -175,33 +176,14 @@ export function CategoryForm({ category, domains, defaultDomainId, mode }: Categ
 
           <div className="space-y-2">
             <Label>Icon</Label>
-            <div className="flex flex-wrap gap-2">
-              {ICON_OPTIONS.map((icon) => (
-                <button
-                  key={icon}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, icon })}
-                  className={`w-11 h-11 text-xl rounded-lg border-2 transition-colors flex items-center justify-center ${
-                    formData.icon === icon
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-muted-foreground"
-                  }`}
-                >
-                  {icon}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Label htmlFor="customIcon" className="text-xs text-muted-foreground">
-                Custom:
-              </Label>
-              <Input
-                id="customIcon"
-                className="w-20"
+            <div className="flex items-center gap-3">
+              <EmojiPicker
                 value={formData.icon}
-                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                maxLength={10}
+                onChange={(emoji) => setFormData({ ...formData, icon: emoji })}
               />
+              <p className="text-sm text-muted-foreground">
+                Click to search and select an emoji
+              </p>
             </div>
           </div>
 

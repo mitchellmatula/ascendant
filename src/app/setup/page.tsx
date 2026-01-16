@@ -14,7 +14,7 @@ export default function SetupPage() {
 
   useEffect(() => {
     // Check if bootstrap is available
-    fetch("/api/admin/bootstrap")
+    fetch("/api/admin/bootstrap", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         setIsAvailable(data.available);
@@ -35,6 +35,7 @@ export default function SetupPage() {
     try {
       const res = await fetch("/api/admin/bootstrap", {
         method: "POST",
+        credentials: "include",
       });
       const data = await res.json();
 

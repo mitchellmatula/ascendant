@@ -50,7 +50,7 @@ export function ChallengeActions({ challenge }: ChallengeActionsProps) {
         ? `/api/admin/challenges/${challenge.id}?force=true`
         : `/api/admin/challenges/${challenge.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {

@@ -126,6 +126,7 @@ export default async function SubmitChallengePage({ params }: PageProps) {
           stravaActivityUrl: existingSubmission.stravaActivityUrl,
           isPublic: existingSubmission.isPublic,
           hideExactValue: existingSubmission.hideExactValue,
+          claimedTiers: existingSubmission.claimedTiers,
         } : null}
         grades={relevantGrades.map(g => ({
           rank: g.rank,

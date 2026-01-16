@@ -49,7 +49,7 @@ export function DisciplineActions({ discipline }: DisciplineActionsProps) {
         ? `/api/admin/disciplines/${discipline.id}?force=true`
         : `/api/admin/disciplines/${discipline.id}`;
 
-      const response = await fetch(url, { method: "DELETE" });
+      const response = await fetch(url, { method: "DELETE", credentials: "include" });
       const data = await response.json();
 
       if (!response.ok) {

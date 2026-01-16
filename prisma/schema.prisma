@@ -71,7 +71,9 @@ enum Role {
   SYSTEM_ADMIN
 }
 
-model Athlete {
+model Athlete {Strict Pull-ups
+💪 Strength (100%)
+Completed!Achieved: A-tier • 600 XP earned
   id String @id @default(cuid())
 
   // For adult athletes who have their own account
@@ -98,6 +100,29 @@ model Athlete {
   xpTransactions XPTransaction[]
   submissions    ChallengeSubmission[]
   disciplines    AthleteDiscipline[]   // Primary training disciplines
+  videos         Video[]               // Video library for reuse
+}
+
+// ============================================
+// VIDEO LIBRARY
+// ============================================
+
+model Video {
+  id          String   @id @default(cuid())
+  athleteId   String
+  title       String   // User-provided title for easy identification
+  url         String   // Vercel Blob URL
+  thumbnailUrl String? // Auto-generated thumbnail (future)
+  duration    Int?     // Duration in seconds (if known)
+  fileSize    Int?     // File size in bytes
+  mimeType    String?  // video/mp4, video/webm, etc.
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  athlete     Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  
+  @@index([athleteId])
 }
 
 // Join table: Athlete <-> Discipline (many-to-many)
@@ -129,10 +154,11 @@ model Domain {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  categories     Category[]
-  levels         DomainLevel[]
-  xpTransactions XPTransaction[]
-  xpThresholds   XPThreshold[] // Configurable XP per sublevel
+  categories       Category[]
+  levels           DomainLevel[]
+  xpTransactions   XPTransaction[]
+  xpThresholds     XPThreshold[] // Configurable XP per sublevel
+  breakthroughRules BreakthroughRule[] // Rules for rank advancement
 
   // Challenges that award XP to this domain
   primaryChallenges   Challenge[] @relation("PrimaryDomain")
@@ -429,9 +455,10 @@ model Division {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  rankRequirements RankRequirement[]
-  rankThresholds   RankThreshold[]
-  challengeGrades  ChallengeGrade[]
+  rankRequirements  RankRequirement[]
+  rankThresholds    RankThreshold[]
+  challengeGrades   ChallengeGrade[]
+  breakthroughRules BreakthroughRule[] // Division-specific breakthrough overrides
   
   // Challenges that are allowed for this division
   allowedChallenges ChallengeDivision[]
@@ -485,13 +512,49 @@ model DomainLevel {
   letter    String @default("F") // F, E, D, C, B, A, S
   sublevel  Int    @default(0) // 0-9
   currentXP Int    @default(0)
-  bankedXP  Int    @default(0) // XP waiting for breakthrough
+  bankedXP  Int    @default(0) // XP waiting for breakthrough (earned but can't level up yet)
+  
+  // Breakthrough tracking
+  // When sublevel hits 9 and has enough XP, athlete must meet breakthrough requirements
+  // to advance to the next rank letter
+  breakthroughReady    Boolean  @default(false) // Has max XP for current rank, needs breakthrough
+  breakthroughAchieved DateTime? // When they completed the breakthrough
+  
   updatedAt DateTime @updatedAt
 
   athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   domain  Domain  @relation(fields: [domainId], references: [id], onDelete: Cascade)
 
   @@unique([athleteId, domainId])
+}
+
+// ============================================
+// BREAKTHROUGH RULES
+// ============================================
+
+// Defines what's required to break through from one rank to the next
+// Example: To go from F → E in Strength, achieve E-tier on 3 challenges
+model BreakthroughRule {
+  id          String  @id @default(cuid())
+  domainId    String
+  fromRank    String  // Current rank (F, E, D, C, B, A)
+  toRank      String  // Target rank (E, D, C, B, A, S)
+  
+  // Requirement: Achieve at least [tierRequired] on [challengeCount] challenges in this domain
+  tierRequired    String  // Minimum tier to count (e.g., "E" means E-tier or higher)
+  challengeCount  Int     // How many challenges needed
+  
+  // Optional: Per-division overrides (null = applies to all divisions)
+  divisionId  String?
+  
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  domain   Domain    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  division Division? @relation(fields: [divisionId], references: [id], onDelete: SetNull)
+
+  @@unique([domainId, fromRank, toRank, divisionId])
 }
 
 model XPTransaction {
@@ -536,7 +599,8 @@ model ChallengeSubmission {
   athleteId     String
   challengeId   String
   submittedById String // User who submitted (parent or athlete themselves)
-  videoUrl      String? // Vercel Blob URL
+  videoUrl      String? // Vercel Blob URL (legacy, or direct URL)
+  videoId       String? // Reference to Video in library (for reuse tracking)
   imageUrl      String? // Vercel Blob URL
   notes         String?
   status        SubmissionStatus @default(PENDING)
@@ -582,6 +646,10 @@ model ChallengeSubmission {
   // Privacy settings
   isPublic       Boolean @default(true)  // Show on public feeds/leaderboards
   hideExactValue Boolean @default(false) // Hide achievedValue but still show rank
+
+  // Manual entry verification - which coach supervised this attempt
+  supervisorId   String? // User ID of supervising coach
+  supervisorName String? // Cached name for display purposes
 
   athlete   Athlete             @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   challenge Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)

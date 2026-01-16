@@ -162,6 +162,36 @@ async function ChallengesContent({ gymSlug }: ChallengesContentProps) {
     orderBy: { sortOrder: "asc" },
   });
 
+  // Get ALL challenges (for "Browse All" tab) - no discipline filter
+  const allChallenges = await db.challenge.findMany({
+    where: {
+      isActive: true,
+      // Show global challenges OR gym-specific challenges user has access to
+      OR: [
+        { gymId: null },
+        ...(memberGymIds.length > 0 ? [{ gymId: { in: memberGymIds } }] : []),
+      ],
+      // Division filter: no restrictions OR athlete's division is allowed
+      AND: [
+        {
+          OR: [
+            { allowedDivisions: { none: {} } }, // No division restrictions
+            ...(athleteDivision ? [{ allowedDivisions: { some: { divisionId: athleteDivision.id } } }] : []),
+          ],
+        },
+      ],
+    },
+    include: {
+      primaryDomain: { select: { id: true, name: true, icon: true, color: true } },
+      disciplines: { include: { discipline: true } },
+      categories: { include: { category: true } },
+      gym: { select: { id: true, name: true, slug: true } },
+      _count: { select: { submissions: true } },
+    },
+    orderBy: { name: "asc" },
+    take: 100,
+  });
+
   // Get popular/recent challenges (for "Discover" tab)
   const discoverChallenges = await db.challenge.findMany({
     where: {
@@ -410,17 +440,20 @@ async function ChallengesContent({ gymSlug }: ChallengesContentProps) {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue={disciplineIds.length > 0 ? "my-disciplines" : "discover"} className="w-full">
+      <Tabs defaultValue={disciplineIds.length > 0 ? "my-disciplines" : "browse-all"} className="w-full">
         <TabsList className="mb-6">
           {disciplineIds.length > 0 && (
             <TabsTrigger value="my-disciplines">
               For You ({myDisciplineChallenges.length})
             </TabsTrigger>
           )}
+          <TabsTrigger value="browse-all">
+            Browse All ({allChallenges.length})
+          </TabsTrigger>
           <TabsTrigger value="discover">
             Discover {discoverChallenges.length > 0 && `(${discoverChallenges.length})`}
           </TabsTrigger>
-          <TabsTrigger value="all">All Disciplines</TabsTrigger>
+          <TabsTrigger value="by-discipline">By Discipline</TabsTrigger>
         </TabsList>
 
         {/* My Disciplines Tab */}
@@ -467,6 +500,9 @@ async function ChallengesContent({ gymSlug }: ChallengesContentProps) {
 
         {/* Discover Tab */}
         <TabsContent value="discover">
+          <p className="text-sm text-muted-foreground mb-4">
+            Challenges outside of your selected disciplines
+          </p>
           {discoverChallenges.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {discoverChallenges.map(challenge => (
@@ -486,8 +522,32 @@ async function ChallengesContent({ gymSlug }: ChallengesContentProps) {
           )}
         </TabsContent>
 
-        {/* All Disciplines Tab */}
-        <TabsContent value="all">
+        {/* Browse All Tab */}
+        <TabsContent value="browse-all">
+          <p className="text-sm text-muted-foreground mb-4">
+            All challenges available to you, regardless of discipline
+          </p>
+          {allChallenges.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {allChallenges.map(challenge => (
+                <ChallengeCard key={challenge.id} challenge={challenge} />
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Trophy className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">No challenges available</h3>
+                <p className="text-muted-foreground">
+                  Check back later for new challenges!
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* By Discipline Tab */}
+        <TabsContent value="by-discipline">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {allDisciplines.map(discipline => (
               <Link key={discipline.id} href={`/disciplines/${discipline.slug}`}>

@@ -42,6 +42,7 @@ export function GymMembershipButton({
     startTransition(async () => {
       const res = await fetch(`/api/gyms/${gymSlug}/membership`, {
         method: "POST",
+        credentials: "include",
       });
       if (res.ok) {
         router.refresh();
@@ -53,6 +54,7 @@ export function GymMembershipButton({
     startTransition(async () => {
       const res = await fetch(`/api/gyms/${gymSlug}/membership`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (res.ok) {
         router.refresh();
@@ -66,6 +68,7 @@ export function GymMembershipButton({
       const res = await fetch(`/api/gyms/${gymSlug}/membership`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ isPublicMember: checked }),
       });
       if (!res.ok) {

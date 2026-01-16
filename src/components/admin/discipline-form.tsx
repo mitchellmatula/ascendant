@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
 
 interface DisciplineFormProps {
   discipline?: {
@@ -21,8 +22,7 @@ interface DisciplineFormProps {
   mode: "create" | "edit";
 }
 
-// Common emoji icons for disciplines/sports
-const ICON_OPTIONS = ["🥷", "🤸", "🏃", "🧗", "🏋️", "🤾", "🎯", "⚡", "🔥", "🏆"];
+
 
 // Preset colors for disciplines
 const COLOR_OPTIONS = [
@@ -84,6 +84,7 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
       const response = await fetch(url, {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
@@ -180,31 +181,15 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
 
           <div className="space-y-2">
             <Label>Icon</Label>
-            <div className="flex flex-wrap gap-2">
-              {ICON_OPTIONS.map((icon) => (
-                <button
-                  key={icon}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, icon })}
-                  className={`w-12 h-12 text-2xl rounded-lg border-2 transition-colors flex items-center justify-center ${
-                    formData.icon === icon
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-muted-foreground"
-                  }`}
-                >
-                  {icon}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Or enter a custom emoji:
-              <Input
-                className="mt-1 w-20"
+            <div className="flex items-center gap-3">
+              <EmojiPicker
                 value={formData.icon}
-                onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                maxLength={10}
+                onChange={(emoji) => setFormData({ ...formData, icon: emoji })}
               />
-            </p>
+              <p className="text-sm text-muted-foreground">
+                Click to search and select an emoji
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2">

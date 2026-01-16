@@ -65,7 +65,7 @@ export async function GET(
       name: activity.name,
       type: activity.type,
       sportType: activity.sport_type,
-      description: activity.description,
+      description: activity.description || null,
       date: activity.start_date_local,
       timezone: activity.timezone,
       // Distance

@@ -16,6 +16,7 @@ export default async function AdminPage() {
     athleteCount,
     suspendedUserCount,
     pendingSubmissionCount,
+    breakthroughRuleCount,
   ] = await Promise.all([
     db.domain.count(),
     db.category.count(),
@@ -28,6 +29,7 @@ export default async function AdminPage() {
     db.athlete.count(),
     db.user.count({ where: { suspendedAt: { not: null } } }),
     db.challengeSubmission.count({ where: { status: "PENDING" } }),
+    db.breakthroughRule.count(),
   ]);
 
   const stats = [
@@ -38,9 +40,9 @@ export default async function AdminPage() {
     { label: "Divisions", value: divisionCount, href: "/admin/divisions", icon: "👥" },
     { label: "Disciplines", value: disciplineCount, href: "/admin/disciplines", icon: "🥷" },
     { label: "Equipment", value: equipmentCount, href: "/admin/equipment", icon: "🏋️" },
+    { label: "Breakthroughs", value: breakthroughRuleCount, href: "/admin/breakthroughs", icon: "✨" },
     { label: "Gyms", value: gymCount, href: "/admin/gyms", icon: "🏢" },
     { label: "Users", value: userCount, href: "/admin/users", icon: "👤" },
-    { label: "Athletes", value: athleteCount, href: "/admin/users", icon: "🏃" },
   ];
 
   return (
