@@ -71,9 +71,7 @@ enum Role {
   SYSTEM_ADMIN
 }
 
-model Athlete {Strict Pull-ups
-💪 Strength (100%)
-Completed!Achieved: A-tier • 600 XP earned
+model Athlete {
   id String @id @default(cuid())
 
   // For adult athletes who have their own account
