@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser, canAutoApprove } from "@/lib/auth";
 import { createSubmissionSchema, submissionQuerySchema } from "@/lib/validators/submission";
 import { calculateSubmissionXP, awardXP, XP_PER_TIER } from "@/lib/xp";
+import { toNumericLevel } from "@/lib/levels";
 import type { Rank } from "@/lib/levels";
 
 /**
@@ -221,6 +222,24 @@ export async function POST(req: NextRequest) {
       include: { history: true },
     });
 
+    // Rate limit: One submission per challenge per day (unless admin/coach)
+    const isPrivileged = ["SYSTEM_ADMIN", "GYM_ADMIN", "COACH"].includes(user.role);
+    if (existingSubmission && !isPrivileged) {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      if (existingSubmission.submittedAt > oneDayAgo) {
+        const hoursRemaining = Math.ceil(
+          (existingSubmission.submittedAt.getTime() + 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60)
+        );
+        return NextResponse.json(
+          { 
+            error: `You can only submit once per day per challenge. Try again in ${hoursRemaining} hour${hoursRemaining !== 1 ? "s" : ""}.`,
+            retryAfter: hoursRemaining,
+          },
+          { status: 429 }
+        );
+      }
+    }
+
     // Determine if auto-approved (coaches/admins)
     const autoApproved = canAutoApprove(user.role);
 
@@ -269,6 +288,7 @@ export async function POST(req: NextRequest) {
       activityType: data.activityType || null,
       activityAvgHR: data.activityAvgHR || null,
       activityMaxHR: data.activityMaxHR || null,
+      activityPolyline: data.activityPolyline || null,
       // Privacy settings
       isPublic: data.isPublic ?? true,
       hideExactValue: data.hideExactValue ?? false,
@@ -312,15 +332,17 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // If auto-approved, award XP
+      // If auto-approved, award XP and get celebration data
+      let celebration: CelebrationData | null = null;
       if (autoApproved && updated.achievedRank) {
-        await processXPAward(updated, challenge, athlete);
+        celebration = await processXPAward(updated, challenge, athlete);
       }
 
       return NextResponse.json({
         submission: updated,
         message: "Submission updated",
         isResubmission: true,
+        celebration,
       });
     }
 
@@ -340,15 +362,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // If auto-approved, award XP
+    // If auto-approved, award XP and get celebration data
+    let celebration: CelebrationData | null = null;
     if (autoApproved && submission.achievedRank) {
-      await processXPAward(submission, challenge, athlete);
+      celebration = await processXPAward(submission, challenge, athlete);
     }
 
     return NextResponse.json({
       submission,
       message: autoApproved ? "Submission approved automatically" : "Submission pending review",
       isResubmission: false,
+      celebration,
     }, { status: 201 });
   } catch (error) {
     console.error("Error creating submission:", error);
@@ -405,9 +429,28 @@ function calculateAchievedRankFromGrades(
 }
 
 // Helper: Process XP award after approval
+// Returns celebration data for the client
+interface CelebrationData {
+  tierAchievement: {
+    tier: Rank;
+    challengeName: string;
+    xpBreakdown: Array<{ domainName: string; xp: number; domainIcon?: string }>;
+    totalXp: number;
+    isNewBest: boolean;
+  } | null;
+  levelUps: Array<{
+    previousLevel: number;
+    newLevel: number;
+    domainName: string;
+    domainIcon?: string;
+    xpGained: number;
+  }>;
+}
+
 async function processXPAward(
   submission: { id: string; achievedRank: string | null; claimedTiers: string; athleteId: string },
   challenge: {
+    name: string;
     minRank: string;
     primaryDomainId: string;
     primaryXPPercent: number;
@@ -415,10 +458,18 @@ async function processXPAward(
     secondaryXPPercent: number | null;
     tertiaryDomainId: string | null;
     tertiaryXPPercent: number | null;
+    primaryDomain: { name: string; icon: string | null };
+    secondaryDomain: { name: string; icon: string | null } | null;
+    tertiaryDomain: { name: string; icon: string | null } | null;
   },
   athlete: { id: string }
-) {
-  if (!submission.achievedRank) return;
+): Promise<CelebrationData> {
+  const result: CelebrationData = {
+    tierAchievement: null,
+    levelUps: [],
+  };
+
+  if (!submission.achievedRank) return result;
 
   const achievedRank = submission.achievedRank as Rank;
   const minRank = challenge.minRank as Rank;
@@ -436,30 +487,45 @@ async function processXPAward(
     }
   }
 
-  if (newTiers.length === 0) return;
+  if (newTiers.length === 0) return result;
 
   // Calculate total XP for new tiers
   const baseXP = newTiers.reduce((sum, tier) => sum + XP_PER_TIER[tier], 0);
 
   // Distribute XP across domains
-  const xpDistribution: Array<{ domainId: string; amount: number }> = [];
+  const xpDistribution: Array<{ domainId: string; amount: number; domainName: string; domainIcon?: string }> = [];
 
   const primaryXP = Math.round(baseXP * (challenge.primaryXPPercent / 100));
-  xpDistribution.push({ domainId: challenge.primaryDomainId, amount: primaryXP });
+  xpDistribution.push({ 
+    domainId: challenge.primaryDomainId, 
+    amount: primaryXP,
+    domainName: challenge.primaryDomain.name,
+    domainIcon: challenge.primaryDomain.icon ?? undefined,
+  });
 
-  if (challenge.secondaryDomainId && challenge.secondaryXPPercent) {
+  if (challenge.secondaryDomainId && challenge.secondaryXPPercent && challenge.secondaryDomain) {
     const secondaryXP = Math.round(baseXP * (challenge.secondaryXPPercent / 100));
-    xpDistribution.push({ domainId: challenge.secondaryDomainId, amount: secondaryXP });
+    xpDistribution.push({ 
+      domainId: challenge.secondaryDomainId, 
+      amount: secondaryXP,
+      domainName: challenge.secondaryDomain.name,
+      domainIcon: challenge.secondaryDomain.icon ?? undefined,
+    });
   }
 
-  if (challenge.tertiaryDomainId && challenge.tertiaryXPPercent) {
+  if (challenge.tertiaryDomainId && challenge.tertiaryXPPercent && challenge.tertiaryDomain) {
     const tertiaryXP = Math.round(baseXP * (challenge.tertiaryXPPercent / 100));
-    xpDistribution.push({ domainId: challenge.tertiaryDomainId, amount: tertiaryXP });
+    xpDistribution.push({ 
+      domainId: challenge.tertiaryDomainId, 
+      amount: tertiaryXP,
+      domainName: challenge.tertiaryDomain.name,
+      domainIcon: challenge.tertiaryDomain.icon ?? undefined,
+    });
   }
 
-  // Award XP for each domain
-  for (const { domainId, amount } of xpDistribution) {
-    await awardXP({
+  // Award XP for each domain and track level ups
+  for (const { domainId, amount, domainName, domainIcon } of xpDistribution) {
+    const xpResult = await awardXP({
       athleteId: athlete.id,
       domainId,
       amount,
@@ -467,7 +533,43 @@ async function processXPAward(
       sourceId: submission.id,
       note: `Completed ${newTiers.join(",")} tier(s)`,
     });
+
+    // Check for level up
+    if (xpResult.leveledUp) {
+      const previousNumeric = toNumericLevel(
+        xpResult.previousLevel.letter as Rank,
+        xpResult.previousLevel.sublevel
+      );
+      const newNumeric = toNumericLevel(
+        xpResult.newLevel.letter as Rank,
+        xpResult.newLevel.sublevel
+      );
+
+      result.levelUps.push({
+        previousLevel: previousNumeric,
+        newLevel: newNumeric,
+        domainName,
+        domainIcon,
+        xpGained: amount,
+      });
+    }
   }
+
+  // Build tier achievement data
+  const highestNewTier = newTiers[newTiers.length - 1];
+  const isNewBest = alreadyClaimed.size === 0; // First time earning any tier
+
+  result.tierAchievement = {
+    tier: highestNewTier,
+    challengeName: challenge.name,
+    xpBreakdown: xpDistribution.map(({ domainName, amount, domainIcon }) => ({
+      domainName,
+      xp: amount,
+      domainIcon,
+    })),
+    totalXp: baseXP,
+    isNewBest,
+  };
 
   // Update claimed tiers and XP on submission
   const updatedClaimed = [...alreadyClaimed, ...newTiers];
@@ -478,4 +580,6 @@ async function processXPAward(
       xpAwarded: { increment: baseXP },
     },
   });
+
+  return result;
 }

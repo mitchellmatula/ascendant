@@ -9,11 +9,17 @@ export const maxDuration = 60; // 60 seconds for large uploads
 
 // Video upload limits
 const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB max
+const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; // 5MB max for thumbnails
 const ALLOWED_TYPES = [
   "video/mp4",
   "video/quicktime", // .mov
   "video/webm",
   "video/x-m4v",
+];
+const ALLOWED_THUMBNAIL_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
 ];
 
 export async function POST(request: NextRequest) {
@@ -51,6 +57,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get thumbnail if provided
+    const thumbnail = formData.get("thumbnail") as File | null;
+    
+    // Validate thumbnail if provided
+    if (thumbnail) {
+      if (!ALLOWED_THUMBNAIL_TYPES.includes(thumbnail.type)) {
+        return NextResponse.json(
+          { error: `Invalid thumbnail type. Allowed: ${ALLOWED_THUMBNAIL_TYPES.join(", ")}` },
+          { status: 400 }
+        );
+      }
+      if (thumbnail.size > MAX_THUMBNAIL_SIZE) {
+        return NextResponse.json(
+          { error: `Thumbnail too large. Maximum size: ${MAX_THUMBNAIL_SIZE / 1024 / 1024}MB` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Get context from form data (for organizing uploads)
     const context = formData.get("context") as string || "submission";
     const uploadAthleteId = athleteId || user.athlete?.id || user.id;
@@ -60,11 +85,23 @@ export async function POST(request: NextRequest) {
     const extension = file.name.split(".").pop() || "mp4";
     const filename = `videos/${context}/${uploadAthleteId}/${timestamp}.${extension}`;
 
-    // Upload to Vercel Blob
+    // Upload video to Vercel Blob
     const blob = await put(filename, file, {
       access: "public",
       addRandomSuffix: true, // Prevents filename conflicts
     });
+
+    // Upload thumbnail if provided
+    let thumbnailUrl: string | null = null;
+    if (thumbnail) {
+      const thumbExtension = thumbnail.type === "image/png" ? "png" : "jpg";
+      const thumbFilename = `thumbnails/${context}/${uploadAthleteId}/${timestamp}.${thumbExtension}`;
+      const thumbBlob = await put(thumbFilename, thumbnail, {
+        access: "public",
+        addRandomSuffix: true,
+      });
+      thumbnailUrl = thumbBlob.url;
+    }
 
     // If saveToLibrary is true and we have an athleteId, save to Video library
     let videoRecord = null;
@@ -82,6 +119,7 @@ export async function POST(request: NextRequest) {
           athleteId,
           title,
           url: blob.url,
+          thumbnailUrl: thumbnailUrl,
           fileSize: file.size,
           mimeType: file.type,
         },
@@ -90,6 +128,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       url: blob.url,
+      thumbnailUrl: thumbnailUrl,
       pathname: blob.pathname,
       size: file.size,
       type: file.type,

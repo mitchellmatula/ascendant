@@ -30,6 +30,7 @@ export const createSubmissionSchema = z.object({
   activityDate: z.string().datetime().optional(), // When the activity occurred
   activityAvgHR: z.number().int().positive().optional(), // Average heart rate
   activityMaxHR: z.number().int().positive().optional(), // Max heart rate
+  activityPolyline: z.string().optional().nullable(), // Encoded polyline for route map
   
   // For graded challenges (reps, time, etc.)
   achievedValue: z.number().positive().optional().nullable(),

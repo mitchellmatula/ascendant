@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VideoDisplay } from "@/components/ui/video-display";
 import { formatSecondsToTime, type TimeFormat } from "@/lib/time";
+import { getRankName, getRankColor, type Rank, RANK_INDEX } from "@/lib/levels";
 import { 
   ChevronLeft, 
   CheckCircle, 
@@ -18,7 +19,6 @@ import {
   Target,
   Trophy,
   Upload,
-  Sparkles,
   Lock
 } from "lucide-react";
 import { XP_PER_TIER } from "@/lib/xp";
@@ -314,7 +314,9 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
                   </span>
                   {submission.achievedRank && (
                     <span className="ml-2 text-sm text-muted-foreground">
-                      Achieved: {submission.achievedRank}-tier • {submission.xpAwarded} XP earned
+                      Achieved: <span className="font-semibold" style={{ color: getRankColor(submission.achievedRank as Rank) }}>
+                        {submission.achievedRank} - {getRankName(submission.achievedRank)}
+                      </span> • {submission.xpAwarded} XP earned
                     </span>
                   )}
                 </div>
@@ -351,255 +353,156 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
         </Card>
       )}
 
-      {/* Grading / Tier Targets */}
-      {challenge.gradingType !== "PASS_FAIL" && relevantGrades.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              Tier Targets
-              {athleteDivision && !showingFallbackGrades && (
-                <Badge variant="outline" className="ml-2 text-xs font-normal">
-                  {athleteDivision.name}
-                </Badge>
-              )}
-              {showingFallbackGrades && (
-                <Badge variant="secondary" className="ml-2 text-xs font-normal">
-                  {relevantGrades[0]?.division?.name || "Sample"}
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Achieve higher tiers for more XP. 
-              {challenge.gradingType === "TIME" 
-                ? " Complete in faster time for higher tiers."
-                : ` Measured in ${challenge.gradingUnit || "units"}.`}
-              {showingFallbackGrades && (
-                <span className="block text-amber-500 mt-1">
-                  Note: Showing targets for {relevantGrades[0]?.division?.name}. Your division may differ.
-                </span>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-2 text-center">
-              {["F", "E", "D", "C", "B", "A", "S"].map(rank => {
-                const grade = relevantGrades.find(g => g.rank === rank);
-                const xpForTier = XP_PER_TIER[rank as keyof typeof XP_PER_TIER];
-                
-                // Format target value based on grading type
-                const formatTargetValue = (value: number) => {
-                  if (challenge.gradingType === "TIME" && challenge.timeFormat && challenge.timeFormat !== "seconds") {
-                    return formatSecondsToTime(value, challenge.timeFormat as TimeFormat);
-                  }
-                  return value.toString();
-                };
-                
-                return (
-                  <div 
-                    key={rank} 
-                    className={`p-2 rounded-lg ${grade ? "bg-muted" : "bg-muted/30 opacity-50"}`}
-                  >
-                    <div className="font-bold text-lg">{rank}</div>
-                    {grade ? (
-                      <>
-                        <div className="text-sm font-medium">{formatTargetValue(grade.targetValue)}</div>
-                        <div className="text-xs text-muted-foreground">+{xpForTier} XP</div>
-                      </>
-                    ) : (
-                      <div className="text-xs text-muted-foreground">—</div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Pass/Fail XP Info */}
-      {challenge.gradingType === "PASS_FAIL" && (
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Trophy className="w-5 h-5" />
-              XP Reward
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-green-500">+{XP_PER_TIER.F} XP</span>
-              <span className="text-muted-foreground">for completing this challenge</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* XP Distribution by Domain */}
+      {/* XP & Tier Targets - Combined Section */}
       <Card className="mb-6">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
-            <Sparkles className="w-5 h-5" />
-            XP Distribution
+            <Trophy className="w-5 h-5" />
+            XP Rewards
+            {challenge.gradingType !== "PASS_FAIL" && athleteDivision && !showingFallbackGrades && (
+              <Badge variant="outline" className="ml-2 text-xs font-normal">
+                {athleteDivision.name}
+              </Badge>
+            )}
+            {challenge.gradingType !== "PASS_FAIL" && showingFallbackGrades && (
+              <Badge variant="secondary" className="ml-2 text-xs font-normal">
+                {relevantGrades[0]?.division?.name || "Sample"}
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
-            How XP is distributed across domains when you complete this challenge
+            {challenge.gradingType === "PASS_FAIL" 
+              ? "Complete this challenge to earn XP"
+              : challenge.gradingType === "TIME"
+                ? "Complete in faster time for higher tiers and more XP"
+                : `Achieve better ${challenge.gradingUnit || "results"} for higher tiers and more XP`
+            }
+            {showingFallbackGrades && (
+              <span className="block text-amber-500 mt-1">
+                Note: Showing targets for {relevantGrades[0]?.division?.name}. Your division may differ.
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {/* Primary Domain */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: challenge.primaryDomain.color || "#888" }}
-                />
-                <span className="font-medium">{challenge.primaryDomain.icon} {challenge.primaryDomain.name}</span>
-                <Badge variant="secondary" className="text-xs">Primary</Badge>
-              </div>
+          {/* Domain Distribution - Compact */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4 text-sm">
+            <div className="flex items-center gap-1.5">
+              <div 
+                className="w-2.5 h-2.5 rounded-full" 
+                style={{ backgroundColor: challenge.primaryDomain.color || "#888" }}
+              />
+              <span>{challenge.primaryDomain.icon} {challenge.primaryDomain.name}</span>
               <span className="font-bold" style={{ color: challenge.primaryDomain.color || undefined }}>
                 {challenge.primaryXPPercent}%
               </span>
             </div>
-            
-            {/* Secondary Domain */}
             {challenge.secondaryDomain && challenge.secondaryXPPercent && challenge.secondaryXPPercent > 0 && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full bg-muted-foreground/50"
-                  />
-                  <span>{challenge.secondaryDomain.icon} {challenge.secondaryDomain.name}</span>
-                </div>
-                <span className="font-medium text-muted-foreground">
-                  {challenge.secondaryXPPercent}%
-                </span>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <span>{challenge.secondaryDomain.icon} {challenge.secondaryDomain.name}</span>
+                <span className="font-medium">{challenge.secondaryXPPercent}%</span>
               </div>
             )}
-            
-            {/* Tertiary Domain */}
             {challenge.tertiaryDomain && challenge.tertiaryXPPercent && challenge.tertiaryXPPercent > 0 && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full bg-muted-foreground/30"
-                  />
-                  <span>{challenge.tertiaryDomain.icon} {challenge.tertiaryDomain.name}</span>
-                </div>
-                <span className="font-medium text-muted-foreground">
-                  {challenge.tertiaryXPPercent}%
-                </span>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <span>{challenge.tertiaryDomain.icon} {challenge.tertiaryDomain.name}</span>
+                <span className="font-medium">{challenge.tertiaryXPPercent}%</span>
               </div>
             )}
-
-            {/* Example calculation - show tier-based breakdown for graded challenges */}
-            <div className="pt-3 mt-3 border-t border-border">
-              {challenge.gradingType !== "PASS_FAIL" && relevantGrades.length > 0 ? (
-                <>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Hit these targets to earn XP
-                    {showingFallbackGrades 
-                      ? ` (${relevantGrades[0]?.division?.name || "sample division"}):`
-                      : ` (${athleteDivision?.name || "Your Division"}):`
-                    }
-                  </p>
-                  <div className="space-y-2">
-                    {["S", "A", "B", "C", "D", "E", "F"].map(rank => {
-                      const grade = relevantGrades.find(g => g.rank === rank);
-                      if (!grade) return null;
-                      
-                      const tierXP = XP_PER_TIER[rank as keyof typeof XP_PER_TIER];
-                      const primaryXP = Math.round(tierXP * (challenge.primaryXPPercent / 100));
-                      const secondaryXP = challenge.secondaryXPPercent 
-                        ? Math.round(tierXP * (challenge.secondaryXPPercent / 100)) 
-                        : 0;
-                      const tertiaryXP = challenge.tertiaryXPPercent 
-                        ? Math.round(tierXP * (challenge.tertiaryXPPercent / 100)) 
-                        : 0;
-                      
-                      // Format target value based on grading type
-                      const formatTargetValue = (value: number) => {
-                        if (challenge.gradingType === "TIME" && challenge.timeFormat && challenge.timeFormat !== "seconds") {
-                          return formatSecondsToTime(value, challenge.timeFormat as TimeFormat);
-                        }
-                        return value.toString();
-                      };
-                      
-                      const targetDisplay = formatTargetValue(grade.targetValue);
-                      const unitLabel = challenge.gradingType === "TIME" 
-                        ? "" 
-                        : ` ${challenge.gradingUnit || ""}`.trimEnd();
-                      
-                      return (
-                        <div key={rank} className="flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                          <span className="font-bold text-base w-6">{rank}</span>
-                          <span className="text-muted-foreground hidden sm:inline">•</span>
-                          <span className="font-medium text-foreground min-w-[60px]">
-                            {targetDisplay}{unitLabel}
-                          </span>
-                          <span className="text-muted-foreground mx-1">→</span>
-                          <div className="flex items-center gap-1.5 flex-wrap flex-1 justify-end">
-                            <Badge 
-                              variant="secondary" 
-                              className="text-xs"
-                              style={{ 
-                                backgroundColor: `${challenge.primaryDomain.color}20` || undefined,
-                                color: challenge.primaryDomain.color || undefined,
-                              }}
-                            >
-                              {challenge.primaryDomain.icon} +{primaryXP}
-                            </Badge>
-                            {challenge.secondaryDomain && secondaryXP > 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                {challenge.secondaryDomain.icon} +{secondaryXP}
-                              </Badge>
-                            )}
-                            {challenge.tertiaryDomain && tertiaryXP > 0 && (
-                              <Badge variant="outline" className="text-xs">
-                                {challenge.tertiaryDomain.icon} +{tertiaryXP}
-                              </Badge>
-                            )}
-                            <span className="text-xs text-muted-foreground ml-1">
-                              = {tierXP} XP
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3 italic">
-                    💡 Beat a higher tier on your first attempt to earn all the XP at once!
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-xs text-muted-foreground mb-2">Completing this challenge earns you:</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge 
-                      variant="secondary" 
-                      style={{ 
-                        backgroundColor: `${challenge.primaryDomain.color}20` || undefined,
-                        color: challenge.primaryDomain.color || undefined,
-                      }}
-                    >
-                      {challenge.primaryDomain.icon} +{Math.round(XP_PER_TIER.F * (challenge.primaryXPPercent / 100))} XP
-                    </Badge>
-                    {challenge.secondaryDomain && challenge.secondaryXPPercent && challenge.secondaryXPPercent > 0 && (
-                      <Badge variant="outline">
-                        {challenge.secondaryDomain.icon} +{Math.round(XP_PER_TIER.F * (challenge.secondaryXPPercent / 100))} XP
-                      </Badge>
-                    )}
-                    {challenge.tertiaryDomain && challenge.tertiaryXPPercent && challenge.tertiaryXPPercent > 0 && (
-                      <Badge variant="outline">
-                        {challenge.tertiaryDomain.icon} +{Math.round(XP_PER_TIER.F * (challenge.tertiaryXPPercent / 100))} XP
-                      </Badge>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
           </div>
+
+          {/* Tier targets list or Pass/Fail reward */}
+          {challenge.gradingType !== "PASS_FAIL" && relevantGrades.length > 0 ? (
+            <>
+              <div className="space-y-2">
+                {["S", "A", "B", "C", "D", "E", "F"].map(rank => {
+                  const grade = relevantGrades.find(g => g.rank === rank);
+                  if (!grade) return null;
+                  
+                  const tierXP = XP_PER_TIER[rank as keyof typeof XP_PER_TIER];
+                  const primaryXP = Math.round(tierXP * (challenge.primaryXPPercent / 100));
+                  const secondaryXP = challenge.secondaryXPPercent 
+                    ? Math.round(tierXP * (challenge.secondaryXPPercent / 100)) 
+                    : 0;
+                  const tertiaryXP = challenge.tertiaryXPPercent 
+                    ? Math.round(tierXP * (challenge.tertiaryXPPercent / 100)) 
+                    : 0;
+                  
+                  // Check if this tier has been achieved
+                  const achievedRank = submission?.status === "APPROVED" ? submission.achievedRank : null;
+                  const isAchieved = achievedRank && RANK_INDEX[rank as Rank] <= RANK_INDEX[achievedRank as Rank];
+                  const isCurrentTier = achievedRank === rank;
+                  const rankColor = getRankColor(rank as Rank);
+                  
+                  // Format target value based on grading type
+                  const formatTargetValue = (value: number) => {
+                    if (challenge.gradingType === "TIME" && challenge.timeFormat && challenge.timeFormat !== "seconds") {
+                      return formatSecondsToTime(value, challenge.timeFormat as TimeFormat);
+                    }
+                    return value.toString();
+                  };
+                  
+                  const targetDisplay = formatTargetValue(grade.targetValue);
+                  const unitLabel = challenge.gradingType === "TIME" 
+                    ? "" 
+                    : ` ${challenge.gradingUnit || ""}`.trimEnd();
+                  
+                  return (
+                    <div 
+                      key={rank} 
+                      className={`flex items-center gap-3 text-sm py-2 px-3 rounded-lg transition-colors ${
+                        isCurrentTier 
+                          ? "outline outline-2 outline-offset-1" 
+                          : isAchieved 
+                            ? "bg-green-500/20" 
+                            : "bg-muted/50 hover:bg-muted"
+                      }`}
+                      style={isCurrentTier ? { 
+                        outlineColor: rankColor,
+                        backgroundColor: `${rankColor}15`,
+                      } : undefined}
+                    >
+                      {isAchieved && (
+                        <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                      )}
+                      <span 
+                        className="font-bold text-lg w-5"
+                        style={isCurrentTier || isAchieved ? { color: isAchieved ? undefined : rankColor } : undefined}
+                      >
+                        {rank}
+                      </span>
+                      <span className="text-xs text-muted-foreground w-24 hidden sm:inline">
+                        {getRankName(rank)}
+                      </span>
+                      <span className={`font-semibold ${isAchieved ? "text-green-600 dark:text-green-400" : "text-foreground"}`}>
+                        {targetDisplay}{unitLabel}
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-1 justify-end">
+                        {isAchieved ? (
+                          <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-600 dark:text-green-400">
+                            ✓ Earned
+                          </Badge>
+                        ) : (
+                          <span className="text-sm font-semibold text-muted-foreground">
+                            +{tierXP} XP
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 italic">
+                💡 Beat a higher tier on your first attempt to earn all the XP at once!
+              </p>
+            </>
+          ) : (
+            /* Pass/Fail Challenge */
+            <div className="flex items-center justify-between py-3 px-4 bg-muted/50 rounded-lg">
+              <span className="text-muted-foreground">Complete this challenge</span>
+              <span className="text-xl font-bold text-green-500">+{XP_PER_TIER.F} XP</span>
+            </div>
+          )}
         </CardContent>
       </Card>
 

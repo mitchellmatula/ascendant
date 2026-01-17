@@ -24,7 +24,44 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { displayName, dateOfBirth, gender, avatarUrl, disciplineIds } = body;
+    const { displayName, username, dateOfBirth, gender, avatarUrl, disciplineIds } = body;
+
+    // Validate username if provided
+    if (username !== undefined) {
+      // Check format
+      if (!username || username.length < 3) {
+        return NextResponse.json(
+          { error: "Username must be at least 3 characters" },
+          { status: 400 }
+        );
+      }
+      if (username.length > 30) {
+        return NextResponse.json(
+          { error: "Username must be 30 characters or less" },
+          { status: 400 }
+        );
+      }
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        return NextResponse.json(
+          { error: "Username can only contain letters, numbers, and underscores" },
+          { status: 400 }
+        );
+      }
+      
+      // Check uniqueness (case insensitive)
+      const existingAthlete = await db.athlete.findFirst({
+        where: {
+          username: { equals: username.toLowerCase(), mode: "insensitive" },
+          id: { not: athleteId },
+        },
+      });
+      if (existingAthlete) {
+        return NextResponse.json(
+          { error: "This username is already taken" },
+          { status: 400 }
+        );
+      }
+    }
 
     // Calculate age for division
     const dob = new Date(dateOfBirth);
@@ -37,6 +74,7 @@ export async function PATCH(
       where: { id: athleteId },
       data: {
         displayName,
+        ...(username !== undefined && { username: username.toLowerCase() }),
         dateOfBirth: dob,
         gender,
         avatarUrl,

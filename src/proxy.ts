@@ -17,6 +17,7 @@ const isPublicRoute = createRouteMatcher([
 // API routes - Clerk should attach auth context but NOT enforce/redirect
 const isApiRoute = createRouteMatcher(["/api/(.*)"]);
 
+// Next.js 16 uses proxy.ts with named export 'proxy'
 export default clerkMiddleware(async (auth, request) => {
   // For API routes, don't call protect() - let the route handler check auth
   // But Clerk still attaches the auth context so auth() works in the handler

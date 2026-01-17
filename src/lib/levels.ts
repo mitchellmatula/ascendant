@@ -2,15 +2,15 @@
  * Level System Utilities
  * 
  * Rank Letters & Numeric Values:
- * | Rank | Numeric Range | Example |
- * |------|---------------|---------|
- * | F | 0-9   | F7 = 7  |
- * | E | 10-19 | E3 = 13 |
- * | D | 20-29 | D5 = 25 |
- * | C | 30-39 | C7 = 37 |
- * | B | 40-49 | B2 = 42 |
- * | A | 50-59 | A0 = 50 |
- * | S | 60-69 | S9 = 69 |
+ * | Rank | Name         | Numeric Range | Example |
+ * |------|--------------|---------------|---------|}
+ * | F    | Foundation   | 0-9           | F7 = 7  |
+ * | E    | Explorer     | 10-19         | E3 = 13 |
+ * | D    | Disciplined  | 20-29         | D5 = 25 |
+ * | C    | Challenger   | 30-39         | C7 = 37 |
+ * | B    | Breakthrough | 40-49         | B2 = 42 |
+ * | A    | Apex         | 50-59         | A0 = 50 |
+ * | S    | Supreme      | 60-69         | S9 = 69 |
  */
 
 export const RANKS = ["F", "E", "D", "C", "B", "A", "S"] as const;
@@ -100,19 +100,61 @@ export function getRankColor(letter: Rank | string): string {
 }
 
 /**
- * Get rank label with description
+ * Rank names - the Ascendant Ladder
+ */
+export const RANK_NAMES: Record<Rank, string> = {
+  F: "Foundation",
+  E: "Explorer",
+  D: "Disciplined",
+  C: "Challenger",
+  B: "Breakthrough",
+  A: "Apex",
+  S: "Supreme",
+};
+
+/**
+ * Rank descriptions - what each rank means
+ */
+export const RANK_DESCRIPTIONS: Record<Rank, string> = {
+  F: "Learning the basics. Building the base.",
+  E: "Trying new skills. Expanding capability.",
+  D: "Training with intent. Showing consistency.",
+  C: "Taking on real tests. Pushing limits.",
+  B: "Major capability unlocked.",
+  A: "Advanced performance.",
+  S: "Exceptional. Rare.",
+};
+
+/**
+ * Get rank name (e.g., "Foundation", "Explorer")
+ */
+export function getRankName(letter: Rank | string): string {
+  return RANK_NAMES[letter as Rank] || RANK_NAMES.F;
+}
+
+/**
+ * Get rank label with description (alias for getRankName for backwards compatibility)
  */
 export function getRankLabel(letter: Rank | string): string {
-  const labels: Record<string, string> = {
-    F: "Foundation",
-    E: "Emerging",
-    D: "Developing",
-    C: "Competent",
-    B: "Breakthrough",
-    A: "Advanced",
-    S: "Supreme",
-  };
-  return labels[letter] || labels.F;
+  return getRankName(letter);
+}
+
+/**
+ * Get rank description
+ */
+export function getRankDescription(letter: Rank | string): string {
+  return RANK_DESCRIPTIONS[letter as Rank] || RANK_DESCRIPTIONS.F;
+}
+
+/**
+ * Format rank with name (e.g., "C - Challenger", "B7 - Breakthrough")
+ */
+export function formatRankWithName(letter: Rank | string, sublevel?: number): string {
+  const name = getRankName(letter);
+  if (sublevel !== undefined) {
+    return `${letter}${sublevel} - ${name}`;
+  }
+  return `${letter} - ${name}`;
 }
 
 /**

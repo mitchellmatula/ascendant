@@ -83,6 +83,7 @@ model Athlete {
   parent   User?   @relation("ParentManaged", fields: [parentId], references: [id])
 
   displayName String
+  username    String?  @unique // For @mentions and profile URLs (URL-safe) - nullable during migration
   dateOfBirth DateTime
   gender      String // Maps to division
   avatarUrl   String?
@@ -90,6 +91,7 @@ model Athlete {
   
   // Privacy settings (COPPA compliance for minors)
   isPublicProfile Boolean @default(false) // Can appear in public lists (leaderboards, gym members)
+  feedVisibility  FeedVisibility @default(PUBLIC) // Who can see activity in feeds
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -99,6 +101,25 @@ model Athlete {
   submissions    ChallengeSubmission[]
   disciplines    AthleteDiscipline[]   // Primary training disciplines
   videos         Video[]               // Video library for reuse
+  
+  // Social: Following system
+  followers      Follow[]       @relation("Following")  // People who follow this athlete
+  following      Follow[]       @relation("Followers")  // People this athlete follows
+  
+  // Social: Reactions & Comments
+  reactions      Reaction[]
+  comments       Comment[]
+  commentReports CommentReport[] @relation("Reporter")
+  
+  // Notifications
+  notifications  Notification[]
+}
+
+// Feed visibility setting
+enum FeedVisibility {
+  PUBLIC     // Everyone can see activity
+  FOLLOWERS  // Only followers can see
+  PRIVATE    // Don't show in any feeds
 }
 
 // ============================================
@@ -627,6 +648,7 @@ model ChallengeSubmission {
   activityType       String?   // Run, Ride, Swim, etc.
   activityAvgHR      Int?      // Average heart rate
   activityMaxHR      Int?      // Max heart rate
+  activityPolyline   String?   // Encoded polyline for route map display
 
   // For graded challenges: what value did they achieve?
   achievedValue Int? // e.g., 20 reps, 45 seconds, etc.
@@ -652,6 +674,10 @@ model ChallengeSubmission {
   athlete   Athlete             @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   challenge Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   history   SubmissionHistory[] // Previous versions
+  
+  // Social features
+  reactions Reaction[]
+  comments  Comment[]
 
   @@unique([athleteId, challengeId]) // One active submission per challenge per athlete
 }
@@ -800,4 +826,139 @@ model GymDiscipline {
   discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
 
   @@unique([gymId, disciplineId])
+}
+
+// ============================================
+// SOCIAL: FOLLOWING SYSTEM
+// ============================================
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   // The athlete doing the following
+  followingId String   // The athlete being followed
+  createdAt   DateTime @default(now())
+
+  follower  Athlete @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following Athlete @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// ============================================
+// SOCIAL: REACTIONS
+// ============================================
+
+model Reaction {
+  id           String   @id @default(cuid())
+  athleteId    String   // Who reacted
+  submissionId String?  // Reaction on a submission
+  commentId    String?  // Reaction on a comment
+  emoji        String   // 🔥 💪 👏 🎯 ⚡
+  createdAt    DateTime @default(now())
+
+  athlete    Athlete              @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  submission ChallengeSubmission? @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  comment    Comment?             @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([athleteId, submissionId, emoji])
+  @@unique([athleteId, commentId, emoji])
+  @@index([submissionId])
+  @@index([commentId])
+}
+
+// ============================================
+// SOCIAL: COMMENTS
+// ============================================
+
+model Comment {
+  id           String   @id @default(cuid())
+  athleteId    String   // Who wrote the comment
+  submissionId String   // Which submission it's on
+  parentId     String?  // For nested replies (null = top-level comment)
+  content      String   @db.Text // Max 2000 chars enforced in app
+  depth        Int      @default(0) // 0 = top-level, 1 = reply, 2 = reply-to-reply (max 3)
+  isDeleted    Boolean  @default(false) // Soft delete (keeps structure for replies)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  athlete    Athlete              @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  submission ChallengeSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  parent     Comment?             @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[]            @relation("CommentReplies")
+  reactions  Reaction[]
+  reports    CommentReport[]
+
+  @@index([submissionId])
+  @@index([parentId])
+}
+
+// ============================================
+// SOCIAL: COMMENT REPORTS
+// ============================================
+
+model CommentReport {
+  id          String       @id @default(cuid())
+  commentId   String
+  reporterId  String       // Athlete who reported
+  reason      String       // Why they reported it
+  status      ReportStatus @default(PENDING)
+  reviewedBy  String?      // Admin user ID who reviewed
+  reviewNotes String?      // Admin notes on resolution
+  reviewedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  comment  Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  reporter Athlete @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@index([status])
+}
+
+enum ReportStatus {
+  PENDING      // Awaiting review
+  REVIEWED     // Reviewed, no action needed
+  DISMISSED    // Report was invalid/spam
+  ACTION_TAKEN // Comment was removed or user warned
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id          String           @id @default(cuid())
+  athleteId   String           // Who receives the notification
+  type        NotificationType
+  title       String           // Short title (e.g., "New follower!")
+  body        String?          // Longer description
+  linkUrl     String?          // Where to navigate when clicked
+  isRead      Boolean          @default(false)
+  
+  // Metadata for rendering (actor info, submission info, etc.)
+  actorId       String?  // Athlete who triggered the notification
+  actorUsername String?  // Cached for display without extra query
+  actorAvatar   String?  // Cached avatar URL
+  submissionId  String?  // Related submission
+  commentId     String?  // Related comment
+  
+  createdAt   DateTime @default(now())
+
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@index([athleteId, isRead])
+  @@index([athleteId, createdAt])
+}
+
+enum NotificationType {
+  FOLLOW          // Someone followed you
+  REACTION        // Someone reacted to your submission
+  COMMENT         // Someone commented on your submission
+  COMMENT_REPLY   // Someone replied to your comment
+  COMMENT_LIKE    // Someone liked your comment
+  LEVEL_UP        // You leveled up
+  TRAINING_SYNC   // Activity synced from Strava/Garmin
+  SUBMISSION_APPROVED // Your submission was approved
+  SUBMISSION_REJECTED // Your submission was rejected
 }

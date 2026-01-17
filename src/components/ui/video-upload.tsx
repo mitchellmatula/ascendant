@@ -19,7 +19,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface VideoUploadProps {
   value?: string | null;
-  onUpload: (url: string, videoId?: string | null) => void;
+  thumbnailValue?: string | null; // Current thumbnail URL
+  onUpload: (url: string, videoId?: string | null, thumbnailUrl?: string | null) => void;
   onRemove?: () => void;
   maxSizeMB?: number; // Max file size in MB (after compression)
   maxDurationSeconds?: number; // Max video duration
@@ -32,6 +33,7 @@ interface VideoUploadProps {
   athleteId?: string; // Required for saving to library
   requireTitle?: boolean; // Require title before upload
   showLibrary?: boolean; // Show option to select from library
+  generateThumbnail?: boolean; // Generate thumbnail from video (default true)
 }
 
 interface UploadState {
@@ -44,6 +46,7 @@ interface LibraryVideo {
   id: string;
   title: string;
   url: string;
+  thumbnailUrl?: string | null;
   createdAt: string;
   duration?: number | null;
   fileSize?: number | null;
@@ -51,6 +54,7 @@ interface LibraryVideo {
 
 export function VideoUpload({
   value,
+  thumbnailValue,
   onUpload,
   onRemove,
   maxSizeMB = 250,
@@ -64,6 +68,7 @@ export function VideoUpload({
   athleteId,
   requireTitle = true,
   showLibrary = true,
+  generateThumbnail = true,
 }: VideoUploadProps) {
   const [uploadState, setUploadState] = useState<UploadState>({
     status: "idle",
@@ -191,7 +196,7 @@ export function VideoUpload({
     await uploadVideo(pendingFile);
   };
 
-  // Upload video (with optional compression)
+  // Upload video (with optional compression and thumbnail generation)
   const uploadVideo = async (file: File) => {
     try {
       let fileToUpload = file;
@@ -210,7 +215,7 @@ export function VideoUpload({
             maxHeight: 720,
             videoBitrate: "1M",
             onProgress: (progress) => {
-              setUploadState({ status: "compressing", progress: progress * 0.5 }); // 0-50%
+              setUploadState({ status: "compressing", progress: progress * 0.4 }); // 0-40%
             },
           });
           
@@ -225,10 +230,27 @@ export function VideoUpload({
         }
       }
 
+      // Generate thumbnail if enabled
+      let thumbnailBlob: Blob | null = null;
+      if (generateThumbnail) {
+        setUploadState({ status: "compressing", progress: 45 });
+        try {
+          const { generateThumbnail: genThumb } = await import("@/lib/video-compression");
+          // Generate thumbnail at 1 second into the video (or 0 if shorter)
+          thumbnailBlob = await genThumb(fileToUpload, 1);
+        } catch (thumbError) {
+          console.warn("Thumbnail generation failed:", thumbError);
+          // Continue without thumbnail
+        }
+      }
+
       setUploadState({ status: "uploading", progress: 50 });
 
       const formData = new FormData();
       formData.append("file", fileToUpload);
+      if (thumbnailBlob) {
+        formData.append("thumbnail", thumbnailBlob, "thumbnail.jpg");
+      }
       if (videoTitle.trim()) {
         formData.append("title", videoTitle.trim());
       }
@@ -240,7 +262,7 @@ export function VideoUpload({
       // Use XMLHttpRequest for real progress tracking
       const xhr = new XMLHttpRequest();
       
-      const uploadPromise = new Promise<{ url: string; videoId?: string | null }>((resolve, reject) => {
+      const uploadPromise = new Promise<{ url: string; videoId?: string | null; thumbnailUrl?: string | null }>((resolve, reject) => {
         xhr.upload.addEventListener("progress", (event) => {
           if (event.lengthComputable) {
             const uploadProgress = (event.loaded / event.total) * 50; // 50-100%
@@ -278,7 +300,7 @@ export function VideoUpload({
 
       setUploadState({ status: "success", progress: 100 });
       setPendingFile(null);
-      onUpload(data.url, data.videoId);
+      onUpload(data.url, data.videoId, data.thumbnailUrl);
 
       // Clean up preview after successful upload
       if (previewUrl) {
@@ -296,7 +318,7 @@ export function VideoUpload({
 
   // Handle selecting from library
   const handleSelectFromLibrary = (video: LibraryVideo) => {
-    onUpload(video.url, video.id);
+    onUpload(video.url, video.id, video.thumbnailUrl);
     setLibraryOpen(false);
   };
 

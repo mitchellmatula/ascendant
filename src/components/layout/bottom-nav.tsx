@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Home", icon: "🏠" },
+  { href: "/", label: "Feed", icon: "📰" },
   { href: "/challenges", label: "Challenges", icon: "🏆" },
   { href: "/gyms", label: "Gyms", icon: "🏋️" },
-  { href: "/submissions", label: "Activity", icon: "📈" },
+  { href: "/dashboard", label: "Profile", icon: "👤" },
 ];
 
 export function BottomNav() {
@@ -23,8 +23,10 @@ export function BottomNav() {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t border-border z-50 pb-safe">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
-          const isActive =
-            pathname === item.href || pathname.startsWith(item.href + "/");
+          // Special handling for home/feed - only active on exact match
+          const isActive = item.href === "/"
+            ? pathname === "/"
+            : pathname === item.href || pathname.startsWith(item.href + "/");
 
           return (
             <Link

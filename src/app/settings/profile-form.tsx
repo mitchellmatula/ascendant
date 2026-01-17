@@ -36,6 +36,7 @@ interface ProfileFormProps {
   athlete: {
     id: string;
     displayName: string;
+    username: string | null;
     dateOfBirth: Date;
     gender: string;
     avatarUrl: string | null;
@@ -56,6 +57,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
   const initialValues = useMemo(
     () => ({
       displayName: athlete.displayName,
+      username: athlete.username || "",
       dateOfBirth: new Date(athlete.dateOfBirth).toDateString(),
       gender: athlete.gender,
       disciplineIds: athlete.disciplines.map((d) => d.discipline.id).sort(),
@@ -65,15 +67,19 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
   
   const [formData, setFormData] = useState({
     displayName: athlete.displayName,
+    username: athlete.username || "",
     dateOfBirth: new Date(athlete.dateOfBirth),
     gender: athlete.gender,
     disciplineIds: athlete.disciplines.map((d) => d.discipline.id),
   });
 
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
   // Check if form has unsaved changes
   const hasChanges = useMemo(() => {
     if (avatarFile) return true;
     if (formData.displayName !== initialValues.displayName) return true;
+    if (formData.username !== initialValues.username) return true;
     if (formData.gender !== initialValues.gender) return true;
     if (formData.dateOfBirth.toDateString() !== initialValues.dateOfBirth) return true;
     
@@ -83,6 +89,15 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
     
     return false;
   }, [formData, avatarFile, initialValues]);
+
+  // Validate username format
+  const validateUsername = (value: string): string | null => {
+    if (!value) return "Username is required";
+    if (value.length < 3) return "Username must be at least 3 characters";
+    if (value.length > 30) return "Username must be 30 characters or less";
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) return "Only letters, numbers, and underscores allowed";
+    return null;
+  };
 
   const toggleDiscipline = (id: string) => {
     setFormData((prev) => ({
@@ -95,7 +110,16 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate username
+    const usernameValidationError = validateUsername(formData.username);
+    if (usernameValidationError) {
+      setUsernameError(usernameValidationError);
+      return;
+    }
+    
     setIsLoading(true);
+    setUsernameError(null);
 
     try {
       // Upload avatar if changed
@@ -115,7 +139,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
       }
 
       // Update athlete
-      const response = await fetch(`/api/athletes/${athlete.id}`, {
+      const response = await fetch(`/api/athletes/profile/${athlete.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -127,7 +151,13 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update profile");
+        const data = await response.json();
+        if (data.error?.includes("username")) {
+          setUsernameError(data.error);
+          setIsLoading(false);
+          return;
+        }
+        throw new Error(data.error || "Failed to update profile");
       }
 
       // If avatar was updated on own profile, reload Clerk user to refresh header avatar
@@ -177,6 +207,31 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
               placeholder="Enter display name"
               required
             />
+          </div>
+
+          {/* Username */}
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+              <Input
+                id="username"
+                value={formData.username}
+                onChange={(e) => {
+                  setFormData({ ...formData, username: e.target.value.toLowerCase() });
+                  setUsernameError(null);
+                }}
+                placeholder="username"
+                className="pl-8"
+                required
+              />
+            </div>
+            {usernameError && (
+              <p className="text-sm text-destructive">{usernameError}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Your unique identifier for mentions and profile URL
+            </p>
           </div>
 
           {/* Date of Birth */}

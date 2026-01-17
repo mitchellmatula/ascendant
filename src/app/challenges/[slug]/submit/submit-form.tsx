@@ -15,6 +15,7 @@ import { VideoUpload } from "@/components/ui/video-upload";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { StravaActivityPicker } from "@/components/strava/strava-activity-picker";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCelebration } from "@/components/ui/celebration-provider";
 import {
   Select,
   SelectContent,
@@ -147,6 +148,7 @@ export function SubmitChallengeForm({
   hasStravaConnected,
 }: SubmitChallengeFormProps) {
   const router = useRouter();
+  const { queueCelebrations } = useCelebration();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -160,6 +162,7 @@ export function SubmitChallengeForm({
   );
 
   const [videoUrl, setVideoUrl] = useState(existingSubmission?.videoUrl || "");
+  const [videoThumbnailUrl, setVideoThumbnailUrl] = useState(""); // Auto-generated thumbnail
   const [imageUrl, setImageUrl] = useState("");
   const [notes, setNotes] = useState(existingSubmission?.notes || "");
   const [achievedValue, setAchievedValue] = useState<string>(
@@ -315,6 +318,10 @@ export function SubmitChallengeForm({
       // Add proof-specific fields
       if (proofType === "VIDEO") {
         body.videoUrl = videoUrl || null;
+        // Use auto-generated thumbnail as imageUrl for feed display
+        if (videoThumbnailUrl) {
+          body.imageUrl = videoThumbnailUrl;
+        }
       } else if (proofType === "IMAGE") {
         body.imageUrl = imageUrl || null;
       } else if (proofType === "STRAVA" && stravaActivity) {
@@ -324,6 +331,7 @@ export function SubmitChallengeForm({
         body.activityTime = stravaActivity.movingTime;
         body.activityElevation = stravaActivity.elevationGain;
         body.activityType = stravaActivity.type;
+        body.activityPolyline = stravaActivity.polyline || null;
       } else if (proofType === "MANUAL" && supervisorId) {
         body.supervisorId = supervisorId;
         body.supervisorName = supervisorName;
@@ -339,6 +347,36 @@ export function SubmitChallengeForm({
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || "Failed to submit");
+      }
+
+      const data = await response.json();
+
+      // Show celebration animations if XP was awarded
+      if (data.celebration) {
+        const { tierAchievement, levelUps } = data.celebration;
+        
+        queueCelebrations({
+          tierAchievement: tierAchievement ? {
+            tier: tierAchievement.tier,
+            challengeName: tierAchievement.challengeName,
+            xpBreakdown: tierAchievement.xpBreakdown.map((x: { domainName: string; xp: number }) => ({
+              domainName: x.domainName,
+              xp: x.xp,
+            })),
+            totalXp: tierAchievement.totalXp,
+            isNewBest: tierAchievement.isNewBest,
+          } : undefined,
+          levelUps: levelUps?.map((l: { previousLevel: number; newLevel: number; domainName: string; domainIcon?: string; xpGained: number }) => ({
+            previousLevel: l.previousLevel,
+            newLevel: l.newLevel,
+            domainName: l.domainName,
+            domainIcon: l.domainIcon,
+            xpGained: l.xpGained,
+          })),
+        });
+
+        // Small delay to let animation start before navigation
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       // Redirect to challenge page with success
@@ -530,8 +568,16 @@ export function SubmitChallengeForm({
           <CardContent>
             <VideoUpload
               value={videoUrl || null}
-              onUpload={(url) => setVideoUrl(url)}
-              onRemove={() => setVideoUrl("")}
+              onUpload={(url, _videoId, thumbnailUrl) => {
+                setVideoUrl(url);
+                if (thumbnailUrl) {
+                  setVideoThumbnailUrl(thumbnailUrl);
+                }
+              }}
+              onRemove={() => {
+                setVideoUrl("");
+                setVideoThumbnailUrl("");
+              }}
               maxDurationSeconds={120}
               maxSizeMB={250}
               enableCompression={true}

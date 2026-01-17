@@ -65,6 +65,20 @@ Examples:
 
 Levels update continuously based on XP.
 
+### Rank Names (The Ascendant Ladder)
+
+| Rank | Name | Meaning |
+|------|------|--------|
+| **F** | Foundation | Learning the basics. Building the base. |
+| **E** | Explorer | Trying new skills. Expanding capability. |
+| **D** | Disciplined | Training with intent. Showing consistency. |
+| **C** | Challenger | Taking on real tests. Pushing limits. |
+| **B** | Breakthrough | Major capability unlocked. |
+| **A** | Apex | Advanced performance. |
+| **S** | Supreme | Exceptional. Rare. |
+
+Rank names give meaning to progression beyond just letters.
+
 ---
 
 ## 5. XP (Experience Points)

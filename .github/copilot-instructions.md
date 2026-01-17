@@ -102,6 +102,27 @@ GymRole = ["MEMBER", "COACH", "MANAGER", "OWNER"]
 - Zod validation in `src/lib/validators/`
 - Server actions or API routes for mutations
 
+### Client-Side Fetch Calls
+**CRITICAL**: All `fetch()` calls in client components that hit authenticated API routes MUST include `credentials: "include"` to send Clerk auth cookies:
+
+```tsx
+// ✅ Correct - includes credentials
+const res = await fetch("/api/submissions/123/reactions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  credentials: "include",  // Required for auth!
+  body: JSON.stringify({ emoji: "🔥" }),
+});
+
+// ❌ Wrong - will get 401 Unauthorized
+const res = await fetch("/api/submissions/123/reactions", {
+  method: "POST",
+  body: JSON.stringify({ emoji: "🔥" }),
+});
+```
+
+This applies to all POST, PUT, PATCH, DELETE requests and any GET requests that return user-specific data.
+
 ## File Structure
 ```
 src/

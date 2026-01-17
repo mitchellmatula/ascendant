@@ -220,7 +220,10 @@ export async function awardXP(params: {
     breakthroughReady: boolean;
   };
   leveledUp: boolean;
+  previousLevel: { letter: string; sublevel: number };
+  newLevel: { letter: string; sublevel: number };
   breakthroughRequired: boolean;
+  xpAwarded: number;
 }> {
   const { athleteId, domainId, amount, source, sourceId, note } = params;
 
@@ -245,6 +248,12 @@ export async function awardXP(params: {
       },
     },
   });
+  
+  // Store previous level for comparison
+  const previousLevel = {
+    letter: domainLevel?.letter ?? "F",
+    sublevel: domainLevel?.sublevel ?? 0,
+  };
 
   if (!domainLevel) {
     domainLevel = await db.domainLevel.create({
@@ -316,7 +325,10 @@ export async function awardXP(params: {
   return {
     domainLevel: updatedLevel,
     leveledUp,
+    previousLevel,
+    newLevel: { letter: updatedLevel.letter, sublevel: updatedLevel.sublevel },
     breakthroughRequired: breakthroughReady,
+    xpAwarded: amount,
   };
 }
 

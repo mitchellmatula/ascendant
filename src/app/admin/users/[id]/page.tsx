@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser, isSystemAdmin } from "@/lib/auth";
 import { redirect, notFound } from "next/navigation";
 import { UserForm } from "@/components/admin/user-form";
+import { UserSubmissions } from "@/components/admin/user-submissions";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
@@ -111,6 +112,9 @@ export default async function EditUserPage({ params }: PageProps) {
         disciplines={disciplines}
         isCurrentUser={user.id === currentUser.id}
       />
+
+      {/* User Submissions Section */}
+      <UserSubmissions userId={user.id} />
     </div>
   );
 }

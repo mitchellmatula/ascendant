@@ -172,7 +172,7 @@ export function StravaActivityPicker({
     });
   }, [activities, activityTypeFilter, minDistanceFilter, searchQuery]);
 
-  const fetchActivities = async (pageNum: number = 1, append: boolean = false) => {
+  const fetchActivities = async (pageNum: number = 1, append: boolean = false, retryCount: number = 0) => {
     if (pageNum === 1) {
       setLoading(true);
     } else {
@@ -199,6 +199,13 @@ export function StravaActivityPicker({
       const response = await fetch(`/api/strava/activities?${params}`, {
         credentials: "include",
       });
+      
+      // Retry once on 401 (auth may not be ready yet on initial load)
+      if (response.status === 401 && retryCount < 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return fetchActivities(pageNum, append, retryCount + 1);
+      }
+      
       const data = await response.json();
 
       if (!response.ok) {

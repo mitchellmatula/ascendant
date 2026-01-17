@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { CelebrationProvider } from "@/components/ui/celebration-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -119,10 +121,13 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
         >
-          <Header />
-          <main className="pb-16 md:pb-0">{children}</main>
-          <BottomNav />
-          <Toaster theme="dark" position="top-center" richColors />
+          <CelebrationProvider>
+            <Header />
+            <main className="pb-16 md:pb-0">{children}</main>
+            <BottomNav />
+            <Toaster theme="dark" position="top-center" richColors />
+          </CelebrationProvider>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

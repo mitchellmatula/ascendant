@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { Metadata } from "next";
+import { auth } from "@clerk/nextjs/server";
+import { SignUpButton } from "@clerk/nextjs";
+import { HomeFeed } from "@/components/feed/home-feed";
+import { Trophy, Zap, Users, Target } from "lucide-react";
+import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Ascendant - Universal Progression System for Athletes",
@@ -83,108 +88,88 @@ const jsonLd = {
         "Video proof submissions",
       ],
     },
-    {
-      "@type": "FAQPage",
-      "@id": "https://ascendant.app/#faq",
-      mainEntity: [
-        {
-          "@type": "Question",
-          name: "What is Ascendant?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Ascendant is a universal progression system for athletes. It gamifies fitness by letting you complete challenges, earn XP, and progress through ranks from F to S across four domains: Strength, Skill, Endurance, and Speed.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "How does the ranking system work?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Athletes progress through 7 ranks: F, E, D, C, B, A, and S. Each rank has 10 sublevels. You earn XP by completing challenges at different tier levels, with harder challenges awarding more XP.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "What are the four domains?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "The four domains are Strength (💪), Skill (🎯), Endurance (🏃), and Speed (⚡). Each domain tracks your progress independently, allowing you to specialize or become a well-rounded athlete.",
-          },
-        },
-        {
-          "@type": "Question",
-          name: "Can I connect my Strava account?",
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: "Yes! Ascendant integrates with Strava to automatically verify endurance challenges like running, cycling, and swimming. Your activity data serves as proof of completion.",
-          },
-        },
-      ],
-    },
   ],
 };
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth();
+  const isSignedIn = !!userId;
+  
+  // Get current user's athlete ID for follow button state
+  let currentAthleteId: string | undefined;
+  if (userId) {
+    const user = await db.user.findUnique({
+      where: { clerkId: userId },
+      select: { athlete: { select: { id: true } } },
+    });
+    currentAthleteId = user?.athlete?.id;
+  }
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] px-4">
-        <div className="max-w-3xl text-center space-y-8">
-          <h1 className="text-5xl sm:text-6xl font-bold tracking-tight">
-            Rise Through the{" "}
-            <span className="text-primary">Ranks</span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Ascendant is a universal progression system for athletes. 
-            Train, compete, earn XP, and level up across multiple skill domains.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/sign-up"
-              className="bg-primary text-primary-foreground rounded-lg font-medium text-base h-12 px-6 flex items-center justify-center hover:opacity-90 transition-opacity"
-            >
-              Start Your Journey
-            </Link>
-            <Link
-              href="#domains"
-              className="border border-border rounded-lg font-medium text-base h-12 px-6 flex items-center justify-center hover:bg-accent transition-colors"
-            >
-              Learn More
-            </Link>
-          </div>
+      
+      <div className="container max-w-2xl mx-auto px-4 py-6">
+        {/* Hero Section for non-authenticated users */}
+        {!isSignedIn && (
+          <section className="mb-8 rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/10 p-6 sm:p-8">
+            <div className="text-center space-y-4">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                Rise Through the <span className="text-primary">Ranks</span>
+              </h1>
+              <p className="text-muted-foreground max-w-lg mx-auto">
+                Ascendant is a universal progression system for athletes. 
+                Complete challenges, earn XP, and level up across Strength, Skill, Endurance, and Speed.
+              </p>
+              
+              {/* Feature highlights */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
+                  <Trophy className="w-6 h-6 text-yellow-500" />
+                  <span className="text-xs font-medium">Earn XP</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
+                  <Zap className="w-6 h-6 text-primary" />
+                  <span className="text-xs font-medium">Level Up</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
+                  <Target className="w-6 h-6 text-green-500" />
+                  <span className="text-xs font-medium">4 Domains</span>
+                </div>
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
+                  <Users className="w-6 h-6 text-blue-500" />
+                  <span className="text-xs font-medium">Community</span>
+                </div>
+              </div>
 
-          <section id="domains" aria-labelledby="domains-heading" className="pt-16">
-            <h2 id="domains-heading" className="sr-only">Skill Domains</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { name: "Strength", color: "bg-[oklch(0.65_0.2_25)]", icon: "💪", description: "Build raw power and muscular strength" },
-                { name: "Skill", color: "bg-[oklch(0.65_0.2_145)]", icon: "🎯", description: "Master technique and coordination" },
-                { name: "Endurance", color: "bg-[oklch(0.65_0.2_250)]", icon: "🏃", description: "Develop stamina and cardio capacity" },
-                { name: "Speed", color: "bg-[oklch(0.65_0.2_85)]", icon: "⚡", description: "Maximize velocity and explosiveness" },
-              ].map((domain) => (
-                <article
-                  key={domain.name}
-                  className="flex flex-col items-center gap-2 p-6 rounded-xl border border-border hover:border-primary/50 transition-colors"
+              {/* CTA */}
+              <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
+                <SignUpButton mode="modal">
+                  <button className="bg-primary text-primary-foreground rounded-lg font-medium text-base h-11 px-6 hover:opacity-90 transition-opacity cursor-pointer">
+                    Start Your Journey
+                  </button>
+                </SignUpButton>
+                <Link
+                  href="/challenges"
+                  className="border border-border rounded-lg font-medium text-base h-11 px-6 flex items-center justify-center hover:bg-accent transition-colors"
                 >
-                  <div className={`w-12 h-12 ${domain.color} rounded-full flex items-center justify-center text-2xl`} aria-hidden="true">
-                    {domain.icon}
-                  </div>
-                  <h3 className="font-medium">{domain.name}</h3>
-                  <p className="sr-only">{domain.description}</p>
-                </article>
-              ))}
+                  Browse Challenges
+                </Link>
+              </div>
+
+              {/* Rank progression */}
+              <p className="text-xs text-muted-foreground pt-2">
+                F → E → D → C → B → A → S • 7 ranks, each with 10 sublevels
+              </p>
             </div>
           </section>
+        )}
 
-          <div className="pt-8 text-sm text-muted-foreground">
-            <p>F → E → D → C → B → A → S</p>
-            <p className="mt-1">Progress through 7 ranks, each with 10 sublevels</p>
-          </div>
-        </div>
+        {/* Feed Section */}
+        <HomeFeed isSignedIn={isSignedIn} currentAthleteId={currentAthleteId} />
       </div>
     </>
   );

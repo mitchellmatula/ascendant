@@ -9,6 +9,7 @@ import { getCurrentUser, isAdmin, getActiveAthlete, getAllAthletes } from "@/lib
 import { MobileMenu } from "./mobile-menu";
 import { AthleteSwitcher } from "./athlete-switcher";
 import { UserMenu } from "./user-menu";
+import { NotificationBell } from "./notification-bell";
 import { NAV_ITEMS } from "@/lib/navigation";
 import { db } from "@/lib/db";
 import { calculatePrime, formatLevel, getRankColor } from "@/lib/levels";
@@ -132,6 +133,8 @@ export async function Header() {
               <span>{formatLevel(primeLevel.letter, primeLevel.sublevel)}</span>
             </Link>
           )}
+          {/* Notification Bell */}
+          <NotificationBell />
           <UserMenu />
           {/* Mobile hamburger menu */}
           <MobileMenu 

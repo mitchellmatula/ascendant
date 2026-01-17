@@ -106,15 +106,24 @@ All UI must be designed **mobile-first**. Athletes will primarily use this app o
 ### 0.1.1 Level System & Prime Calculation
 
 **Rank Letters & Numeric Values:**
-| Rank | Numeric Range | Example |
-|------|---------------|---------|
-| F | 0-9 | F7 = 7 |
-| E | 10-19 | E3 = 13 |
-| D | 20-29 | D5 = 25 |
-| C | 30-39 | C7 = 37 |
-| B | 40-49 | B2 = 42 |
-| A | 50-59 | A0 = 50 |
-| S | 60-69 | S9 = 69 |
+| Rank | Name | Numeric Range | Example |
+|------|------|---------------|---------|
+| F | Foundation | 0-9 | F7 = 7 |
+| E | Explorer | 10-19 | E3 = 13 |
+| D | Disciplined | 20-29 | D5 = 25 |
+| C | Challenger | 30-39 | C7 = 37 |
+| B | Breakthrough | 40-49 | B2 = 42 |
+| A | Apex | 50-59 | A0 = 50 |
+| S | Supreme | 60-69 | S9 = 69 |
+
+**Rank Meanings:**
+- **F - Foundation**: Learning the basics. Building the base.
+- **E - Explorer**: Trying new skills. Expanding capability.
+- **D - Disciplined**: Training with intent. Showing consistency.
+- **C - Challenger**: Taking on real tests. Pushing limits.
+- **B - Breakthrough**: Major capability unlocked.
+- **A - Apex**: Advanced performance.
+- **S - Supreme**: Exceptional. Rare.
 
 **Formula**: `numericValue = (rankIndex * 10) + sublevel`
 - Where rankIndex: F=0, E=1, D=2, C=3, B=4, A=5, S=6
@@ -731,6 +740,34 @@ model CompetitionResult {
 
 ## Immediate Next Steps
 
+### 🎯 WHAT'S NEXT
+The following items are the highest priority for immediate work:
+
+1. **Community Feed & Social System** (Phase 9) – IN PROGRESS
+   - ✅ Schema migration for social models (Follow, Reaction, Comment, Notification)
+   - ✅ Username field on Athlete model
+   - ✅ Feed utility functions (`src/lib/feed.ts`)
+   - ✅ Notification utility functions (`src/lib/notifications.ts`)
+   - ✅ Feed API endpoint (`/api/feed`)
+   - ✅ Notifications API endpoints (`/api/notifications`, `/api/notifications/[id]`)
+   - ✅ Follow API endpoint (`/api/athletes/[username]/follow`)
+   - ✅ Reactions API endpoint (`/api/submissions/[id]/reactions`)
+   - ✅ Comments API endpoints (`/api/submissions/[id]/comments`)
+   - ✅ Feed page with tabs (`/feed`)
+   - ✅ Feed card component with reactions
+   - ✅ Comments component with nested replies
+   - ✅ Follow button component
+   - ✅ Notification bell in header
+   - ✅ Athlete profile page (`/athletes/[username]`)
+   - ✅ Athlete search page (`/athletes/search`)
+   - ✅ Added Feed to main navigation
+   - [ ] Followers/Following lists on profile
+   - [ ] Full notifications page (`/notifications`)
+
+2. **Progress notifications** (Phase 8) – Toast/banner when earning XP or leveling up
+3. **Dark mode polish** (Phase 8) – Ensure all components work well in dark mode
+4. **PWA support** (Phase 8) – Add to home screen, offline caching
+
 ### ✅ COMPLETED - Phase 1: Project Setup
 1. ✅ **Scaffold the project** – Next.js 16 + Prisma 7 + Tailwind v4 + shadcn
 2. ✅ **Set up Neon database** – Connected via Prisma
@@ -808,9 +845,14 @@ model CompetitionResult {
    - ✅ XP value & domain distribution
    - ✅ "Required for [Rank]" badge based on athlete's division
    - ✅ Equipment needed
-   - ✅ Tier targets grid
+   - ✅ Combined XP Rewards card (tier targets + domain distribution in one place)
    - ✅ Submit button (sticky at bottom)
-6. ✅ **Challenge browse page** – `/challenges` - All challenges with filtering by discipline
+6. ✅ **Challenge browse page** – `/challenges` - All challenges with advanced browsing:
+   - ✅ Unified list sorted by: For You → Explore → Completed
+   - ✅ Pagination (12 per page with page numbers)
+   - ✅ Search by name/description
+   - ✅ Stats cards (total, for you, completed)
+   - ✅ Filtering by discipline and gym
 
 **Priority 3: Challenge Submission**
 7. ✅ **Submission form** – `/challenges/[slug]/submit` - Video upload for proof
@@ -883,89 +925,289 @@ model CompetitionResult {
     - ✅ Gym page shows exclusive challenge count and badges
     - ✅ Non-members see "Join to access X exclusive challenges" prompt
     - ✅ Lock icon badge on exclusive challenges in listings
-22. [ ] **Equipment-based challenge filtering** – Show challenges gym can support
+22. [x] **Equipment-based challenge filtering** – Show challenges gym can support
+    - ✅ When filtering by gym, only show challenges where gym has all required equipment
+    - ✅ Challenges with no equipment requirements always shown
+    - ✅ Banner shows equipment filter status and count of hidden challenges
+    - ✅ "Show all" toggle to disable equipment filter
+    - ✅ URL parameter `?equipment=false` to show all challenges regardless of equipment
 
-### 📋 Phase 7: Fitness App Integrations (Strava/Garmin)
+### ✅ COMPLETED - Phase 7: Fitness App Integrations (Strava/Garmin)
 For running, cycling, and outdoor endurance challenges, athletes can link their fitness accounts to submit verified activities.
 
 **Admin: Challenge Form Updates**
-21. [ ] **Proof type selector** – Challenge can accept: Video, Image, Strava, Garmin, Manual
-22. [ ] **Activity validation rules** – For Strava/Garmin challenges:
-    - [ ] Activity type filter (Run, Ride, Swim, Hike, etc.)
-    - [ ] Distance range (min/max in km/miles)
-    - [ ] Elevation gain minimum (for hill/mountain challenges)
-    - [ ] Pace requirements (optional)
-    - [ ] Heart rate requirements (optional, proves effort)
-    - [ ] Must be outdoor/GPS (vs treadmill)
-23. [ ] **Update challenge form UI** – New "Activity Requirements" section for Strava/Garmin-enabled challenges
+21. [x] **Proof type selector** – Challenge can accept: Video, Image, Strava, Garmin, Manual
+22. [x] **Activity validation rules** – For Strava/Garmin challenges:
+    - [x] Activity type filter (Run, Ride, Swim, Hike, etc.)
+    - [x] Distance range (min/max in km/miles)
+    - [x] Elevation gain minimum (for hill/mountain challenges)
+    - [ ] Pace requirements (optional) - not implemented yet
+    - [ ] Heart rate requirements (optional) - not implemented yet
+    - [x] Must be outdoor/GPS (requiresGPS flag)
+23. [x] **Update challenge form UI** – "Activity Requirements" section for Strava/Garmin-enabled challenges
 
 **Athlete: Account Linking**
-24. [ ] **Strava OAuth flow** – Connect/disconnect Strava account
-    - [ ] Store `stravaAccessToken`, `stravaRefreshToken`, `stravaAthleteId` on User
-    - [ ] Token refresh logic
-25. [ ] **Garmin OAuth flow** – Connect/disconnect Garmin account (future)
-25. [ ] **Settings page** – `/settings/connections` - Manage linked accounts ✅ (placeholder created)
+24. [x] **Strava OAuth flow** – Connect/disconnect Strava account
+    - [x] Store `stravaAccessToken`, `stravaRefreshToken`, `stravaAthleteId` on User
+    - [x] Token refresh logic (`src/lib/strava.ts`)
+25. [ ] **Garmin OAuth flow** – Connect/disconnect Garmin account (future - schema ready)
+25. [x] **Settings page** – `/settings/connections` - Manage linked accounts with Strava connect/disconnect
 
 **Athlete: Activity-Based Submission**
-26. [ ] **Activity picker component** – Browse/search Strava activities
-    - [ ] Filter by type, date range
-    - [ ] Show distance, time, elevation, date
-    - [ ] Validate against challenge requirements
-27. [ ] **Submit from activity** – Select activity → auto-populate achievedValue
-28. [ ] **Store activity proof** – Save Strava activity ID, URL, cached metrics
-29. [ ] **Auto-approve Strava submissions** – Verified data = high trust
+26. [x] **Activity picker component** – `StravaActivityPicker` component
+    - [x] Filter by type, date range
+    - [x] Show distance, time, elevation, date
+    - [x] Validate against challenge requirements
+    - [x] Route map display with `StravaRouteMap` component
+27. [x] **Submit from activity** – Select activity → auto-populate achievedValue
+28. [x] **Store activity proof** – Save Strava activity ID, URL, cached metrics
+29. [x] **Auto-approve Strava submissions** – Verified data = high trust (coach/admin auto-approve)
 
-**Schema Changes**
-```prisma
-// On User model - fitness app connections
-stravaAthleteId      String?   @unique
-stravaAccessToken    String?
-stravaRefreshToken   String?
-stravaConnectedAt    DateTime?
-garminUserId         String?   @unique
-garminAccessToken    String?
-garminRefreshToken   String?
-garminConnectedAt    DateTime?
-
-// On Challenge model - activity validation rules
-proofTypes           String[]  @default(["VIDEO"]) // VIDEO, IMAGE, STRAVA, GARMIN, MANUAL
-activityType         String?   // Run, Ride, Swim, Hike, etc.
-minDistance          Float?    // meters
-maxDistance          Float?    // meters (for "3K time trial" = 2900-3200m)
-minElevationGain     Float?    // meters
-requiresGPS          Boolean   @default(false) // Must be outdoor, not treadmill
-requiresHeartRate    Boolean   @default(false) // Proves genuine effort
-
-// On ChallengeSubmission model - activity proof
-proofType            ProofType @default(VIDEO)
-stravaActivityId     String?
-stravaActivityUrl    String?
-garminActivityId     String?
-garminActivityUrl    String?
-activityDistance     Float?    // cached from API
-activityTime         Int?      // cached from API (seconds)
-activityElevation    Float?    // cached from API
-activityDate         DateTime? // when the activity occurred
-
-enum ProofType {
-  VIDEO
-  IMAGE
-  STRAVA
-  GARMIN
-  RACE_RESULT
-  MANUAL
-}
-```
+**Schema Changes** ✅ All implemented via migration `add_strava_garmin_integration`
 
 ### 📋 Phase 8: Polish & Enhancement
-- [ ] Level-up animations (Framer Motion)
-- [ ] Breakthrough unlock celebrations
-- [ ] Progress notifications
-- [ ] Mobile-responsive refinements
+- ✅ Rank names (F=Foundation, E=Explorer, D=Disciplined, C=Challenger, B=Breakthrough, A=Apex, S=Supreme)
+- ✅ Mobile-responsive refinements (challenges page, tier targets)
+- ✅ Level-up animations (Framer Motion)
+  - ✅ `LevelUpCelebration` component with confetti, odometer effect
+  - ✅ Shows old level → pause → odometer transition to new level
+  - ✅ Rank name display (Foundation, Explorer, etc.)
+  - ✅ XP gained badge
+- ✅ Tier achievement celebrations
+  - ✅ `TierAchievement` component for challenge completion
+  - ✅ XP breakdown by domain
+  - ✅ Clear "Challenge performance tier" labeling
+- ✅ Animated progress components
+  - ✅ `AnimatedNumber` - Odometer-style number transitions
+  - ✅ `AnimatedProgress` - Progress bar with surge/glow effects
+  - ✅ `AnimatedLevel` - Rank letter + sublevel with roll animation
+  - ✅ `AnimatedDomainCard` - Dashboard cards with animations
+- ✅ `CelebrationProvider` - Queue multiple celebrations (tier → level ups)
+- [ ] Progress notifications (toast/banner when earning XP)
 - [ ] Dark mode polish
 - [ ] PWA support
 
-### 📋 Phase 9: Future Features
+### 📋 Phase 9: Community Feed & Social System
+The homepage feed experience where athletes see activity from the community.
+
+**Feed Types (Tabs):**
+| Tab | Content |
+|-----|---------|
+| Community | All public activity on the site |
+| Following | Activity from people you follow |
+| Gym | Activity from members of your gyms |
+| Division | Activity from athletes in your same division |
+
+**Feed Content Types:**
+- ✅ Challenge completions (primary content)
+- ✅ Level-ups ("John just hit C-rank in Strength!")
+- ❌ Gym joins (tabled for future if requested)
+- ❌ New challenges unlocked (not included)
+- ✅ Comments & reactions on completions
+
+**Feed Card Design:**
+```
+┌─────────────────────────────────────────┐
+│ [Avatar] @username  [Rank Badge: C3]    │
+│ "completed a challenge"      2 hours ago│
+├─────────────────────────────────────────┤
+│ Challenge Name                          │
+│ [Video Thumbnail - tap to play]         │
+│                                         │
+│ 🏆 B-Tier Result! +150 XP               │
+│ Leveled up: Skill D9 → E0!              │
+├─────────────────────────────────────────┤
+│ 🔥 12  💪 8  👏 24   💬 5 comments      │
+└─────────────────────────────────────────┘
+```
+
+- Shows username (not full name), avatar, rank badge
+- Video thumbnail - tap to play
+- Challenge name, tier achieved, XP earned
+- Level-up callout if applicable
+- Reaction counts + comment count
+- Minimalistic, follows site design patterns
+
+**Following System:**
+- Follow button on user profiles and feed cards
+- Instant follow (no approval required)
+- Search for users by username
+- View followers / following lists on profile
+- Unfollow from profile or following list
+
+**User Profiles (`/athletes/[username]`):**
+- Public profile based on privacy settings
+- Shows: avatar, username, rank/level in all domains, Prime level
+- Recent activity feed (their completions)
+- Achievements/milestones
+- Gym memberships (if public)
+- Follow/Unfollow button
+- Follower/Following counts
+
+**Reactions:**
+| Emoji | Meaning |
+|-------|---------|
+| 🔥 | Fire (impressive!) |
+| 💪 | Strong |
+| 👏 | Clap (encouragement) |
+| 🎯 | Bullseye (nailed it) |
+| ⚡ | Lightning (fast/speed) |
+
+- One-tap to react (can use multiple)
+- See who reacted (tap reaction count)
+- Can like other people's comments too
+
+**Comments:**
+- Flat comments with nested replies (max depth 3)
+- Max length: 2000 characters
+- Delete your own comments
+- Admins can delete any comment
+- Report feature for inappropriate comments
+- Oldest-first by default
+
+**Privacy & Activity Settings:**
+- Athletes can set default visibility: "Show All" / "Don't Show" / "Followers Only"
+- Per-submission override available
+- Minors: COPPA-compliant (stricter defaults, parental control)
+- Existing `isPublic` on submissions applies to feed
+
+**Notifications:**
+- When someone follows you
+- When someone reacts to your completion
+- When someone comments on your completion
+- When you level up (including from training runs)
+- When someone replies to your comment
+- Notification panel in header (bell icon)
+- `src/lib/notifications.ts` utility for creating notifications
+
+**Feed Behavior:**
+- Infinite scroll
+- Pull-to-refresh
+- Chronological order (newest first)
+- Shows at least a few days of history
+- Skeleton loading states
+
+**Schema Additions Needed:**
+```prisma
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   // The athlete doing the following
+  followingId String   // The athlete being followed
+  createdAt   DateTime @default(now())
+  
+  follower    Athlete  @relation("Followers", ...)
+  following   Athlete  @relation("Following", ...)
+  
+  @@unique([followerId, followingId])
+}
+
+model Reaction {
+  id           String   @id @default(cuid())
+  athleteId    String
+  submissionId String?  // Reaction on a submission
+  commentId    String?  // Reaction on a comment
+  emoji        String   // 🔥 💪 👏 🎯 ⚡
+  createdAt    DateTime @default(now())
+  
+  @@unique([athleteId, submissionId, emoji])
+  @@unique([athleteId, commentId, emoji])
+}
+
+model Comment {
+  id           String   @id @default(cuid())
+  athleteId    String
+  submissionId String
+  parentId     String?  // For nested replies
+  content      String   @db.Text
+  depth        Int      @default(0)  // 0, 1, 2 (max 3 levels)
+  isDeleted    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  replies      Comment[] @relation("CommentReplies")
+  parent       Comment?  @relation("CommentReplies", ...)
+}
+
+model CommentReport {
+  id          String   @id @default(cuid())
+  commentId   String
+  reporterId  String   // Athlete who reported
+  reason      String
+  status      ReportStatus @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  athleteId   String   // Who receives the notification
+  type        NotificationType
+  title       String
+  body        String?
+  linkUrl     String?  // Where to go when clicked
+  isRead      Boolean  @default(false)
+  metadata    Json?    // Extra data (actorId, submissionId, etc.)
+  createdAt   DateTime @default(now())
+}
+
+enum NotificationType {
+  FOLLOW
+  REACTION
+  COMMENT
+  COMMENT_REPLY
+  LEVEL_UP
+  TRAINING_SYNC
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+  ACTION_TAKEN
+}
+
+// Add to Athlete model:
+model Athlete {
+  // ... existing fields
+  username           String   @unique  // For @mentions and URLs
+  feedVisibility     FeedVisibility @default(PUBLIC)
+  // ... relations
+  followers          Follow[] @relation("Following")
+  following          Follow[] @relation("Followers")
+  reactions          Reaction[]
+  comments           Comment[]
+  notifications      Notification[]
+}
+
+enum FeedVisibility {
+  PUBLIC        // Everyone can see
+  FOLLOWERS     // Only followers
+  PRIVATE       // Don't show in feeds
+}
+```
+
+**Implementation Tasks:**
+- [ ] Add `username` field to Athlete (unique, URL-safe)
+- [ ] Create Follow model and API (`POST/DELETE /api/athletes/[username]/follow`)
+- [ ] Create Reaction model and API (`POST/DELETE /api/submissions/[id]/reactions`)
+- [ ] Create Comment model and API (`POST/DELETE /api/submissions/[id]/comments`)
+- [ ] Create CommentReport model and API
+- [ ] Create Notification model and `src/lib/notifications.ts`
+- [ ] Feed page `/feed` with tab navigation
+- [ ] Feed API endpoints per tab type
+- [ ] Feed card component with video thumbnail, reactions, comments
+- [ ] User profile page `/athletes/[username]`
+- [ ] User search (`/api/athletes/search?q=...`)
+- [ ] Notification panel component (bell icon dropdown)
+- [ ] Notification badge (unread count)
+- [ ] Privacy settings in `/settings/privacy`
+- [ ] Comment reporting flow and admin review
+
+**Stretch Goals:**
+- [ ] Share to external social (Twitter, Instagram, etc.)
+- [ ] @mentions in comments
+- [ ] Push notifications (PWA)
 - [ ] Coach verification workflow
 - [ ] Leaderboards (opt-in by division)
 - [ ] Competition/event integration
@@ -973,6 +1215,62 @@ enum ProofType {
 - [ ] Team challenges
 - [ ] Training program suggestions
 - [ ] Mobile app (React Native) or enhanced PWA
+
+### 📋 Phase 10: Training XP System (Strava/Garmin Auto-Sync)
+Automatic XP from synced training activities. See `docs/training-xp-system.md` for full specification.
+
+**Goal:** Athletes earn Endurance/Speed XP from regular training (runs, rides, swims) synced from Strava/Garmin.
+
+**Strava Webhook Integration:**
+- Strava allows ONE webhook subscription per app
+- Webhook endpoint: `POST /api/webhooks/strava`
+- Events: activity `create`, `update`, `delete` + athlete `deauthorize`
+
+**Webhook Payload Example:**
+```json
+{
+  "aspect_type": "create",
+  "event_time": 1516126040,
+  "object_id": 1360128428,      // Activity ID
+  "object_type": "activity",
+  "owner_id": 134815,           // Strava athlete ID
+  "subscription_id": 120475,
+  "updates": {}
+}
+```
+
+**Webhook Setup Flow:**
+1. `POST https://www.strava.com/api/v3/push_subscriptions` with client_id, client_secret, callback_url, verify_token
+2. Strava sends GET to callback_url with `hub.challenge` - must respond with `{"hub.challenge": "..."}`
+3. Subscription created - Strava sends POSTs for all athlete events
+
+**Implementation Tasks:**
+- [ ] Create `TrainingActivity` model (distance, elevation, activityType, hrZones, xpAwarded)
+- [ ] Webhook endpoint: validate signature, queue activity processing
+- [ ] Activity processor: fetch full activity from Strava API, calculate XP
+- [ ] XP formula: `Base XP = (distance_km × 2) + (elevation_m × 0.05)` × multipliers
+- [ ] Multipliers: terrain (flat/rolling/hilly/mountain), effort (HR zones), activity type
+- [ ] Daily cap: 50 XP, Weekly cap: 250-450 XP (based on volume)
+- [ ] Weekly bonuses: volume bonus + active day bonus
+- [ ] Anti-cheat: pace sanity checks, GPS required, duplicate detection
+- [ ] Domain assignment: Running >5km → 80% Endurance / 20% Speed, etc.
+- [ ] Breakthrough challenges: 5K, 10K, Half Marathon, Marathon gates for rank-ups
+- [ ] Activity review dashboard for admins (GPS map, pace/HR graphs, flag suspicious)
+- [ ] Push notification when activity syncs: "🏃 10K run synced! +28 XP Endurance"
+
+**Environment Variables Needed:**
+```
+STRAVA_CLIENT_ID=
+STRAVA_CLIENT_SECRET=
+STRAVA_WEBHOOK_VERIFY_TOKEN=    # Random string for webhook validation
+```
+
+**API Endpoints:**
+- `GET /api/webhooks/strava` - Webhook validation (respond with hub.challenge)
+- `POST /api/webhooks/strava` - Receive activity events
+- `GET /api/strava/subscription` - Check current subscription status
+- `POST /api/strava/subscription` - Create webhook subscription (admin only)
+- `DELETE /api/strava/subscription` - Delete webhook subscription (admin only)
 
 ---
 
