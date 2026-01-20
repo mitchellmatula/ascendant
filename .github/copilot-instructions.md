@@ -103,23 +103,33 @@ GymRole = ["MEMBER", "COACH", "MANAGER", "OWNER"]
 - Server actions or API routes for mutations
 
 ### Client-Side Fetch Calls
-**CRITICAL**: All `fetch()` calls in client components that hit authenticated API routes MUST include `credentials: "include"` to send Clerk auth cookies:
+**CRITICAL**: All `fetch()` calls in client components that hit authenticated API routes should use `fetchWithAuth()` instead of raw `fetch()`:
 
 ```tsx
-// ✅ Correct - includes credentials
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
+
+// ✅ Correct - uses fetchWithAuth (auto-handles 401 with session refresh)
+const res = await fetchWithAuth("/api/submissions/123/reactions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ emoji: "🔥" }),
+});
+
+// ❌ Old pattern - don't use raw fetch for authenticated routes
 const res = await fetch("/api/submissions/123/reactions", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
-  credentials: "include",  // Required for auth!
-  body: JSON.stringify({ emoji: "🔥" }),
-});
-
-// ❌ Wrong - will get 401 Unauthorized
-const res = await fetch("/api/submissions/123/reactions", {
-  method: "POST",
+  credentials: "include",
   body: JSON.stringify({ emoji: "🔥" }),
 });
 ```
+
+The `fetchWithAuth` wrapper:
+- Automatically includes `credentials: "include"`
+- Detects 401 Unauthorized responses
+- Attempts to refresh the Clerk session
+- Retries the original request once
+- Prevents constant "session expired" issues in development
 
 This applies to all POST, PUT, PATCH, DELETE requests and any GET requests that return user-specific data.
 

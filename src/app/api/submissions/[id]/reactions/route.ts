@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { notifyReaction } from "@/lib/notifications";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 
 // Valid reaction emojis
 const VALID_EMOJIS = ["🔥", "💪", "👏", "🎯", "⚡"];
@@ -70,10 +71,17 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const currentUser = await getCurrentUser();
     
-    if (!userId) {
+    if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    // Get active athlete (supports parent accounts)
+    const athlete = await getActiveAthlete(currentUser);
+    
+    if (!athlete) {
+      return NextResponse.json({ error: "No active athlete profile" }, { status: 404 });
     }
     
     const { id: submissionId } = await params;
@@ -85,20 +93,6 @@ export async function POST(
         { error: `Invalid emoji. Must be one of: ${VALID_EMOJIS.join(", ")}` },
         { status: 400 }
       );
-    }
-    
-    // Get current user's athlete
-    const currentUser = await db.user.findUnique({
-      where: { clerkId: userId },
-      include: {
-        athlete: {
-          select: { id: true, username: true, avatarUrl: true },
-        },
-      },
-    });
-    
-    if (!currentUser?.athlete) {
-      return NextResponse.json({ error: "Athlete profile not found" }, { status: 404 });
     }
     
     // Get submission (and verify it exists)
@@ -118,7 +112,7 @@ export async function POST(
     const existingReaction = await db.reaction.findUnique({
       where: {
         athleteId_submissionId_emoji: {
-          athleteId: currentUser.athlete.id,
+          athleteId: athlete.id,
           submissionId,
           emoji,
         },
@@ -132,7 +126,7 @@ export async function POST(
     // Create reaction
     await db.reaction.create({
       data: {
-        athleteId: currentUser.athlete.id,
+        athleteId: athlete.id,
         submissionId,
         emoji,
       },
@@ -142,9 +136,9 @@ export async function POST(
     await notifyReaction(
       submission.athlete.id,
       {
-        id: currentUser.athlete.id,
-        username: currentUser.athlete.username || "unknown",
-        avatarUrl: currentUser.athlete.avatarUrl,
+        id: athlete.id,
+        username: athlete.username || "unknown",
+        avatarUrl: athlete.avatarUrl,
       },
       emoji,
       submissionId,
@@ -167,10 +161,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
+    const currentUser = await getCurrentUser();
     
-    if (!userId) {
+    if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    // Get active athlete (supports parent accounts)
+    const athlete = await getActiveAthlete(currentUser);
+    
+    if (!athlete) {
+      return NextResponse.json({ error: "No active athlete profile" }, { status: 404 });
     }
     
     const { id: submissionId } = await params;
@@ -184,20 +185,10 @@ export async function DELETE(
       );
     }
     
-    // Get current user's athlete
-    const currentUser = await db.user.findUnique({
-      where: { clerkId: userId },
-      include: { athlete: { select: { id: true } } },
-    });
-    
-    if (!currentUser?.athlete) {
-      return NextResponse.json({ error: "Athlete profile not found" }, { status: 404 });
-    }
-    
     // Delete reaction
     await db.reaction.deleteMany({
       where: {
-        athleteId: currentUser.athlete.id,
+        athleteId: athlete.id,
         submissionId,
         emoji,
       },

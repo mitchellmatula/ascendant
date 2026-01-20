@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { accountType, displayName, dateOfBirth, gender, avatarUrl, disciplineIds, children, parentAthlete } = body;
+    const { accountType, displayName, dateOfBirth, gender, avatarUrl, disciplineIds, children, parentAthlete, shareChildActivity } = body;
 
     // Get Clerk user info for username
     const clerk = await clerkClient();
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
           email: "", // Will be updated by webhook
           accountType: accountType === "parent" ? "PARENT" : "ATHLETE",
           role: accountType === "parent" ? "PARENT" : "ATHLETE",
+          shareChildActivity: accountType === "parent" ? (shareChildActivity || false) : false,
         },
       });
     } else {
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
         data: {
           accountType: accountType === "parent" ? "PARENT" : "ATHLETE",
           role: accountType === "parent" ? "PARENT" : "ATHLETE",
+          shareChildActivity: accountType === "parent" ? (shareChildActivity || false) : false,
         },
       });
     }

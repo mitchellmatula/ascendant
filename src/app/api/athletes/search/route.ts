@@ -1,29 +1,60 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { Prisma } from "../../../../../prisma/generated/prisma/client";
 
 // GET /api/athletes/search - Search for athletes by username or display name
+// Optional params for coaching: gymId (filter to gym members), excludeClassId (exclude current members)
 export async function GET(request: NextRequest) {
   try {
+    const { userId: clerkId } = await auth();
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get("q");
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? Math.min(parseInt(limitParam, 10), 50) : 20;
     
+    // Coaching-specific filters
+    const gymId = searchParams.get("gymId");
+    const excludeClassId = searchParams.get("excludeClassId");
+    const forClass = gymId || excludeClassId;
+    
     if (!query || query.length < 2) {
       return NextResponse.json({ athletes: [] });
     }
+
+    // If searching for class, require authentication
+    if (forClass && !clerkId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Build the where clause
+    const where: Prisma.AthleteWhereInput = {
+      OR: [
+        { username: { contains: query, mode: "insensitive" } },
+        { displayName: { contains: query, mode: "insensitive" } },
+      ],
+    };
+
+    // For class search (coaching context), show gym members regardless of profile settings
+    if (forClass) {
+      if (gymId) {
+        where.user = {
+          gymMemberships: { some: { gymId, isActive: true } },
+        };
+      }
+      if (excludeClassId) {
+        where.classMembers = {
+          none: { classId: excludeClassId, status: "ACTIVE" },
+        };
+      }
+    } else {
+      // Public search: only show public, non-minor profiles
+      where.isPublicProfile = true;
+      where.isMinor = false;
+    }
     
     const athletes = await db.athlete.findMany({
-      where: {
-        OR: [
-          { username: { contains: query, mode: "insensitive" } },
-          { displayName: { contains: query, mode: "insensitive" } },
-        ],
-        // Only show public profiles in search
-        isPublicProfile: true,
-        // COPPA: Don't show minors in search
-        isMinor: false,
-      },
+      where,
       select: {
         id: true,
         username: true,

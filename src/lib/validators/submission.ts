@@ -70,7 +70,7 @@ export type CreateSubmissionInput = z.infer<typeof createSubmissionSchema>;
 // Review a submission
 export const reviewSubmissionSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED", "NEEDS_REVISION"]),
-  reviewNotes: z.string().max(2000).optional(),
+  reviewNotes: z.string().max(2000).optional().nullable(),
   achievedValue: z.number().int().positive().optional().nullable(), // Reviewer can adjust/set the achieved value
 });
 

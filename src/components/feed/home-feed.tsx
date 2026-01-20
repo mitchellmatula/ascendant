@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,9 +56,7 @@ export function HomeFeed({ isSignedIn, currentAthleteId }: HomeFeedProps) {
       const params = new URLSearchParams({ tab: activeTab });
       if (cursor) params.set("cursor", cursor);
 
-      const res = await fetch(`/api/feed?${params.toString()}`, {
-        credentials: "include",
-      });
+      const res = await fetchWithAuth(`/api/feed?${params.toString()}`);
       
       if (!res.ok) {
         const data = await res.json();

@@ -6,7 +6,7 @@ import { formatLevel, getRankColor, getRankLabel, calculatePrime, type Rank, get
 import { XP_PER_SUBLEVEL, CUMULATIVE_XP_TO_RANK, XP_PER_RANK } from "@/lib/xp-constants";
 import { getAllBreakthroughProgress } from "@/lib/breakthroughs";
 import Link from "next/link";
-import { Building2, Lock, Unlock, Sparkles } from "lucide-react";
+import { Building2, Lock, Unlock, Sparkles, GraduationCap, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
 export default async function DashboardPage() {
@@ -53,7 +53,9 @@ export default async function DashboardPage() {
     where: { athleteId: athlete.id },
     include: { 
       challenge: {
-        include: {
+        select: {
+          name: true,
+          slug: true,
           primaryDomain: true,
         }
       } 
@@ -79,6 +81,23 @@ export default async function DashboardPage() {
       },
     },
     orderBy: { joinedAt: "desc" },
+  });
+
+  // Get athlete's class memberships
+  const classMemberships = await db.classMember.findMany({
+    where: { athleteId: athlete.id, status: "ACTIVE" },
+    include: {
+      class: {
+        select: {
+          id: true,
+          name: true,
+          gym: { select: { name: true } },
+          _count: { select: { benchmarks: true } },
+        },
+      },
+    },
+    orderBy: { joinedAt: "desc" },
+    take: 5,
   });
 
   // Calculate Prime
@@ -355,7 +374,11 @@ export default async function DashboardPage() {
             ) : (
               <div className="space-y-3">
                 {recentSubmissions.map((submission) => (
-                  <div key={submission.id} className="flex items-center justify-between gap-2 py-2 border-b last:border-0">
+                  <Link 
+                    key={submission.id} 
+                    href={`/challenges/${submission.challenge.slug}`}
+                    className="flex items-center justify-between gap-2 py-2 border-b last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
+                  >
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-lg shrink-0">{submission.challenge.primaryDomain?.icon ?? "🎯"}</span>
                       <div className="min-w-0">
@@ -376,7 +399,7 @@ export default async function DashboardPage() {
                     }`}>
                       {submission.status === "NEEDS_REVISION" ? "Revision" : submission.status.charAt(0) + submission.status.slice(1).toLowerCase()}
                     </span>
-                  </div>
+                  </Link>
                 ))}
                 <Link 
                   href="/submissions" 
@@ -453,6 +476,46 @@ export default async function DashboardPage() {
                     <Building2 className="w-5 h-5 text-muted-foreground" />
                   )}
                   <span className="text-sm font-medium">{membership.gym.name}</span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* My Classes Section */}
+      {classMemberships.length > 0 && (
+        <Card className="mt-6 md:mt-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <GraduationCap className="w-5 h-5" />
+              My Classes
+            </CardTitle>
+            <CardDescription className="text-xs md:text-sm">Classes you&apos;re enrolled in</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {classMemberships.map((membership) => (
+                <Link
+                  key={membership.class.id}
+                  href={`/classes/${membership.class.id}`}
+                  className="flex items-center justify-between p-3 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{membership.class.name}</p>
+                      {membership.class.gym && (
+                        <p className="text-xs text-muted-foreground truncate">{membership.class.gym.name}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 ml-2">
+                    <Target className="w-3.5 h-3.5" />
+                    <span>{membership.class._count.benchmarks}</span>
+                  </div>
                 </Link>
               ))}
             </div>

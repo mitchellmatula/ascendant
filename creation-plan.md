@@ -743,7 +743,31 @@ model CompetitionResult {
 ### 🎯 WHAT'S NEXT
 The following items are the highest priority for immediate work:
 
-1. **Community Feed & Social System** (Phase 9) – IN PROGRESS
+1. **Class & Coaching System** (Phase 11) – IN PROGRESS
+   - ✅ Schema migration for Class, ClassCoach, ClassMember, ClassJoinRequest, ClassBenchmark, ClassGrade
+   - ✅ Class CRUD API endpoints (`/api/classes`, `/api/classes/[id]`)
+   - ✅ Join request flow (request → approve/deny)
+   - ✅ Coach dashboard (`/coach`) with class list
+   - ✅ Create class form (`/coach/classes/new`)
+   - ✅ Class detail page (`/classes/[id]`) with benchmarks and progress
+   - ✅ Member management (`/coach/classes/[id]/members`) - add/remove athletes
+   - ✅ Athlete search for adding members
+   - ✅ Join request queue for coaches with approve/deny
+   - ✅ Benchmark management (`/coach/classes/[id]/benchmarks`)
+   - ✅ Quick grade UI (`/coach/classes/[id]/grade`) - batch mode with previous submission history
+   - ✅ Grade edit capability
+   - ✅ Parent view: browse classes, request to join (with athlete selection dropdown)
+   - ✅ Athlete view: "My Classes" section on dashboard
+   - ✅ XP integration: grades create ChallengeSubmission records with tier-based XP
+   - ✅ CLASS_GRADE notification type for new grades
+   - ✅ Parent notifications: parents see notifications for all managed athletes
+   - ✅ Progress page links to challenges (with athlete switch for parents)
+   - ✅ Dashboard recent submissions link to challenges
+   - [ ] Custom challenge creation form (1 per class limit)
+   - [ ] Privacy: ensure class data doesn't leak to public feed
+   - [ ] Admin moderation: view coach-created challenges
+
+2. **Community Feed & Social System** (Phase 9) – COMPLETED
    - ✅ Schema migration for social models (Follow, Reaction, Comment, Notification)
    - ✅ Username field on Athlete model
    - ✅ Feed utility functions (`src/lib/feed.ts`)
@@ -761,12 +785,13 @@ The following items are the highest priority for immediate work:
    - ✅ Athlete profile page (`/athletes/[username]`)
    - ✅ Athlete search page (`/athletes/search`)
    - ✅ Added Feed to main navigation
-   - [ ] Followers/Following lists on profile
-   - [ ] Full notifications page (`/notifications`)
+   - ✅ Followers/Following lists on profile
+   - ✅ Full notifications page (`/notifications`)
+   - ✅ Parent consent for sharing child activity (COPPA compliance)
 
-2. **Progress notifications** (Phase 8) – Toast/banner when earning XP or leveling up
-3. **Dark mode polish** (Phase 8) – Ensure all components work well in dark mode
-4. **PWA support** (Phase 8) – Add to home screen, offline caching
+3. **Progress notifications** (Phase 8) – Toast/banner when earning XP or leveling up
+4. **Dark mode polish** (Phase 8) – Ensure all components work well in dark mode
+5. **PWA support** (Phase 8) – Add to home screen, offline caching
 
 ### ✅ COMPLETED - Phase 1: Project Setup
 1. ✅ **Scaffold the project** – Next.js 16 + Prisma 7 + Tailwind v4 + shadcn
@@ -884,7 +909,7 @@ The following items are the highest priority for immediate work:
     - ✅ Challenge listings filter by athlete's division
     - ✅ Challenge detail shows restriction warning if not allowed
 
-### 🔨 CURRENT - Phase 6: Gym Features
+### 🔨 ON HOLD BUT MOSTLY COMPLETE - Phase 6: Gym Features
 16. [x] **Gym dashboard** – `/gym/[slug]` - Public gym page
     - ✅ Shows gym logo, name, address, description
     - ✅ Displays owner (privacy-respecting - only if isPublicProfile)
@@ -931,6 +956,15 @@ The following items are the highest priority for immediate work:
     - ✅ Banner shows equipment filter status and count of hidden challenges
     - ✅ "Show all" toggle to disable equipment filter
     - ✅ URL parameter `?equipment=false` to show all challenges regardless of equipment
+23. [ ] **Coach invite system** – Gym owners invite coaches via link
+    - [ ] Generate unique invite link (`/invite/[token]`)
+    - [ ] Link contains: gym ID, role (COACH), expiration
+    - [ ] Copy-to-clipboard button in gym management UI
+    - [ ] When clicked: sign in (if account exists) or create account
+    - [ ] After auth: auto-join gym with COACH role
+    - [ ] Invite tokens expire after 7 days (configurable)
+    - [ ] Owner can revoke/regenerate invite links
+    - [ ] Schema: `GymInvite` model with token, gymId, role, expiresAt, usedBy
 
 ### ✅ COMPLETED - Phase 7: Fitness App Integrations (Strava/Garmin)
 For running, cycling, and outdoor endurance challenges, athletes can link their fitness accounts to submit verified activities.
@@ -987,7 +1021,7 @@ For running, cycling, and outdoor endurance challenges, athletes can link their 
 - [ ] Dark mode polish
 - [ ] PWA support
 
-### 📋 Phase 9: Community Feed & Social System
+### ✅ COMPLETED - Phase 9: Community Feed & Social System
 The homepage feed experience where athletes see activity from the community.
 
 **Feed Types (Tabs):**
@@ -1271,6 +1305,339 @@ STRAVA_WEBHOOK_VERIFY_TOKEN=    # Random string for webhook validation
 - `GET /api/strava/subscription` - Check current subscription status
 - `POST /api/strava/subscription` - Create webhook subscription (admin only)
 - `DELETE /api/strava/subscription` - Delete webhook subscription (admin only)
+
+### 📋 Phase 11: Class & Coaching System
+Coaches can create classes, add athletes, assign benchmarks, and track progress with quick grading.
+
+**Core Concepts:**
+
+| Concept | Description |
+|---------|-------------|
+| **Class** | A group of athletes managed by one or more coaches |
+| **Benchmark** | A curated list of challenges the class is working on |
+| **Quick Grade** | Coach enters results directly, auto-approved |
+
+**Class Structure:**
+- **Name**: e.g., "Tuesday Ninja Kids", "Adult Competitive Team", "Marathon Training Group"
+- **Gym association**: Optional (running coaches may not have a gym)
+- **Schedule**: Meeting time/day (informational, stored as text)
+- **Duration**: Ongoing - athletes stay enrolled until removed
+- **Multiple coaches**: Classes can have multiple coaches (co-teaching)
+
+**Who Can Create Classes:**
+- Gym owners/managers (for their gym)
+- Coaches at a gym (for their gym)
+- System admins (any class)
+- Future: Verified independent coaches (no gym affiliation)
+
+**Class Membership:**
+- **Coaches can add anyone** - Coaches can add any athlete directly (no approval needed)
+- **Parents request to join** - Parents/athletes request to join, coach approves
+- **Self-removal allowed** - Athletes/parents can remove themselves from any class
+- Class rosters are **private** (members can't see each other - COPPA compliance)
+- Athletes can be in multiple classes
+- Notification sent when added to a class or request approved
+
+**Benchmarks & Events:**
+Benchmarks are the challenges a class is working on:
+1. **Curated from existing challenges** - Pick from the global challenge library
+2. **Gym-specific challenges** - Create new challenges via full challenge form (same as admin)
+
+**Challenge Ownership & Scope:**
+| Scope | Created By | Visible To | XP | Moderation |
+|-------|------------|------------|-----|------------|
+| **Global** | System Admin | Everyone | Standard tiers | Pre-approved |
+| **Class-specific** | Coach (for a class) | Class members only | Standard tiers | Admin can review |
+
+- Class-specific challenges use the **same XP tier system** as global challenges
+- **Limit: 1 custom challenge per class** - Prevents XP gaming, keeps it focused
+- Classes can use unlimited global challenges as benchmarks
+- Admin panel shows all coach-created challenges for moderation
+- Admin can promote class challenges to global, or flag/disable problematic ones
+- `Challenge.scope` field: `GLOBAL` or `CLASS`
+- `Challenge.createdByClassId` - which class created it (if scope=CLASS)
+
+**Grading System:**
+- **Quick Grade UI** - Coach enters stats directly during class
+- **Two modes**: Batch grading (all athletes at once) OR select athlete then grade
+- **Auto-approve** - Coach input is trusted, no review queue
+- **Creates ChallengeSubmission** - Grades create submission records (shows in athlete history)
+- **Grade updates allowed** - Coaches can edit grades if mistakes were made
+- Results feed into athlete's XP and domain progress
+- Progress history tracked via SubmissionHistory (see improvement over time)
+
+**Athlete Search (for adding to class):**
+- Search by **display name** or **username**
+- Works for adults and children
+- Shows athlete's gym memberships (if any) for context
+
+**Class Discovery:**
+- Classes are **publicly discoverable** (anyone can browse)
+- Listing shows: class name, coach name(s), gym (if any), schedule
+- Full details visible only to members and coaches
+
+**Privacy & Visibility:**
+- Class progress is **separate from public feed** (not shown in community feed)
+- Coaches see their students' full profiles and all completed challenges
+- Parents see only their own child's class progress
+- Athletes see their own class progress and benchmarks
+- **Stretch goal**: Opt-in class leaderboard for members
+
+**URL Structure:**
+```
+/classes                    # Browse/search classes (for parents to find)
+/classes/[id]               # Class detail (join request, benchmarks)
+/classes/[id]/roster        # Coach view: manage members
+/classes/[id]/benchmarks    # Coach view: manage benchmarks
+/classes/[id]/grade         # Coach view: quick grade interface
+/coach                      # Coach dashboard: my classes
+/coach/classes/new          # Create new class
+```
+
+**Athlete Experience:**
+- "My Classes" section on dashboard
+- View assigned benchmarks and progress
+- See their own grades/results
+
+**Schema Additions:**
+```prisma
+model Class {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  schedule    String?  // e.g., "Tuesdays 5-6pm"
+  
+  // Optional gym association
+  gymId       String?
+  gym         Gym?     @relation(fields: [gymId], references: [id])
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  coaches     ClassCoach[]
+  members     ClassMember[]
+  benchmarks  ClassBenchmark[]
+}
+
+model ClassCoach {
+  id        String   @id @default(cuid())
+  classId   String
+  userId    String   // The coach's User record
+  role      ClassCoachRole @default(COACH)
+  createdAt DateTime @default(now())
+  
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@unique([classId, userId])
+}
+
+enum ClassCoachRole {
+  COACH       // Full access
+  ASSISTANT   // Future: limited permissions
+}
+
+model ClassMember {
+  id        String   @id @default(cuid())
+  classId   String
+  athleteId String
+  addedById String   // User who added them (coach or parent)
+  status    ClassMemberStatus @default(ACTIVE)
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+  
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  athlete   Athlete  @relation(fields: [athleteId], references: [id])
+  
+  @@unique([classId, athleteId])
+}
+
+enum ClassMemberStatus {
+  ACTIVE
+  REMOVED    // Removed by coach
+  LEFT       // Self-removed or parent removed
+}
+
+model ClassJoinRequest {
+  id          String   @id @default(cuid())
+  classId     String
+  athleteId   String
+  requestedById String  // User who requested (parent or adult athlete)
+  status      JoinRequestStatus @default(PENDING)
+  note        String?  // Optional message from requester
+  reviewedById String? // Coach who approved/denied
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  athlete     Athlete  @relation(fields: [athleteId], references: [id])
+  requestedBy User     @relation("JoinRequester", fields: [requestedById], references: [id])
+  reviewedBy  User?    @relation("JoinReviewer", fields: [reviewedById], references: [id])
+  
+  @@unique([classId, athleteId])  // One pending request per athlete per class
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model ClassBenchmark {
+  id          String   @id @default(cuid())
+  classId     String
+  challengeId String   // Always links to a Challenge (global or gym-specific)
+  
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  class       Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  grades      ClassGrade[]
+}
+
+model ClassGrade {
+  id           String   @id @default(cuid())
+  benchmarkId  String
+  athleteId    String
+  gradedById   String   // Coach who graded
+  submissionId String?  // Links to ChallengeSubmission created
+  
+  // Result (cached for quick display, source of truth is submission)
+  achievedValue Float?   // Reps, time, distance
+  passed        Boolean? // For pass/fail
+  achievedTier  String?  // F, E, D, C, B, A, S
+  notes         String?
+  
+  gradedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  benchmark     ClassBenchmark     @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  athlete       Athlete            @relation(fields: [athleteId], references: [id])
+  gradedBy      User               @relation(fields: [gradedById], references: [id])
+  submission    ChallengeSubmission? @relation(fields: [submissionId], references: [id])
+  
+  @@unique([benchmarkId, athleteId])  // One grade per athlete per benchmark
+}
+
+// Add to Challenge model:
+model Challenge {
+  // ... existing fields
+  scope            ChallengeScope @default(GLOBAL)
+  createdByClassId String?        // If scope=CLASS, which class created it
+  
+  classBenchmarks  ClassBenchmark[]
+  createdByClass   Class?         @relation("ClassChallenges", fields: [createdByClassId], references: [id])
+}
+
+enum ChallengeScope {
+  GLOBAL    // Admin-created, visible to everyone
+  CLASS     // Coach-created for a class, visible only to class members
+}
+
+// Add to Class model:
+model Class {
+  // ... existing fields
+  createdChallenges Challenge[] @relation("ClassChallenges")  // Max 1 per class
+}
+
+// Add to User model:
+model User {
+  // ... existing fields
+  coachedClasses  ClassCoach[]
+  classGrades     ClassGrade[]  // Grades given by this user
+  joinRequestsMade    ClassJoinRequest[] @relation("JoinRequester")
+  joinRequestsReviewed ClassJoinRequest[] @relation("JoinReviewer")
+}
+
+// Add to Athlete model:
+model Athlete {
+  // ... existing fields
+  classMembers    ClassMember[]
+  classGrades     ClassGrade[]
+  joinRequests    ClassJoinRequest[]
+}
+
+// Add to Gym model:
+model Gym {
+  // ... existing fields
+  classes         Class[]
+}
+
+// Add to ChallengeSubmission model:
+model ChallengeSubmission {
+  // ... existing fields
+  classGrade      ClassGrade?  // If created via class grading
+}
+```
+
+**API Endpoints:**
+- `GET /api/classes` - List classes (with filters for gym, coach, search)
+- `POST /api/classes` - Create a class
+- `GET /api/classes/[id]` - Get class details
+- `PATCH /api/classes/[id]` - Update class
+- `DELETE /api/classes/[id]` - Archive/delete class
+- `GET /api/classes/[id]/members` - List members (coach only)
+- `POST /api/classes/[id]/members` - Add member (coach adds directly)
+- `DELETE /api/classes/[id]/members/[athleteId]` - Remove member (coach or self/parent)
+- `POST /api/classes/[id]/join` - Request to join (parent/athlete)
+- `GET /api/classes/[id]/requests` - List pending join requests (coach only)
+- `POST /api/classes/[id]/requests/[id]/approve` - Approve join request
+- `POST /api/classes/[id]/requests/[id]/deny` - Deny join request
+- `GET /api/classes/[id]/benchmarks` - List benchmarks
+- `POST /api/classes/[id]/benchmarks` - Add benchmark (existing or create new gym challenge)
+- `PATCH /api/classes/[id]/benchmarks/[id]` - Update benchmark
+- `DELETE /api/classes/[id]/benchmarks/[id]` - Remove benchmark
+- `POST /api/classes/[id]/grade` - Quick grade (batch or single)
+- `PATCH /api/classes/[id]/grades/[id]` - Update a grade
+- `GET /api/classes/[id]/grades` - Get all grades for class
+- `GET /api/classes/[id]/grades/[athleteId]` - Get grades for specific athlete
+- `GET /api/coach/classes` - Get classes where user is a coach
+- `GET /api/athlete/classes` - Get classes athlete is enrolled in
+- `GET /api/athletes/search` - Search athletes by name/username (for adding to class)
+
+**Admin Moderation:**
+- `GET /api/admin/challenges?scope=GYM` - List all gym-created challenges
+- `PATCH /api/admin/challenges/[id]/promote` - Promote gym challenge to global
+- `PATCH /api/admin/challenges/[id]/flag` - Flag/disable problematic challenge
+- Admin UI: `/admin/challenges` shows scope filter and gym source
+
+**Implementation Tasks:**
+- [ ] Add `scope`, `createdByGymId` to Challenge model
+- [x] Schema migration for Class, ClassCoach, ClassMember, ClassJoinRequest, ClassBenchmark, ClassGrade
+- [ ] Gym challenge limit enforcement (configurable, e.g., 10 per gym)
+- [x] Class CRUD API endpoints
+- [x] Join request flow (request → approve/deny)
+- [x] Coach dashboard (`/coach`) with class list
+- [x] Create class form (`/coach/classes/new`)
+- [x] Class detail page with benchmarks
+- [x] Member management (add/remove athletes)
+- [x] Athlete search (by name/username) for adding members
+- [x] Join request queue for coaches
+- [x] Benchmark management (select existing challenges)
+- [ ] Custom challenge creation form (reuse admin challenge form, 1 per class limit)
+- [x] Quick grade UI - batch mode (all athletes, one benchmark)
+- [x] Quick grade UI - shows previous submission history when grading
+- [x] Grade edit capability
+- [x] Parent view: browse classes, request to join (with athlete selection)
+- [x] Athlete view: "My Classes" dashboard section
+- [x] XP integration: grades create ChallengeSubmission records
+- [x] Notifications: added to class, request approved, new grade (CLASS_GRADE type)
+- [x] Parent notifications: parents see notifications for all managed athletes
+- [ ] Privacy: ensure class data doesn't leak to public feed
+- [ ] Admin moderation: view coach-created challenges
+- [ ] Admin: promote class challenges to global
+- [ ] Admin: flag/disable problematic class challenges
+
+**Stretch Goals:**
+- [ ] Class leaderboard (opt-in per class)
+- [ ] Class notifications (new benchmark, grade posted)
+- [ ] Class schedule integration (calendar view)
+- [ ] Attendance tracking
+- [ ] Progress reports (PDF export for parents)
+- [ ] Assistant coach role with limited permissions
 
 ---
 

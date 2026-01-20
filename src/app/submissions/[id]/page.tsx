@@ -98,6 +98,14 @@ export default async function SubmissionPage({ params }: Props) {
         select: {
           emoji: true,
           athleteId: true,
+          athlete: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
         },
       },
     },
@@ -207,11 +215,29 @@ export default async function SubmissionPage({ params }: Props) {
     .filter((c) => !c.isDeleted || (c.replies && c.replies.length > 0))
     .map((c) => transformComment(c));
 
-  // Calculate reaction counts
+  // Calculate reaction counts and group reactors
   const reactionCounts: Record<string, number> = {};
+  const reactors: Record<string, Array<{
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }>> = {};
   const userReactions: string[] = [];
   for (const reaction of submission.reactions) {
     reactionCounts[reaction.emoji] = (reactionCounts[reaction.emoji] || 0) + 1;
+    
+    // Group reactors by emoji
+    if (!reactors[reaction.emoji]) {
+      reactors[reaction.emoji] = [];
+    }
+    reactors[reaction.emoji].push({
+      id: reaction.athlete.id,
+      username: reaction.athlete.username || "unknown",
+      displayName: reaction.athlete.displayName,
+      avatarUrl: reaction.athlete.avatarUrl,
+    });
+    
     if (reaction.athleteId === currentAthleteId) {
       userReactions.push(reaction.emoji);
     }
@@ -412,6 +438,7 @@ export default async function SubmissionPage({ params }: Props) {
             <FeedReactions
               submissionId={submission.id}
               reactionCounts={reactionCounts}
+              reactors={reactors}
               userReactions={userReactions}
             />
           </div>

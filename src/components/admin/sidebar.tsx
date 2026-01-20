@@ -67,6 +67,11 @@ const navItems = [
     icon: "🏢",
   },
   {
+    title: "Classes",
+    href: "/admin/classes",
+    icon: "🎓",
+  },
+  {
     title: "Users",
     href: "/admin/users",
     icon: "👤",

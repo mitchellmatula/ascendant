@@ -2,10 +2,16 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,8 +38,12 @@ import {
   Send,
   ChevronDown,
   ChevronUp,
+  Smile,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Dynamically import emoji picker to avoid SSR issues
+const EmojiPickerReact = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 // ============================================
 // TYPES
@@ -490,28 +500,75 @@ export function Comments({
     }
   };
 
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Insert emoji at cursor position
+  const handleEmojiSelect = (emojiData: { emoji: string }) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newValue = newComment.slice(0, start) + emojiData.emoji + newComment.slice(end);
+      setNewComment(newValue);
+      // Set cursor position after emoji
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + emojiData.emoji.length;
+        textarea.focus();
+      }, 0);
+    } else {
+      setNewComment((prev) => prev + emojiData.emoji);
+    }
+    setEmojiPickerOpen(false);
+  };
+
   return (
     <div className="space-y-4">
       {/* New Comment Form */}
-      <div className="flex gap-3">
+      <div className="space-y-2">
         <Textarea
+          ref={textareaRef}
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
           className="min-h-[80px] resize-none"
           maxLength={2000}
         />
-        <Button
-          onClick={handleAddComment}
-          disabled={!newComment.trim() || isPending}
-          className="self-end"
-        >
-          {isPending ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-        </Button>
+        <div className="flex items-center justify-between">
+          <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" type="button" className="gap-1.5">
+                <Smile className="w-4 h-4" />
+                <span className="text-xs">Emoji</span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 border-0" align="start" sideOffset={8}>
+              <EmojiPickerReact
+                onEmojiClick={handleEmojiSelect}
+                autoFocusSearch
+                lazyLoadEmojis
+                searchPlaceholder="Search emojis..."
+                height={350}
+                width={320}
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button
+            onClick={handleAddComment}
+            disabled={!newComment.trim() || isPending}
+            size="sm"
+          >
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-1.5" />
+                Post
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Character count */}

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { VideoDisplay } from "@/components/ui/video-display";
 import { Check, X, RotateCcw, Loader2 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 type Submission = {
   id: string;
@@ -70,10 +71,9 @@ export function ReviewDialog({
     setError(null);
 
     try {
-      const res = await fetch(`/api/submissions/${submission.id}/review`, {
+      const res = await fetchWithAuth(`/api/submissions/${submission.id}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           status,
           reviewNotes: reviewNotes || null,
@@ -108,20 +108,21 @@ export function ReviewDialog({
 
         <div className="space-y-4">
           {/* Submission Media */}
-          <div className="rounded-lg overflow-hidden bg-muted aspect-video">
+          <div className="rounded-lg overflow-hidden bg-muted flex items-center justify-center max-h-[500px]">
             {submission.videoUrl ? (
               <VideoDisplay
                 url={submission.videoUrl}
                 fallbackImageUrl={submission.imageUrl}
+                className="max-h-[500px] w-full object-contain"
               />
             ) : submission.imageUrl ? (
               <img
                 src={submission.imageUrl}
                 alt="Submission"
-                className="w-full h-full object-contain"
+                className="max-h-[500px] w-full object-contain"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <div className="w-full h-64 flex items-center justify-center text-muted-foreground">
                 No media attached
               </div>
             )}

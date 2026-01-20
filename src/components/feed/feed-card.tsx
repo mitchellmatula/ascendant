@@ -409,6 +409,7 @@ export function FeedCard({ item, currentAthleteId, onReactionToggle }: FeedCardP
             <FeedReactions
               submissionId={submission.id}
               reactionCounts={submission.reactionCounts}
+              reactors={submission.reactors}
               userReactions={submission.userReactions}
               onToggle={onReactionToggle}
             />

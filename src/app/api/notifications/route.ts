@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import {
-  getNotifications,
-  getUnreadCount,
-  markAllAsRead,
-} from "@/lib/notifications";
 
 // GET /api/notifications - Get notifications for current user
 export async function GET(request: NextRequest) {
@@ -16,14 +11,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    // Get athlete for current user
+    // Get user with their athlete and managed athletes
     const user = await db.user.findUnique({
       where: { clerkId: userId },
-      include: { athlete: { select: { id: true } } },
+      include: { 
+        athlete: { select: { id: true } },
+        managedAthletes: { select: { id: true } },
+      },
     });
     
-    if (!user?.athlete) {
-      return NextResponse.json({ error: "Athlete profile not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Collect all athlete IDs this user has access to
+    const athleteIds: string[] = [];
+    if (user.athlete) {
+      athleteIds.push(user.athlete.id);
+    }
+    athleteIds.push(...user.managedAthletes.map(a => a.id));
+
+    if (athleteIds.length === 0) {
+      return NextResponse.json({ error: "No athlete profile found" }, { status: 404 });
     }
     
     const searchParams = request.nextUrl.searchParams;
@@ -35,22 +44,59 @@ export async function GET(request: NextRequest) {
     
     // If only count is needed (for badge)
     if (countOnly) {
-      const count = await getUnreadCount(user.athlete.id);
+      const count = await db.notification.count({
+        where: {
+          athleteId: { in: athleteIds },
+          isRead: false,
+        },
+      });
       return NextResponse.json({ unreadCount: count });
     }
     
-    // Get full notifications
-    const result = await getNotifications(user.athlete.id, {
-      limit,
-      cursor,
-      unreadOnly,
+    // Get full notifications for all athlete IDs
+    const notifications = await db.notification.findMany({
+      where: {
+        athleteId: { in: athleteIds },
+        ...(unreadOnly ? { isRead: false } : {}),
+      },
+      include: {
+        athlete: { select: { id: true, displayName: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+
+    const hasMore = notifications.length > limit;
+    const rawItems = hasMore ? notifications.slice(0, -1) : notifications;
+
+    // Transform to match frontend expectations
+    // For parent accounts, prefix with child's name
+    const isParent = user.managedAthletes.length > 0;
+    const items = rawItems.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: isParent && n.athlete ? `${n.athlete.displayName}: ${n.title}` : n.title,
+      message: n.body ?? "",
+      url: n.linkUrl,
+      isRead: n.isRead,
+      createdAt: n.createdAt.toISOString(),
+      actorId: n.actorId,
+      actorUsername: n.actorUsername,
+      actorAvatar: n.actorAvatar,
+    }));
+    
+    // Also include unread count for all athletes
+    const unreadCount = await db.notification.count({
+      where: {
+        athleteId: { in: athleteIds },
+        isRead: false,
+      },
     });
     
-    // Also include unread count
-    const unreadCount = await getUnreadCount(user.athlete.id);
-    
     return NextResponse.json({
-      ...result,
+      items,
+      nextCursor: hasMore ? rawItems[rawItems.length - 1]?.id : undefined,
       unreadCount,
     });
   } catch (error) {
@@ -73,18 +119,39 @@ export async function POST(request: NextRequest) {
     
     const user = await db.user.findUnique({
       where: { clerkId: userId },
-      include: { athlete: { select: { id: true } } },
+      include: { 
+        athlete: { select: { id: true } },
+        managedAthletes: { select: { id: true } },
+      },
     });
     
-    if (!user?.athlete) {
-      return NextResponse.json({ error: "Athlete profile not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Collect all athlete IDs
+    const athleteIds: string[] = [];
+    if (user.athlete) {
+      athleteIds.push(user.athlete.id);
+    }
+    athleteIds.push(...user.managedAthletes.map(a => a.id));
+
+    if (athleteIds.length === 0) {
+      return NextResponse.json({ error: "No athlete profile found" }, { status: 404 });
     }
     
     const body = await request.json();
     const { action } = body;
     
     if (action === "markAllRead") {
-      await markAllAsRead(user.athlete.id);
+      // Mark all notifications for all managed athletes as read
+      await db.notification.updateMany({
+        where: {
+          athleteId: { in: athleteIds },
+          isRead: false,
+        },
+        data: { isRead: true },
+      });
       return NextResponse.json({ success: true });
     }
     

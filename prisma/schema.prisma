@@ -44,6 +44,9 @@ model User {
   // Unit preferences for training display
   unitSystem          String    @default("metric") // "metric" or "imperial"
   
+  // Parent consent for child activity sharing (COPPA compliance)
+  shareChildActivity  Boolean   @default(false) // Can parent share child achievements in feed
+  
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -56,6 +59,13 @@ model User {
   // Gym relationships
   gymMemberships GymMember[] // Gyms this user is a member of
   ownedGyms      Gym[]       @relation("GymOwner") // Gyms this user owns
+  
+  // Class/coaching relationships
+  coachedClasses        ClassCoach[]         // Classes where user is a coach
+  classMembersAdded     ClassMember[]        @relation("ClassMemberAdder") // Members this user added
+  joinRequestsMade      ClassJoinRequest[]   @relation("JoinRequester")
+  joinRequestsReviewed  ClassJoinRequest[]   @relation("JoinReviewer")
+  classGradesGiven      ClassGrade[]         @relation("ClassGrader") // Grades given by this coach
 }
 
 enum AccountType {
@@ -113,6 +123,11 @@ model Athlete {
   
   // Notifications
   notifications  Notification[]
+  
+  // Class memberships and grades
+  classMembers   ClassMember[]
+  classGrades    ClassGrade[]
+  joinRequests   ClassJoinRequest[]
 }
 
 // Feed visibility setting
@@ -425,6 +440,11 @@ model Challenge {
   gymId String?
   gym   Gym?    @relation(fields: [gymId], references: [id], onDelete: SetNull)
 
+  // Challenge scope: GLOBAL (admin) or CLASS (coach-created for a class)
+  scope            ChallengeScope @default(GLOBAL)
+  createdByClassId String?
+  createdByClass   Class?         @relation("ClassChallenges", fields: [createdByClassId], references: [id], onDelete: SetNull)
+
   // Categories this challenge appears in (many-to-many)
   categories ChallengeCategory[]
 
@@ -456,6 +476,7 @@ model Challenge {
 
   rankRequirements RankRequirement[]
   submissions      ChallengeSubmission[]
+  classBenchmarks  ClassBenchmark[]
 }
 
 // ============================================
@@ -678,6 +699,9 @@ model ChallengeSubmission {
   // Social features
   reactions Reaction[]
   comments  Comment[]
+  
+  // Class grading (if created via class quick grade)
+  classGrade ClassGrade?
 
   @@unique([athleteId, challengeId]) // One active submission per challenge per athlete
 }
@@ -770,6 +794,7 @@ model Gym {
   equipment   GymEquipment[]   // Equipment this gym has
   disciplines GymDiscipline[]  // Disciplines this gym focuses on
   challenges  Challenge[]      // Gym-specific challenges
+  classes     Class[]          // Classes at this gym
 }
 
 // Gym membership role
@@ -961,4 +986,153 @@ enum NotificationType {
   TRAINING_SYNC   // Activity synced from Strava/Garmin
   SUBMISSION_APPROVED // Your submission was approved
   SUBMISSION_REJECTED // Your submission was rejected
+  CLASS_ADDED     // You were added to a class
+  CLASS_JOIN_REQUEST  // Someone wants to join your class
+  CLASS_REQUEST_APPROVED // Your join request was approved
+  CLASS_REQUEST_DENIED   // Your join request was denied
+  CLASS_GRADE     // Coach graded your submission
+}
+
+// ============================================
+// CLASSES & COACHING
+// ============================================
+
+model Class {
+  id          String   @id @default(cuid())
+  name        String   // e.g., "Tuesday Ninja Kids"
+  description String?  @db.Text
+  schedule    String?  // e.g., "Tuesdays 5-6pm"
+  
+  // Optional gym association
+  gymId       String?
+  gym         Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  
+  // Visibility and enrollment
+  isPublic         Boolean @default(true)  // Visible to non-gym members
+  requiresApproval Boolean @default(true)  // Join requests need coach approval
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  coaches      ClassCoach[]
+  members      ClassMember[]
+  benchmarks   ClassBenchmark[]
+  joinRequests ClassJoinRequest[]
+  
+  // Challenges created specifically for this class (max 1)
+  createdChallenges Challenge[] @relation("ClassChallenges")
+}
+
+model ClassCoach {
+  id          String         @id @default(cuid())
+  classId     String
+  userId      String
+  role        ClassCoachRole @default(COACH)
+  isHeadCoach Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([classId, userId])
+}
+
+enum ClassCoachRole {
+  COACH     // Full access
+  ASSISTANT // Future: limited permissions
+}
+
+model ClassMember {
+  id        String            @id @default(cuid())
+  classId   String
+  athleteId String
+  addedById String            // User who added them (coach or parent self-request approved)
+  status    ClassMemberStatus @default(ACTIVE)
+  joinedAt  DateTime          @default(now())
+  leftAt    DateTime?
+  
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  athlete Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  addedBy User    @relation("ClassMemberAdder", fields: [addedById], references: [id])
+  
+  @@unique([classId, athleteId])
+}
+
+enum ClassMemberStatus {
+  ACTIVE  // Currently enrolled
+  REMOVED // Removed by coach
+  LEFT    // Self-removed by athlete/parent
+}
+
+model ClassJoinRequest {
+  id            String            @id @default(cuid())
+  classId       String
+  athleteId     String
+  requestedById String            // User who made the request (parent or adult athlete)
+  status        JoinRequestStatus @default(PENDING)
+  note          String?           // Optional message from requester
+  reviewedById  String?           // Coach who approved/denied
+  reviewedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  
+  class       Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  athlete     Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  requestedBy User    @relation("JoinRequester", fields: [requestedById], references: [id])
+  reviewedBy  User?   @relation("JoinReviewer", fields: [reviewedById], references: [id])
+  
+  @@unique([classId, athleteId]) // One pending request per athlete per class
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+model ClassBenchmark {
+  id          String    @id @default(cuid())
+  classId     String
+  challengeId String
+  targetTier  String?   // Target tier for athletes (F, E, D, C, B, A, S)
+  dueDate     DateTime? // Optional due date for completing the benchmark
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  
+  class     Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  challenge Challenge   @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  grades    ClassGrade[]
+  
+  @@unique([classId, challengeId])
+}
+
+model ClassGrade {
+  id           String   @id @default(cuid())
+  benchmarkId  String
+  athleteId    String
+  gradedById   String   // Coach who graded
+  submissionId String?  @unique // Links to ChallengeSubmission created
+  
+  // Result (cached for quick display, source of truth is submission)
+  achievedValue Float?   // Reps, time, distance
+  passed        Boolean? // For pass/fail challenges
+  achievedTier  String?  // F, E, D, C, B, A, S
+  notes         String?
+  
+  gradedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  benchmark  ClassBenchmark       @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  athlete    Athlete              @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  gradedBy   User                 @relation("ClassGrader", fields: [gradedById], references: [id])
+  submission ChallengeSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  
+  @@unique([benchmarkId, athleteId]) // One grade per athlete per benchmark
+}
+
+// Challenge scope: Global (admin-created) vs Class (coach-created for a class)
+enum ChallengeScope {
+  GLOBAL // Admin-created, visible to everyone
+  CLASS  // Coach-created for a class, visible only to class members
 }

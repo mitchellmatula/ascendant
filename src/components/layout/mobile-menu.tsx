@@ -17,6 +17,7 @@ interface AthleteOption {
 
 interface MobileMenuProps {
   showAdminLink: boolean;
+  showCoachLink?: boolean;
   primeLevel: { letter: string; sublevel: number } | null;
   athletes?: AthleteOption[];
   activeAthleteId?: string | null;
@@ -25,6 +26,7 @@ interface MobileMenuProps {
 
 export function MobileMenu({ 
   showAdminLink, 
+  showCoachLink = false,
   primeLevel,
   athletes = [],
   activeAthleteId = null,
@@ -240,6 +242,25 @@ export function MobileMenu({
               >
                 <span>⚙️</span>
                 <span>Admin Panel</span>
+              </Link>
+            </>
+          )}
+          
+          {showCoachLink && (
+            <>
+              {!showAdminLink && <div className="h-px bg-border my-4" />}
+              <Link
+                href="/coach"
+                onClick={() => setIsOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-colors",
+                  pathname.startsWith("/coach")
+                    ? "bg-emerald-600 text-white"
+                    : "text-emerald-600 dark:text-emerald-400 hover:bg-muted"
+                )}
+              >
+                <span>🎓</span>
+                <span>Coach Dashboard</span>
               </Link>
             </>
           )}

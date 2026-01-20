@@ -62,6 +62,14 @@ export interface FeedItem {
     reactionCounts: Record<string, number>; // { "🔥": 5, "💪": 3, ... }
     commentCount: number;
     
+    // Who reacted with each emoji
+    reactors: Record<string, Array<{
+      id: string;
+      username: string;
+      displayName: string;
+      avatarUrl: string | null;
+    }>>;
+    
     // Current user's reactions (for highlighting)
     userReactions?: string[];
   };
@@ -158,6 +166,14 @@ const submissionFeedInclude = {
     select: {
       emoji: true,
       athleteId: true,
+      athlete: {
+        select: {
+          id: true,
+          username: true,
+          displayName: true,
+          avatarUrl: true,
+        },
+      },
     },
   },
   _count: {
@@ -175,12 +191,30 @@ function transformSubmissionToFeedItem(
   currentAthleteId?: string,
   followingIds?: Set<string>
 ): FeedItem {
-  // Calculate reaction counts
+  // Calculate reaction counts and group reactors
   const reactionCounts: Record<string, number> = {};
+  const reactors: Record<string, Array<{
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }>> = {};
   const userReactions: string[] = [];
   
   for (const reaction of submission.reactions) {
     reactionCounts[reaction.emoji] = (reactionCounts[reaction.emoji] || 0) + 1;
+    
+    // Group reactors by emoji
+    if (!reactors[reaction.emoji]) {
+      reactors[reaction.emoji] = [];
+    }
+    reactors[reaction.emoji].push({
+      id: reaction.athlete.id,
+      username: reaction.athlete.username || "unknown",
+      displayName: reaction.athlete.displayName,
+      avatarUrl: reaction.athlete.avatarUrl,
+    });
+    
     if (reaction.athleteId === currentAthleteId) {
       userReactions.push(reaction.emoji);
     }
@@ -242,6 +276,7 @@ function transformSubmissionToFeedItem(
       activityPolyline: submission.activityPolyline,
       stravaActivityUrl: submission.stravaActivityUrl,
       reactionCounts,
+      reactors,
       commentCount: submission._count.comments,
       userReactions: currentAthleteId ? userReactions : undefined,
     },
@@ -270,8 +305,17 @@ export async function getCommunityFeed(options: FeedQueryOptions = {}) {
       isPublic: true,
       athlete: {
         feedVisibility: "PUBLIC",
-        // COPPA: Exclude minors from public community feed
-        isMinor: false,
+        OR: [
+          // Non-minors can appear in community feed
+          { isMinor: false },
+          // Minors can appear if their parent has enabled sharing
+          {
+            isMinor: true,
+            parent: {
+              shareChildActivity: true,
+            },
+          },
+        ],
       },
     },
     include: submissionFeedInclude,
@@ -449,7 +493,17 @@ export async function getDivisionFeed(
     where: {
       gender: currentAthlete.gender,
       feedVisibility: { in: ["PUBLIC", "FOLLOWERS"] },
-      isMinor: false, // COPPA
+      OR: [
+        // Non-minors
+        { isMinor: false },
+        // Minors with parent consent
+        {
+          isMinor: true,
+          parent: {
+            shareChildActivity: true,
+          },
+        },
+      ],
     },
     select: { id: true, dateOfBirth: true },
   });

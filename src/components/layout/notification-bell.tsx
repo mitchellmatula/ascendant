@@ -13,8 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Check, Heart, MessageCircle, UserPlus, Trophy, Loader2 } from "lucide-react";
+import { Bell, Check, Heart, MessageCircle, UserPlus, Trophy, Loader2, GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 interface Notification {
   id: string;
@@ -40,7 +41,7 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/notifications?limit=10", { credentials: "include" });
+      const res = await fetchWithAuth("/api/notifications?limit=10");
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setNotifications(data.items ?? []);
@@ -60,31 +61,44 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
     }
   }, [isOpen, fetchNotifications]);
 
-  // Poll for unread count every 30 seconds
+  // Poll for unread count every 30 seconds (start after initial delay)
   useEffect(() => {
+    // Don't poll immediately - wait for hydration to complete
+    let mounted = true;
+    
     const checkUnread = async () => {
+      if (!mounted) return;
       try {
-        const res = await fetch("/api/notifications?limit=1", { credentials: "include" });
-        if (res.ok) {
+        const res = await fetchWithAuth("/api/notifications?limit=1");
+        if (res.ok && mounted) {
           const data = await res.json();
           setUnreadCount(data.unreadCount);
         }
+        // Don't handle 401 here - user might just not be logged in
       } catch {
         // Silent fail
       }
     };
 
+    // Initial check after a short delay to let auth settle
+    const initialTimeout = setTimeout(checkUnread, 2000);
+    
+    // Then poll every 30 seconds
     const interval = setInterval(checkUnread, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      mounted = false;
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, []);
 
   // Mark all as read
   const handleMarkAllRead = async () => {
     try {
-      const res = await fetch("/api/notifications", {
+      const res = await fetchWithAuth("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ action: "markAllRead" }),
       });
       if (res.ok) {
@@ -101,10 +115,9 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
   // Mark single as read
   const handleMarkRead = async (id: string) => {
     try {
-      const res = await fetch(`/api/notifications/${id}`, {
+      const res = await fetchWithAuth(`/api/notifications/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ isRead: true }),
       });
       if (res.ok) {
@@ -122,6 +135,7 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
   const getIcon = (type: string) => {
     switch (type) {
       case "NEW_FOLLOWER":
+      case "FOLLOW":
         return <UserPlus className="w-4 h-4 text-blue-500" />;
       case "REACTION":
       case "COMMENT_LIKE":
@@ -132,6 +146,12 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
       case "LEVEL_UP":
       case "SUBMISSION_APPROVED":
         return <Trophy className="w-4 h-4 text-yellow-500" />;
+      case "CLASS_JOIN_REQUEST":
+      case "CLASS_ADDED":
+      case "CLASS_REQUEST_APPROVED":
+      case "CLASS_REQUEST_DENIED":
+      case "CLASS_GRADE":
+        return <GraduationCap className="w-4 h-4 text-emerald-500" />;
       default:
         return <Bell className="w-4 h-4 text-muted-foreground" />;
     }

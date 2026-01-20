@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatLevel, getRankColor, calculatePrime } from "@/lib/levels";
 import { UserPlus, ChevronRight } from "lucide-react";
+import { ChildActivitySettings } from "@/components/settings/child-activity-settings";
 
 export default async function ChildrenSettingsPage() {
   const user = await getCurrentUser();
@@ -35,6 +36,12 @@ export default async function ChildrenSettingsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Privacy Settings */}
+      {managedAthletes.length > 0 && (
+        <ChildActivitySettings initialValue={user.shareChildActivity ?? false} />
+      )}
+
+      {/* Managed Children List */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>

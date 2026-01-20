@@ -104,7 +104,7 @@ export function VideoPlayer({
           onEnded={onEnded}
           aria-label="Video player"
           className={cn(
-            "w-full",
+            "w-full object-contain",
             aspectRatio === "16:9" && "aspect-video",
             aspectRatio === "9:16" && "aspect-[9/16] max-h-[500px] mx-auto",
             aspectRatio === "1:1" && "aspect-square",
@@ -147,7 +147,7 @@ export function VideoPlayer({
         onCanPlay={() => setIsLoading(false)}
         aria-label="Video player"
         className={cn(
-          "w-full cursor-pointer",
+          "w-full cursor-pointer object-contain",
           aspectRatio === "16:9" && "aspect-video",
           aspectRatio === "9:16" && "aspect-[9/16] max-h-[500px] mx-auto",
           aspectRatio === "1:1" && "aspect-square",

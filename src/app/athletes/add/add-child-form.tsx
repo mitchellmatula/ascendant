@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -87,10 +88,9 @@ export function AddChildForm({ disciplines }: AddChildFormProps) {
         avatarUrl = await uploadAvatar(avatarFile);
       }
 
-      const response = await fetch("/api/athletes/children", {
+      const response = await fetchWithAuth("/api/athletes/children", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           displayName: formData.displayName,
           dateOfBirth: formData.dateOfBirth?.toISOString(),

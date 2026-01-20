@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   SignInButton,
   SignUpButton,
@@ -17,6 +18,15 @@ import { calculatePrime, formatLevel, getRankColor } from "@/lib/levels";
 export async function Header() {
   const user = await getCurrentUser();
   const showAdminLink = user && isAdmin(user.role);
+  
+  // Check if user is a coach
+  let isCoach = false;
+  if (user) {
+    const coachCount = await db.classCoach.count({
+      where: { userId: user.id },
+    });
+    isCoach = coachCount > 0;
+  }
   
   // Get the active athlete (respects switcher selection)
   const activeAthlete = user ? await getActiveAthlete(user) : null;
@@ -68,8 +78,15 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-50 flex justify-between items-center px-4 md:px-6 h-14 md:h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex items-center gap-4 md:gap-6">
-        <Link href="/" className="text-lg md:text-xl font-bold text-primary">
-          Ascendant
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo_text_white2.png"
+            alt="Ascendant"
+            width={140}
+            height={32}
+            className="h-7 md:h-8 w-auto dark:brightness-100 brightness-0"
+            priority
+          />
         </Link>
         {/* Desktop navigation */}
         <SignedIn>
@@ -89,6 +106,14 @@ export async function Header() {
                 className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
               >
                 Admin
+              </Link>
+            )}
+            {isCoach && (
+              <Link 
+                href="/coach" 
+                className="text-sm text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors font-medium"
+              >
+                Coach
               </Link>
             )}
           </nav>
@@ -139,6 +164,7 @@ export async function Header() {
           {/* Mobile hamburger menu */}
           <MobileMenu 
             showAdminLink={showAdminLink ?? false} 
+            showCoachLink={isCoach}
             primeLevel={primeLevel}
             athletes={athletesWithLevels}
             activeAthleteId={activeAthlete?.id ?? null}

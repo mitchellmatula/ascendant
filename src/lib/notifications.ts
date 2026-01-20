@@ -301,11 +301,25 @@ export async function getNotifications(
   });
 
   const hasMore = notifications.length > limit;
-  const items = hasMore ? notifications.slice(0, -1) : notifications;
+  const rawItems = hasMore ? notifications.slice(0, -1) : notifications;
+
+  // Transform to match frontend expectations (linkUrl -> url, body -> message)
+  const items = rawItems.map((n) => ({
+    id: n.id,
+    type: n.type,
+    title: n.title,
+    message: n.body ?? "",
+    url: n.linkUrl,
+    isRead: n.isRead,
+    createdAt: n.createdAt.toISOString(),
+    actorId: n.actorId,
+    actorUsername: n.actorUsername,
+    actorAvatar: n.actorAvatar,
+  }));
 
   return {
     items,
-    nextCursor: hasMore ? items[items.length - 1]?.id : undefined,
+    nextCursor: hasMore ? rawItems[rawItems.length - 1]?.id : undefined,
   };
 }
 

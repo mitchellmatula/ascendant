@@ -12,6 +12,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "🏠" },
   { href: "/challenges", label: "Challenges", icon: "🏆" },
+  { href: "/classes", label: "Classes", icon: "🎓" },
   { href: "/gyms", label: "Gyms", icon: "🏋️" },
   { href: "/domains", label: "Ranks", icon: "🎯" },
 ];

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
+import { getCurrentUser, getActiveAthlete } from "@/lib/auth";
 import {
   getCommunityFeed,
   getFollowingFeed,
@@ -18,19 +19,18 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? Math.min(parseInt(limitParam, 10), 50) : 20;
     
-    // Get current athlete if logged in
+    // Get current user and athlete (supports parent accounts with active athlete)
     let athleteId: string | undefined;
     let dbUserId: string | undefined;
     
     if (userId) {
-      const user = await db.user.findUnique({
-        where: { clerkId: userId },
-        include: { athlete: { select: { id: true } } },
-      });
-      
-      if (user?.athlete) {
-        athleteId = user.athlete.id;
-        dbUserId = user.id;
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        dbUserId = currentUser.id;
+        const athlete = await getActiveAthlete(currentUser);
+        if (athlete) {
+          athleteId = athlete.id;
+        }
       }
     }
     

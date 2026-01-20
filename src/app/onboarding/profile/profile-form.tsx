@@ -75,6 +75,9 @@ function ProfileFormContent() {
   
   // For parents who also want to compete
   const [alsoCompete, setAlsoCompete] = useState(false);
+  
+  // Parent consent for sharing child activity (COPPA compliance)
+  const [shareChildActivity, setShareChildActivity] = useState(false);
 
   // Fetch disciplines
   useEffect(() => {
@@ -210,13 +213,15 @@ function ProfileFormContent() {
             accountType,
             children: childrenWithAvatars,
             parentAthlete: parentAthleteData,
+            shareChildActivity, // Parent consent for sharing child achievements
           }),
         });
 
         if (response.ok) {
           router.push("/dashboard");
         } else {
-          console.error("Failed to create profiles");
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Failed to create profiles:", errorData);
           setIsLoading(false);
         }
       } else {
@@ -414,6 +419,30 @@ function ProfileFormContent() {
                 <Plus className="w-4 h-4 mr-2" />
                 Add Another Child
               </Button>
+
+              {/* Parent consent for sharing child activity (COPPA compliance) */}
+              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+                <CardHeader className="pb-4">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="share-child-activity"
+                      checked={shareChildActivity}
+                      onCheckedChange={(checked) => setShareChildActivity(checked === true)}
+                      className="mt-1"
+                    />
+                    <div>
+                      <Label htmlFor="share-child-activity" className="text-base font-medium cursor-pointer">
+                        Share my children's achievements in the activity feed
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Allow posting updates like "@username achieved X-tier on Challenge!" 
+                        to celebrate your children's progress. You can change this anytime in settings. 
+                        This is off by default to protect your child's privacy.
+                      </p>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
 
               {/* Option for parent to also compete */}
               <Card>

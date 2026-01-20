@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { getCurrentUser } from "@/lib/auth";
 import { GymMembershipButton } from "./membership-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MapPin, Globe, Phone, Mail, Users, Crown, Trophy, ChevronRight, Settings, Lock } from "lucide-react";
+import { MapPin, Globe, Phone, Mail, Users, Crown, Trophy, ChevronRight, Settings, Lock, GraduationCap, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -63,7 +63,9 @@ export default async function GymPage({ params }: GymPageProps) {
   // Check if current user can manage members
   const isOwner = user && gym.ownerId === user.id;
   const isManager = currentUserMembership?.role === "MANAGER";
+  const isCoach = currentUserMembership?.role === "COACH";
   const canManageMembers = isOwner || isManager;
+  const canCreateClass = isOwner || isManager || isCoach;
 
   const totalMembers = await db.gymMember.count({
     where: { gymId: gym.id, isActive: true },
@@ -132,6 +134,36 @@ export default async function GymPage({ params }: GymPageProps) {
     : [];
 
   const sampleChallenges = [...exclusiveChallenges, ...publicChallenges];
+
+  // Get classes for this gym (only public ones for non-members)
+  const gymClasses = await db.class.findMany({
+    where: {
+      gymId: gym.id,
+      isActive: true,
+      ...(isMember ? {} : { isPublic: true }),
+    },
+    include: {
+      _count: {
+        select: {
+          members: { where: { status: "ACTIVE" } },
+          benchmarks: true,
+        },
+      },
+      coaches: {
+        include: {
+          user: {
+            select: {
+              athlete: { select: { displayName: true, avatarUrl: true } },
+            },
+          },
+        },
+        where: { role: "COACH" },
+        take: 1,
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
 
   // Public members are those with isPublicMember=true AND isPublicProfile=true
   // This includes the owner if they've opted in
@@ -368,6 +400,70 @@ export default async function GymPage({ params }: GymPageProps) {
                 View all {totalChallengeCount} challenges
                 <ChevronRight className="w-4 h-4" />
               </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Classes Section */}
+      {(gymClasses.length > 0 || canCreateClass) && (
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5" />
+                  Classes
+                </CardTitle>
+                <CardDescription>
+                  {gymClasses.length} class{gymClasses.length !== 1 ? "es" : ""} at this gym
+                </CardDescription>
+              </div>
+              {canCreateClass && (
+                <Button size="sm" asChild>
+                  <Link href={`/coach/classes/new?gymId=${gym.id}`}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {gymClasses.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                {canCreateClass 
+                  ? "No classes yet. Create one to start coaching!"
+                  : "No classes available at this gym yet."}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {gymClasses.map((classItem) => {
+                  const headCoach = classItem.coaches[0]?.user?.athlete;
+                  return (
+                    <Link
+                      key={classItem.id}
+                      href={`/classes/${classItem.id}`}
+                      className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                        <GraduationCap className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{classItem.name}</p>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          {headCoach && <span>Coach: {headCoach.displayName}</span>}
+                          <span>•</span>
+                          <span>{classItem._count.members} athletes</span>
+                          <span>•</span>
+                          <span>{classItem._count.benchmarks} benchmarks</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                    </Link>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>

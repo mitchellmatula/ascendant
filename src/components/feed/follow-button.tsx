@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { UserPlus, UserMinus, Loader2 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 interface FollowButtonProps {
   username: string;
@@ -22,7 +23,7 @@ export function FollowButton({ username, initialIsFollowing }: FollowButtonProps
     startTransition(async () => {
       try {
         const method = newState ? "POST" : "DELETE";
-        const res = await fetch(`/api/athletes/${username}/follow`, { method, credentials: "include" });
+        const res = await fetchWithAuth(`/api/athletes/${username}/follow`, { method });
 
         if (!res.ok) {
           // Revert on error

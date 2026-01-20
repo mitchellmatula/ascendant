@@ -12,6 +12,7 @@ export default async function AdminPage() {
     disciplineCount,
     equipmentCount,
     gymCount,
+    classCount,
     userCount,
     athleteCount,
     suspendedUserCount,
@@ -25,6 +26,7 @@ export default async function AdminPage() {
     db.discipline.count(),
     db.equipment.count(),
     db.gym.count(),
+    db.class.count(),
     db.user.count(),
     db.athlete.count(),
     db.user.count({ where: { suspendedAt: { not: null } } }),
@@ -42,6 +44,7 @@ export default async function AdminPage() {
     { label: "Equipment", value: equipmentCount, href: "/admin/equipment", icon: "🏋️" },
     { label: "Breakthroughs", value: breakthroughRuleCount, href: "/admin/breakthroughs", icon: "✨" },
     { label: "Gyms", value: gymCount, href: "/admin/gyms", icon: "🏢" },
+    { label: "Classes", value: classCount, href: "/admin/classes", icon: "🎓" },
     { label: "Users", value: userCount, href: "/admin/users", icon: "👤" },
   ];
 
