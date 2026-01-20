@@ -164,6 +164,10 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
   }[]>([]);
   const [isSearchingSimilar, setIsSearchingSimilar] = useState(false);
 
+  // Filter states for long lists
+  const [disciplineFilter, setDisciplineFilter] = useState("");
+  const [equipmentFilter, setEquipmentFilter] = useState("");
+
   const [formData, setFormData] = useState({
     name: challenge?.name ?? "",
     description: challenge?.description ?? "",
@@ -1187,19 +1191,48 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
             Selected: {formData.disciplineIds.length}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {disciplines.length > 8 && (
+            <div className="relative max-w-xs">
+              <Input
+                placeholder="Search disciplines..."
+                value={disciplineFilter}
+                onChange={(e) => setDisciplineFilter(e.target.value)}
+              />
+              {disciplineFilter && (
+                <button
+                  type="button"
+                  onClick={() => setDisciplineFilter("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm px-1"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
-            {disciplines.map((disc) => (
-              <Badge
-                key={disc.id}
-                variant={formData.disciplineIds.includes(disc.id) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/80"
-                onClick={() => toggleDiscipline(disc.id)}
-              >
-                {disc.icon} {disc.name}
-                {formData.disciplineIds.includes(disc.id) && " ✓"}
-              </Badge>
-            ))}
+            {disciplines
+              .filter((disc) =>
+                disciplineFilter
+                  ? disc.name.toLowerCase().includes(disciplineFilter.toLowerCase())
+                  : true
+              )
+              .map((disc) => (
+                <Badge
+                  key={disc.id}
+                  variant={formData.disciplineIds.includes(disc.id) ? "default" : "outline"}
+                  className="cursor-pointer hover:bg-primary/80"
+                  onClick={() => toggleDiscipline(disc.id)}
+                >
+                  {disc.icon} {disc.name}
+                  {formData.disciplineIds.includes(disc.id) && " ✓"}
+                </Badge>
+              ))}
+            {disciplineFilter && disciplines.filter((disc) =>
+              disc.name.toLowerCase().includes(disciplineFilter.toLowerCase())
+            ).length === 0 && (
+              <p className="text-xs text-muted-foreground">No disciplines match &quot;{disciplineFilter}&quot;</p>
+            )}
           </div>
           {disciplines.length === 0 && (
             <p className="text-xs text-muted-foreground">No disciplines created yet</p>
@@ -1216,19 +1249,48 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
             Selected: {formData.equipmentIds.length}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          {equipment.length > 8 && (
+            <div className="relative max-w-xs">
+              <Input
+                placeholder="Search equipment..."
+                value={equipmentFilter}
+                onChange={(e) => setEquipmentFilter(e.target.value)}
+              />
+              {equipmentFilter && (
+                <button
+                  type="button"
+                  onClick={() => setEquipmentFilter("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm px-1"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
-            {equipment.map((eq) => (
-              <Badge
-                key={eq.id}
-                variant={formData.equipmentIds.includes(eq.id) ? "default" : "outline"}
-                className="cursor-pointer hover:bg-primary/80"
-                onClick={() => toggleEquipment(eq.id)}
-              >
-                {eq.icon} {eq.name}
-                {formData.equipmentIds.includes(eq.id) && " ✓"}
-              </Badge>
-            ))}
+            {equipment
+              .filter((eq) =>
+                equipmentFilter
+                  ? eq.name.toLowerCase().includes(equipmentFilter.toLowerCase())
+                  : true
+              )
+              .map((eq) => (
+                <Badge
+                  key={eq.id}
+                  variant={formData.equipmentIds.includes(eq.id) ? "default" : "outline"}
+                  className="cursor-pointer hover:bg-primary/80"
+                  onClick={() => toggleEquipment(eq.id)}
+                >
+                  {eq.icon} {eq.name}
+                  {formData.equipmentIds.includes(eq.id) && " ✓"}
+                </Badge>
+              ))}
+            {equipmentFilter && equipment.filter((eq) =>
+              eq.name.toLowerCase().includes(equipmentFilter.toLowerCase())
+            ).length === 0 && (
+              <p className="text-xs text-muted-foreground">No equipment matches &quot;{equipmentFilter}&quot;</p>
+            )}
           </div>
           {equipment.length === 0 && (
             <p className="text-xs text-muted-foreground">No equipment created yet. <a href="/admin/equipment" className="underline">Add equipment</a></p>

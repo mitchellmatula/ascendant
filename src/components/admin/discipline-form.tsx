@@ -50,6 +50,10 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [similarWarning, setSimilarWarning] = useState<{
+    message: string;
+    similarTo: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     name: discipline?.name ?? "",
@@ -69,12 +73,14 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
       icon: preset.icon,
       color: preset.color,
     });
+    setSimilarWarning(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, confirmOverride = false) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    if (!confirmOverride) setSimilarWarning(null);
 
     try {
       const url = mode === "create" 
@@ -85,12 +91,22 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
         method: mode === "create" ? "POST" : "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, confirmOverride }),
       });
 
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        // Check if it's a similarity warning that can be overridden
+        if (response.status === 409 && data.canOverride && data.similarTo) {
+          setSimilarWarning({
+            message: data.error,
+            similarTo: data.similarTo,
+          });
+          setIsLoading(false);
+          return;
+        }
+
         let errorMessage = data.error || "Something went wrong";
         
         if (data.details?.fieldErrors) {
@@ -132,6 +148,33 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
             </div>
           )}
 
+          {similarWarning && (
+            <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-3">
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                ⚠️ {similarWarning.message}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => handleSubmit(e, true)}
+                  disabled={isLoading}
+                >
+                  Create Anyway
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSimilarWarning(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
           {mode === "create" && (
             <div className="space-y-2">
               <Label>Quick Presets</Label>
@@ -161,7 +204,10 @@ export function DisciplineForm({ discipline, mode }: DisciplineFormProps) {
               id="name"
               placeholder="e.g., Ninja"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                setSimilarWarning(null);
+              }}
               required
               minLength={2}
               maxLength={50}

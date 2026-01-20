@@ -303,9 +303,10 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
               onCheckedChange={(checked) =>
                 setFormData({ ...formData, isPublicProfile: checked === true })
               }
+              className="mt-1"
             />
             <div className="space-y-1">
-              <Label htmlFor="isPublicProfile" className="cursor-pointer">
+              <Label htmlFor="isPublicProfile" className="cursor-pointer leading-none">
                 Show me on the leaderboard
               </Label>
               <p className="text-xs text-muted-foreground">
