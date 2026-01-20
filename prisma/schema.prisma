@@ -1148,3 +1148,63 @@ enum ChallengeScope {
   GLOBAL // Admin-created, visible to everyone
   CLASS  // Coach-created for a class, visible only to class members
 }
+
+// ============================================
+// SUPPORT TICKETS
+// ============================================
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  
+  // Contact info (may or may not be logged in)
+  email     String
+  name      String?
+  userId    String?  // If logged in, link to user
+  athleteId String?  // If logged in and has athlete profile
+  
+  // Ticket details
+  subject   String
+  message   String
+  category  SupportCategory @default(OTHER)
+  
+  // Status tracking
+  status    TicketStatus @default(OPEN)
+  priority  TicketPriority @default(NORMAL)
+  
+  // Admin notes (internal)
+  adminNotes String?
+  resolvedAt DateTime?
+  resolvedBy String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum SupportCategory {
+  BUG           // Something isn't working
+  ACCOUNT       // Account or login issues
+  CHALLENGE     // Challenge-related questions
+  SUBMISSION    // Submission issues
+  GYM           // Gym-related questions
+  FEATURE       // Feature request
+  OTHER         // General inquiry
+}
+
+enum TicketStatus {
+  OPEN          // New ticket
+  IN_PROGRESS   // Being worked on
+  WAITING       // Waiting for user response
+  RESOLVED      // Issue resolved
+  CLOSED        // Closed (no resolution needed)
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}

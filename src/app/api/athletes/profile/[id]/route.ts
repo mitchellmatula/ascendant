@@ -24,7 +24,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { displayName, username, dateOfBirth, gender, avatarUrl, disciplineIds } = body;
+    const { displayName, username, dateOfBirth, gender, avatarUrl, disciplineIds, isPublicProfile } = body;
 
     // Validate username if provided
     if (username !== undefined) {
@@ -79,6 +79,7 @@ export async function PATCH(
         gender,
         avatarUrl,
         isMinor,
+        ...(isPublicProfile !== undefined && { isPublicProfile }),
       },
     });
 

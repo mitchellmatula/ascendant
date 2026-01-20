@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VideoDisplay } from "@/components/ui/video-display";
 import { FeedReactions } from "@/components/feed/feed-reactions";
 import { Comments, CommentData } from "@/components/feed/comments";
+import { DeleteSubmissionButton } from "@/components/ui/delete-submission-button";
 import { calculatePrime, formatLevel, getRankColor } from "@/lib/levels";
 import { 
   ArrowLeft, 
@@ -314,10 +315,19 @@ export default async function SubmissionPage({ params }: Props) {
               </div>
             </Link>
 
-            {/* Status Badge */}
-            <div className={`flex items-center gap-1.5 ${status.color}`}>
-              <StatusIcon className="w-4 h-4" />
-              <span className="text-sm font-medium">{status.label}</span>
+            {/* Status & Actions */}
+            <div className="flex flex-col items-end gap-2">
+              <div className={`flex items-center gap-1.5 ${status.color}`}>
+                <StatusIcon className="w-4 h-4" />
+                <span className="text-sm font-medium">{status.label}</span>
+              </div>
+              {isOwner && (
+                <DeleteSubmissionButton
+                  submissionId={submission.id}
+                  challengeName={submission.challenge.name}
+                  redirectTo={`/challenges/${submission.challenge.slug}`}
+                />
+              )}
             </div>
           </div>
         </div>

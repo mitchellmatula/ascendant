@@ -68,6 +68,7 @@ function ProfileFormContent() {
     dateOfBirth: undefined as Date | undefined,
     gender: "",
     disciplineIds: [] as string[],
+    isPublicProfile: true, // Show on leaderboards by default
   });
 
   // For parent accounts - multiple children
@@ -202,6 +203,7 @@ function ProfileFormContent() {
             gender: formData.gender,
             disciplineIds: formData.disciplineIds,
             avatarUrl,
+            isPublicProfile: formData.isPublicProfile,
           };
         }
 
@@ -242,6 +244,7 @@ function ProfileFormContent() {
             gender: formData.gender,
             disciplineIds: formData.disciplineIds,
             avatarUrl,
+            isPublicProfile: formData.isPublicProfile,
           }),
         });
 
@@ -549,6 +552,24 @@ function ProfileFormContent() {
                         </div>
                       </div>
                     )}
+
+                    {/* Leaderboard visibility */}
+                    <div className="flex items-start space-x-3 pt-2">
+                      <Checkbox
+                        id="parent-show-on-leaderboard"
+                        checked={formData.isPublicProfile}
+                        onCheckedChange={(checked) => setFormData({ ...formData, isPublicProfile: checked === true })}
+                        className="mt-0.5"
+                      />
+                      <div>
+                        <Label htmlFor="parent-show-on-leaderboard" className="cursor-pointer">
+                          Show me on the leaderboard
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Appear in public rankings and athlete searches.
+                        </p>
+                      </div>
+                    </div>
                   </CardContent>
                 )}
               </Card>
@@ -652,6 +673,24 @@ function ProfileFormContent() {
                     </div>
                   </div>
                 )}
+
+                {/* Leaderboard visibility */}
+                <div className="flex items-start space-x-3 pt-2">
+                  <Checkbox
+                    id="show-on-leaderboard"
+                    checked={formData.isPublicProfile}
+                    onCheckedChange={(checked) => setFormData({ ...formData, isPublicProfile: checked === true })}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <Label htmlFor="show-on-leaderboard" className="cursor-pointer">
+                      Show me on the leaderboard
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Appear in public rankings and athlete searches. You can change this anytime.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}

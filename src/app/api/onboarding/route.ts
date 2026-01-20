@@ -17,6 +17,7 @@ interface ParentAthleteData {
   gender: string;
   disciplineIds?: string[];
   avatarUrl?: string | null;
+  isPublicProfile?: boolean;
 }
 
 /**
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { accountType, displayName, dateOfBirth, gender, avatarUrl, disciplineIds, children, parentAthlete, shareChildActivity } = body;
+    const { accountType, displayName, dateOfBirth, gender, avatarUrl, disciplineIds, children, parentAthlete, shareChildActivity, isPublicProfile } = body;
 
     // Get Clerk user info for username
     const clerk = await clerkClient();
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
             gender: pa.gender,
             isMinor: isMinorAthlete,
             avatarUrl: pa.avatarUrl,
+            isPublicProfile: pa.isPublicProfile ?? true, // Default to true for adults
             ...(pa.disciplineIds?.length && {
               disciplines: {
                 create: pa.disciplineIds.map((disciplineId: string) => ({
@@ -191,6 +193,7 @@ export async function POST(request: Request) {
         gender,
         isMinor: isMinorAthlete,
         avatarUrl,
+        isPublicProfile: isPublicProfile ?? true, // Default to true for adults
         ...(disciplineIds?.length && {
           disciplines: {
             create: disciplineIds.map((disciplineId: string) => ({

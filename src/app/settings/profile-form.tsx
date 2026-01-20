@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
 import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Save, AlertCircle } from "lucide-react";
 import {
   Select,
@@ -40,6 +41,7 @@ interface ProfileFormProps {
     dateOfBirth: Date;
     gender: string;
     avatarUrl: string | null;
+    isPublicProfile: boolean;
     disciplines: { discipline: Discipline }[];
   };
   disciplines: Discipline[];
@@ -61,6 +63,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
       dateOfBirth: new Date(athlete.dateOfBirth).toDateString(),
       gender: athlete.gender,
       disciplineIds: athlete.disciplines.map((d) => d.discipline.id).sort(),
+      isPublicProfile: athlete.isPublicProfile,
     }),
     [athlete]
   );
@@ -71,6 +74,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
     dateOfBirth: new Date(athlete.dateOfBirth),
     gender: athlete.gender,
     disciplineIds: athlete.disciplines.map((d) => d.discipline.id),
+    isPublicProfile: athlete.isPublicProfile,
   });
 
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -82,6 +86,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
     if (formData.username !== initialValues.username) return true;
     if (formData.gender !== initialValues.gender) return true;
     if (formData.dateOfBirth.toDateString() !== initialValues.dateOfBirth) return true;
+    if (formData.isPublicProfile !== initialValues.isPublicProfile) return true;
     
     const currentDisciplines = [...formData.disciplineIds].sort();
     if (currentDisciplines.length !== initialValues.disciplineIds.length) return true;
@@ -287,6 +292,25 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
                   {discipline.name}
                 </Badge>
               ))}
+            </div>
+          </div>
+
+          {/* Public Profile / Leaderboard */}
+          <div className="flex items-start space-x-3 pt-2">
+            <Checkbox
+              id="isPublicProfile"
+              checked={formData.isPublicProfile}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, isPublicProfile: checked === true })
+              }
+            />
+            <div className="space-y-1">
+              <Label htmlFor="isPublicProfile" className="cursor-pointer">
+                Show me on the leaderboard
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Allow your profile to appear on public leaderboards and gym member lists
+              </p>
             </div>
           </div>
 

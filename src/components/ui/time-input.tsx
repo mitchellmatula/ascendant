@@ -12,6 +12,9 @@ interface TimeInputProps {
   format: TimeFormat;
   className?: string;
   placeholder?: string;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  "data-grade-row"?: number;
+  "data-grade-col"?: number;
 }
 
 /**
@@ -92,7 +95,16 @@ export function formatSecondsToTime(seconds: number, format: TimeFormat): string
  * Time input component that handles different time formats
  * Stores value in seconds internally
  */
-export function TimeInput({ value, onChange, format, className, placeholder }: TimeInputProps) {
+export function TimeInput({ 
+  value, 
+  onChange, 
+  format, 
+  className, 
+  placeholder,
+  onKeyDown,
+  "data-grade-row": dataGradeRow,
+  "data-grade-col": dataGradeCol,
+}: TimeInputProps) {
   const [displayValue, setDisplayValue] = useState("");
   
   // Update display when value or format changes
@@ -120,6 +132,20 @@ export function TimeInput({ value, onChange, format, className, placeholder }: T
     }
   }, [displayValue, format, onChange]);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp") {
+      // Commit the value before navigation
+      const seconds = parseTimeToSeconds(displayValue, format);
+      onChange(seconds);
+      if (seconds > 0) {
+        setDisplayValue(formatSecondsToTime(seconds, format));
+      } else {
+        setDisplayValue("");
+      }
+    }
+    onKeyDown?.(e);
+  }, [displayValue, format, onChange, onKeyDown]);
+
   const getPlaceholder = () => {
     if (placeholder) return placeholder;
     switch (format) {
@@ -135,8 +161,11 @@ export function TimeInput({ value, onChange, format, className, placeholder }: T
       value={displayValue}
       onChange={handleChange}
       onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
       placeholder={getPlaceholder()}
       className={cn("text-center", className)}
+      data-grade-row={dataGradeRow}
+      data-grade-col={dataGradeCol}
     />
   );
 }

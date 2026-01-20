@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VideoDisplay } from "@/components/ui/video-display";
+import { DeleteSubmissionButton } from "@/components/ui/delete-submission-button";
 import { formatSecondsToTime, type TimeFormat } from "@/lib/time";
 import { getRankName, getRankColor, type Rank, RANK_INDEX } from "@/lib/levels";
 import { 
@@ -601,6 +602,21 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
                   <p className="text-xs text-center text-muted-foreground mt-2">
                     Submit again to try for a higher tier!
                   </p>
+                )}
+                {submission && submission.status !== "APPROVED" && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <span className="text-xs text-muted-foreground">
+                      {submission.status === "PENDING" ? "Pending review" : 
+                       submission.status === "REJECTED" ? "Rejected" : "Needs revision"}
+                    </span>
+                    <DeleteSubmissionButton
+                      submissionId={submission.id}
+                      challengeName={challenge.name}
+                      redirectTo={`/challenges/${challenge.slug}`}
+                      variant="ghost"
+                      size="sm"
+                    />
+                  </div>
                 )}
               </>
             )}

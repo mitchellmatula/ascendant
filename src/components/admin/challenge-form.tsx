@@ -664,6 +664,54 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
     }
   };
 
+  // Handle keyboard navigation in grade matrix (Excel-like behavior)
+  const handleGradeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
+    const navigate = (nextRow: number, nextCol: number) => {
+      const nextInput = document.querySelector<HTMLInputElement>(
+        `[data-grade-row="${nextRow}"][data-grade-col="${nextCol}"]`
+      );
+      if (nextInput) {
+        e.preventDefault();
+        nextInput.focus();
+        nextInput.select();
+        return true;
+      }
+      return false;
+    };
+
+    switch (e.key) {
+      case "Enter":
+      case "ArrowDown":
+        e.preventDefault();
+        // Move to next row, same column
+        if (!navigate(rowIndex + 1, colIndex)) {
+          // If no next row, wrap to first row of next column
+          navigate(0, colIndex + 1);
+        }
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        // Move to previous row, same column
+        if (!navigate(rowIndex - 1, colIndex)) {
+          // If no previous row, could wrap to last row of previous column
+          // For now, just stay put
+        }
+        break;
+      case "ArrowRight":
+        // Only navigate if cursor is at end of input
+        if (e.currentTarget.selectionStart === e.currentTarget.value.length) {
+          navigate(rowIndex, colIndex + 1);
+        }
+        break;
+      case "ArrowLeft":
+        // Only navigate if cursor is at start of input
+        if (e.currentTarget.selectionStart === 0) {
+          navigate(rowIndex, colIndex - 1);
+        }
+        break;
+    }
+  };
+
   // Generate grades with AI
   const generateGradesWithAI = async () => {
     if (!formData.name.trim() || formData.gradingType === "PASS_FAIL") return;
@@ -1691,10 +1739,10 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                   {(formData.allowedDivisionIds.length > 0 
                     ? divisions.filter(d => formData.allowedDivisionIds.includes(d.id))
                     : divisions
-                  ).map(division => (
+                  ).map((division, rowIndex) => (
                     <tr key={division.id} className="border-b last:border-0">
                       <td className="py-2 pr-4 font-medium whitespace-nowrap">{division.name}</td>
-                      {getAvailableRanks().map(rank => {
+                      {getAvailableRanks().map((rank, colIndex) => {
                         const grade = getGrade(division.id, rank);
                         return (
                           <td key={rank} className="py-2 px-1">
@@ -1704,6 +1752,9 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                                 onChange={(seconds) => setGrade(division.id, rank, seconds)}
                                 format={formData.timeFormat}
                                 className="w-20 h-8 text-sm"
+                                data-grade-row={rowIndex}
+                                data-grade-col={colIndex}
+                                onKeyDown={(e) => handleGradeKeyDown(e, rowIndex, colIndex)}
                               />
                             ) : formData.gradingType === "WEIGHTED_REPS" ? (
                               <div className="flex flex-col gap-1">
@@ -1715,6 +1766,10 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                                   onChange={(e) => setGrade(division.id, rank, parseInt(e.target.value) || 0)}
                                   placeholder="reps"
                                   title="Reps"
+                                  data-grade-row={rowIndex}
+                                  data-grade-col={colIndex}
+                                  data-grade-subrow={0}
+                                  onKeyDown={(e) => handleGradeKeyDown(e, rowIndex, colIndex)}
                                 />
                                 <Input
                                   type="number"
@@ -1725,6 +1780,10 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                                   placeholder={formData.weightUnit}
                                   title={`Weight (${formData.weightUnit})`}
                                   disabled={!grade?.targetValue}
+                                  data-grade-row={rowIndex}
+                                  data-grade-col={colIndex}
+                                  data-grade-subrow={1}
+                                  onKeyDown={(e) => handleGradeKeyDown(e, rowIndex, colIndex)}
                                 />
                               </div>
                             ) : (
@@ -1735,6 +1794,9 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                                 value={grade?.targetValue ?? ""}
                                 onChange={(e) => setGrade(division.id, rank, parseInt(e.target.value) || 0)}
                                 placeholder="—"
+                                data-grade-row={rowIndex}
+                                data-grade-col={colIndex}
+                                onKeyDown={(e) => handleGradeKeyDown(e, rowIndex, colIndex)}
                               />
                             )}
                           </td>
