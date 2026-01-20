@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ interface GymStaff {
   role: string;
 }
 
-export default function NewClassPage() {
+function NewClassForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedGymId = searchParams.get("gymId");
@@ -316,5 +316,43 @@ export default function NewClassPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function NewClassFormLoading() {
+  return (
+    <div className="container mx-auto px-4 py-6 md:py-8 max-w-2xl">
+      <div className="mb-6">
+        <div className="h-4 w-32 bg-muted rounded animate-pulse mb-4" />
+        <div className="h-8 w-64 bg-muted rounded animate-pulse mb-2" />
+        <div className="h-4 w-80 bg-muted rounded animate-pulse" />
+      </div>
+      <Card>
+        <CardHeader>
+          <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-full bg-muted rounded animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-24 w-full bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function NewClassPage() {
+  return (
+    <Suspense fallback={<NewClassFormLoading />}>
+      <NewClassForm />
+    </Suspense>
   );
 }
