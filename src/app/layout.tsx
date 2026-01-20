@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { PageTransition } from "@/components/layout/page-transition";
 import { CelebrationProvider } from "@/components/ui/celebration-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -123,7 +124,9 @@ export default function RootLayout({
         >
           <CelebrationProvider>
             <Header />
-            <main className="pb-16 md:pb-0">{children}</main>
+            <PageTransition>
+              <main className="pb-16 md:pb-0">{children}</main>
+            </PageTransition>
             <BottomNav />
             <Toaster theme="dark" position="top-center" richColors />
           </CelebrationProvider>

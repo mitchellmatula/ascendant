@@ -131,7 +131,7 @@ export default async function FollowingPage({ params }: Props) {
                     </Link>
                     
                     <div className="flex-1 min-w-0">
-                      <Link href={`/athletes/${followedAthlete.username}`} className="hover:text-primary">
+                      <Link href={`/athletes/${followedAthlete.username}`} className="hover:text-accent">
                         <div className="flex items-center gap-2">
                           <span className="font-medium truncate">{followedAthlete.displayName}</span>
                           <Badge

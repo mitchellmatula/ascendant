@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { JoinClassButton } from "./join-class-button";
 import { ProgressLink } from "./progress-link";
+import { LeaveClassButton } from "./leave-class-button";
 
 interface ClassPageProps {
   params: Promise<{ id: string }>;
@@ -83,6 +84,7 @@ export default async function ClassPage({ params }: ClassPageProps) {
     where: {
       classId: id,
       athleteId: { in: athleteIds },
+      status: "ACTIVE",
     },
     include: {
       athlete: {
@@ -196,14 +198,27 @@ export default async function ClassPage({ params }: ClassPageProps) {
                 </CardDescription>
               </div>
             </div>
-            {isCoach && (
-              <Button variant="outline" size="sm" asChild>
-                <Link href={`/coach/classes/${id}`}>
-                  <Settings className="w-4 h-4 mr-1" />
-                  Manage
-                </Link>
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {isCoach && (
+                <Button variant="outline" size="sm" asChild>
+                  <Link href={`/coach/classes/${id}`}>
+                    <Settings className="w-4 h-4 mr-1" />
+                    Manage
+                  </Link>
+                </Button>
+              )}
+              {memberships.length > 0 && !isCoach && (
+                <LeaveClassButton
+                  classId={id}
+                  className={classData.name}
+                  memberAthletes={memberships.map(m => ({
+                    id: m.athlete.id,
+                    displayName: m.athlete.displayName,
+                  }))}
+                  isParent={isParent}
+                />
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -351,7 +366,7 @@ export default async function ClassPage({ params }: ClassPageProps) {
                       <div className="min-w-0 flex-1">
                         <Link 
                           href={`/challenges/${benchmark.challenge.slug}`}
-                          className="font-medium text-sm truncate hover:text-primary transition-colors block"
+                          className="font-medium text-sm truncate hover:text-accent transition-colors block"
                         >
                           {benchmark.challenge.name}
                         </Link>

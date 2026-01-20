@@ -292,7 +292,7 @@ export default async function SubmissionPage({ params }: Props) {
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold group-hover:text-primary transition-colors">
+                  <span className="font-semibold group-hover:text-accent transition-colors">
                     {submission.athlete.displayName}
                   </span>
                   <Badge 
@@ -326,7 +326,7 @@ export default async function SubmissionPage({ params }: Props) {
         <div className="p-4 bg-muted/30 border-b">
           <Link 
             href={`/challenges/${submission.challenge.slug}`}
-            className="flex items-center gap-3 hover:text-primary transition-colors"
+            className="flex items-center gap-3 hover:text-accent transition-colors"
           >
             <div 
               className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"

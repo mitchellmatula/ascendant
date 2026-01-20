@@ -283,11 +283,23 @@ export async function DELETE(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check coach or admin
+    // Get class to check gym ownership
+    const classData = await db.class.findUnique({
+      where: { id },
+      include: { gym: { select: { ownerId: true } } },
+    });
+
+    if (!classData) {
+      return NextResponse.json({ error: "Class not found" }, { status: 404 });
+    }
+
+    // Allow: class coach, gym owner, or system admin
     const isCoach = await isClassCoach(id, user.id);
-    if (!isCoach && user.role !== Role.SYSTEM_ADMIN) {
+    const isGymOwner = classData.gym?.ownerId === user.id;
+    
+    if (!isCoach && !isGymOwner && user.role !== Role.SYSTEM_ADMIN) {
       return NextResponse.json(
-        { error: "Only coaches can archive this class" },
+        { error: "Only coaches or gym owners can archive this class" },
         { status: 403 }
       );
     }

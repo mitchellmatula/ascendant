@@ -11,7 +11,25 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, city, state, website, disciplineIds } = body;
+    const { 
+      name, 
+      description,
+      logoUrl,
+      address,
+      city, 
+      state, 
+      country,
+      zipCode,
+      googlePlaceId,
+      website, 
+      phone,
+      email,
+      instagramUrl,
+      facebookUrl,
+      tiktokUrl,
+      youtubeUrl,
+      disciplineIds 
+    } = body;
 
     if (!name || name.trim().length < 2) {
       return NextResponse.json(
@@ -64,9 +82,20 @@ export async function POST(request: Request) {
         name: name.trim(),
         slug,
         description: description?.trim() || null,
+        logoUrl: logoUrl?.trim() || null,
+        address: address?.trim() || null,
         city: city?.trim() || null,
         state: state?.trim() || null,
+        country: country?.trim() || null,
+        zipCode: zipCode?.trim() || null,
+        googlePlaceId: googlePlaceId?.trim() || null,
         website: website?.trim() || null,
+        phone: phone?.trim() || null,
+        email: email?.trim() || null,
+        instagramUrl: instagramUrl?.trim() || null,
+        facebookUrl: facebookUrl?.trim() || null,
+        tiktokUrl: tiktokUrl?.trim() || null,
+        youtubeUrl: youtubeUrl?.trim() || null,
         ownerId: user.id,
         // Add creator as owner member
         members: {

@@ -79,10 +79,11 @@ export function canAutoApprove(role: Role): boolean {
 }
 
 /**
- * Check if user has admin access
+ * Check if user has system admin access (full admin panel)
+ * Only SYSTEM_ADMIN can access /admin routes
  */
 export function isAdmin(role: Role): boolean {
-  return hasRole(role, ["GYM_ADMIN", "SYSTEM_ADMIN"]);
+  return hasRole(role, ["SYSTEM_ADMIN"]);
 }
 
 /**

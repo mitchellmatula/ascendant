@@ -146,7 +146,7 @@ export async function Header() {
           {/* Prime Level Badge */}
           {primeLevel && (
             <Link 
-              href="/domains" 
+              href="/dashboard" 
               className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-sm font-bold transition-opacity hover:opacity-80"
               style={{ 
                 backgroundColor: `${getRankColor(primeLevel.letter)}20`,

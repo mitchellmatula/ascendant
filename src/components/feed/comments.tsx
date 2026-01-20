@@ -161,7 +161,7 @@ function CommentItem({
           <div className="flex items-center gap-2 mb-1">
             <Link
               href={`/athletes/${comment.athlete.username}`}
-              className="font-medium text-sm hover:text-primary transition-colors"
+              className="font-medium text-sm hover:text-accent transition-colors"
             >
               @{comment.athlete.username}
             </Link>

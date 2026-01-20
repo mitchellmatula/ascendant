@@ -170,8 +170,8 @@ export function VideoPlayer({
           className="absolute inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
           onClick={togglePlay}
         >
-          <div className="rounded-full bg-white/90 p-4">
-            <Play className="h-8 w-8 text-black fill-black" />
+          <div className="rounded-full bg-black/60 backdrop-blur-sm p-4 border border-white/20">
+            <Play className="h-8 w-8 text-primary fill-primary" />
           </div>
         </div>
       )}

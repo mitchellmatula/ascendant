@@ -55,6 +55,10 @@ interface GymFormProps {
     zipCode: string | null;
     phone: string | null;
     email: string | null;
+    instagramUrl: string | null;
+    facebookUrl: string | null;
+    tiktokUrl: string | null;
+    youtubeUrl: string | null;
     isActive: boolean;
     disciplines?: { discipline: Discipline }[];
     equipment?: { equipment: Equipment }[];
@@ -99,6 +103,10 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
     zipCode: gym?.zipCode ?? "",
     phone: gym?.phone ?? "",
     email: gym?.email ?? "",
+    instagramUrl: gym?.instagramUrl ?? "",
+    facebookUrl: gym?.facebookUrl ?? "",
+    tiktokUrl: gym?.tiktokUrl ?? "",
+    youtubeUrl: gym?.youtubeUrl ?? "",
     isActive: gym?.isActive ?? true,
     disciplineIds: gym?.disciplines?.map(d => d.discipline.id) ?? [],
     equipmentIds: gym?.equipment?.map(e => e.equipment.id) ?? [],
@@ -291,6 +299,10 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
         zipCode: formData.zipCode?.trim() || null,
         phone: formData.phone?.trim() || null,
         email: formData.email?.trim() || null,
+        instagramUrl: formData.instagramUrl?.trim() || null,
+        facebookUrl: formData.facebookUrl?.trim() || null,
+        tiktokUrl: formData.tiktokUrl?.trim() || null,
+        youtubeUrl: formData.youtubeUrl?.trim() || null,
       };
 
       const response = await fetch(url, {
@@ -509,6 +521,61 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
             {phoneError && (
               <p className="text-xs text-destructive">{phoneError}</p>
             )}
+          </div>
+
+          {/* Social Media Links */}
+          <div className="border-t pt-4">
+            <Label className="text-sm font-medium mb-3 block">Social Media</Label>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="instagramUrl" className="text-xs text-muted-foreground">
+                  Instagram
+                </Label>
+                <Input
+                  id="instagramUrl"
+                  type="url"
+                  placeholder="https://instagram.com/yourgym"
+                  value={formData.instagramUrl}
+                  onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="facebookUrl" className="text-xs text-muted-foreground">
+                  Facebook
+                </Label>
+                <Input
+                  id="facebookUrl"
+                  type="url"
+                  placeholder="https://facebook.com/yourgym"
+                  value={formData.facebookUrl}
+                  onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tiktokUrl" className="text-xs text-muted-foreground">
+                  TikTok
+                </Label>
+                <Input
+                  id="tiktokUrl"
+                  type="url"
+                  placeholder="https://tiktok.com/@yourgym"
+                  value={formData.tiktokUrl}
+                  onChange={(e) => setFormData({ ...formData, tiktokUrl: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="youtubeUrl" className="text-xs text-muted-foreground">
+                  YouTube
+                </Label>
+                <Input
+                  id="youtubeUrl"
+                  type="url"
+                  placeholder="https://youtube.com/@yourgym"
+                  value={formData.youtubeUrl}
+                  onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
+                />
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -113,22 +113,60 @@ export async function POST(
     }
 
     // Check for pending request
-    const existingRequest = await db.classJoinRequest.findFirst({
+    const existingRequest = await db.classJoinRequest.findUnique({
       where: {
-        classId: id,
-        athleteId: targetAthlete.id,
-        status: "PENDING",
+        classId_athleteId: { classId: id, athleteId: targetAthlete.id },
       },
     });
 
     if (existingRequest) {
-      return NextResponse.json(
-        { error: `${targetAthlete.displayName} already has a pending request for this class` },
-        { status: 400 }
-      );
+      if (existingRequest.status === "PENDING") {
+        return NextResponse.json(
+          { error: `${targetAthlete.displayName} already has a pending request for this class` },
+          { status: 400 }
+        );
+      }
+      
+      // Reuse/update existing request (was APPROVED or DENIED)
+      await db.classJoinRequest.update({
+        where: { id: existingRequest.id },
+        data: {
+          status: "PENDING",
+          note: message || null,
+          requestedBy: { connect: { id: user.id } },
+          reviewedAt: null,
+          reviewedBy: { disconnect: true },
+        },
+      });
+
+      // Notify all coaches
+      const coaches = classData.coaches;
+      for (const coach of coaches) {
+        const coachUser = await db.user.findUnique({
+          where: { id: coach.userId },
+          select: { athlete: { select: { id: true } } },
+        });
+
+        if (coachUser?.athlete) {
+          await createNotification({
+            athleteId: coachUser.athlete.id,
+            type: "CLASS_JOIN_REQUEST",
+            title: "Class join request",
+            body: `${targetAthlete.displayName} wants to join "${classData.name}"`,
+            linkUrl: `/coach/classes/${id}/requests`,
+          });
+        }
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        requestId: existingRequest.id,
+        athleteName: targetAthlete.displayName,
+        message: `${targetAthlete.displayName}'s join request has been submitted` 
+      });
     }
 
-    // Create join request (note field in schema)
+    // Create new join request
     const joinRequest = await db.classJoinRequest.create({
       data: {
         classId: id,

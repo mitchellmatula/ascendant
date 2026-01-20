@@ -208,3 +208,90 @@ export async function POST(
     );
   }
 }
+
+// DELETE /api/classes/[id]/members - Leave class (athlete or parent removes their child)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId: clerkId } = await auth();
+
+    if (!clerkId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const athleteId = searchParams.get("athleteId");
+
+    if (!athleteId) {
+      return NextResponse.json(
+        { error: "Athlete ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const user = await db.user.findUnique({
+      where: { clerkId },
+      include: {
+        athlete: { select: { id: true } },
+        managedAthletes: { select: { id: true } },
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Get all athlete IDs this user controls (own + managed)
+    const controlledAthleteIds = [
+      ...(user.athlete ? [user.athlete.id] : []),
+      ...user.managedAthletes.map(a => a.id),
+    ];
+
+    // Verify user controls this athlete
+    if (!controlledAthleteIds.includes(athleteId)) {
+      return NextResponse.json(
+        { error: "You can only remove yourself or your managed athletes from a class" },
+        { status: 403 }
+      );
+    }
+
+    // Find and update the membership
+    const membership = await db.classMember.findUnique({
+      where: { classId_athleteId: { classId: id, athleteId } },
+    });
+
+    if (!membership) {
+      return NextResponse.json(
+        { error: "Not a member of this class" },
+        { status: 404 }
+      );
+    }
+
+    // Mark as LEFT (soft delete to preserve history/grades)
+    await db.classMember.update({
+      where: { id: membership.id },
+      data: { status: "LEFT", leftAt: new Date() },
+    });
+
+    // Also cancel any pending join requests
+    await db.classJoinRequest.updateMany({
+      where: {
+        classId: id,
+        athleteId,
+        status: "PENDING",
+      },
+      data: { status: "DENIED" },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Class members DELETE error:", error);
+    return NextResponse.json(
+      { error: "Failed to leave class" },
+      { status: 500 }
+    );
+  }
+}

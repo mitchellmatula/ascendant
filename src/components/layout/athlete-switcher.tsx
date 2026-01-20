@@ -129,9 +129,9 @@ export function AthleteSwitcher({
             key={athlete.id}
             onClick={() => {
               if (athlete.id === activeAthleteId) {
-                // If clicking the active athlete, go to ranks page
+                // If clicking the active athlete, go to dashboard
                 setIsOpen(false);
-                router.push("/domains");
+                router.push("/dashboard");
               } else {
                 handleSwitch(athlete.id);
               }

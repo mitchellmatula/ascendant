@@ -94,6 +94,7 @@ export async function PATCH(
     const { 
       name, description, logoUrl, bannerUrl, website, googlePlaceId,
       address, city, state, country, zipCode, phone, email,
+      instagramUrl, facebookUrl, tiktokUrl, youtubeUrl,
       isActive, disciplineIds, equipmentIds 
     } = parsed.data;
 
@@ -167,6 +168,10 @@ export async function PATCH(
         zipCode,
         phone,
         email,
+        instagramUrl,
+        facebookUrl,
+        tiktokUrl,
+        youtubeUrl,
         isActive,
       },
       include: {

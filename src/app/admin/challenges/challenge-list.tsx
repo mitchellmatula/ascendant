@@ -84,6 +84,7 @@ const GRADING_TYPES = [
   { value: "TIME", label: "Time" },
   { value: "DISTANCE", label: "Distance" },
   { value: "TIMED_REPS", label: "Timed Reps" },
+  { value: "WEIGHTED_REPS", label: "Weighted Reps" },
 ];
 
 export function ChallengeList({ challenges, domains, categories, disciplines, gyms }: ChallengeListProps) {

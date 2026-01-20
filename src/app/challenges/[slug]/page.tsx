@@ -443,9 +443,20 @@ export default async function ChallengeDetailPage({ params }: PageProps) {
                   };
                   
                   const targetDisplay = formatTargetValue(grade.targetValue);
-                  const unitLabel = challenge.gradingType === "TIME" 
-                    ? "" 
-                    : ` ${challenge.gradingUnit || ""}`.trimEnd();
+                  
+                  // Determine unit label based on grading type
+                  let unitLabel = "";
+                  if (challenge.gradingType === "TIME") {
+                    if (challenge.timeFormat === "hh:mm:ss") {
+                      unitLabel = " (h:m:s)";
+                    } else if (challenge.timeFormat === "mm:ss") {
+                      unitLabel = " (m:s)";
+                    } else {
+                      unitLabel = " sec";
+                    }
+                  } else if (challenge.gradingUnit) {
+                    unitLabel = ` ${challenge.gradingUnit}`;
+                  }
                   
                   return (
                     <div 

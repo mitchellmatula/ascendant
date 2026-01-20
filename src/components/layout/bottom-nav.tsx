@@ -8,7 +8,7 @@ const navItems = [
   { href: "/", label: "Feed", icon: "📰" },
   { href: "/challenges", label: "Challenges", icon: "🏆" },
   { href: "/gyms", label: "Gyms", icon: "🏋️" },
-  { href: "/dashboard", label: "Profile", icon: "👤" },
+  { href: "/dashboard", label: "Dashboard", icon: "📊" },
 ];
 
 export function BottomNav() {

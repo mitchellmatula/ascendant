@@ -5,8 +5,8 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatLevel, getRankColor, getRankLabel } from "@/lib/levels";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { formatLevel, getRankColor, getRankLabel, type Rank } from "@/lib/levels";
+import { ChevronLeft, ChevronRight, CheckCircle, Trophy } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -91,6 +91,31 @@ export default async function DomainDetailPage({ params }: PageProps) {
 
   const completedChallengeIds = new Set(completedSubmissions.map(s => s.challengeId));
 
+  // Get a few featured challenges from this domain
+  const featuredChallenges = await db.challenge.findMany({
+    where: {
+      isActive: true,
+      primaryDomainId: domain.id,
+      gymId: null, // Only global challenges
+    },
+    include: {
+      submissions: {
+        where: { athleteId: athlete.id },
+        select: { status: true, achievedRank: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 6,
+  });
+
+  // Sort: incomplete first, then by name
+  const sortedFeaturedChallenges = featuredChallenges.sort((a, b) => {
+    const aCompleted = a.submissions.some(s => s.status === "APPROVED");
+    const bCompleted = b.submissions.some(s => s.status === "APPROVED");
+    if (aCompleted !== bCompleted) return aCompleted ? 1 : -1;
+    return a.name.localeCompare(b.name);
+  }).slice(0, 4);
+
   // Calculate completion per category
   const categoryStats = domain.categories.map(category => {
     const categoryChalllenges = challengesByCategoryRaw.filter(c => 
@@ -110,11 +135,11 @@ export default async function DomainDetailPage({ params }: PageProps) {
     <div className="container mx-auto px-4 py-6 md:py-8">
       {/* Back button */}
       <Link 
-        href="/domains" 
+        href="/dashboard" 
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
       >
         <ChevronLeft className="w-4 h-4 mr-1" />
-        All Domains
+        Dashboard
       </Link>
 
       {/* Domain Header */}
@@ -160,6 +185,75 @@ export default async function DomainDetailPage({ params }: PageProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Featured Challenges */}
+      {sortedFeaturedChallenges.length > 0 && (
+        <div className="mb-6 md:mb-8">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg md:text-xl font-semibold flex items-center gap-2">
+              <Trophy className="w-5 h-5" style={{ color: domain.color ?? undefined }} />
+              Challenges
+            </h2>
+            <Link href={`/challenges?domain=${domain.slug}`}>
+              <Button variant="ghost" size="sm" className="text-sm">
+                View all
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {sortedFeaturedChallenges.map((challenge) => {
+              const submission = challenge.submissions[0];
+              const isCompleted = submission?.status === "APPROVED";
+              const achievedRank = submission?.achievedRank as Rank | null;
+              
+              return (
+                <Link key={challenge.id} href={`/challenges/${challenge.slug}`}>
+                  <Card className="hover:shadow-md hover:border-primary/50 transition-all cursor-pointer h-full">
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        {isCompleted ? (
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0"
+                            style={{ backgroundColor: achievedRank ? getRankColor(achievedRank) : "#22c55e" }}
+                          >
+                            {achievedRank || <CheckCircle className="w-5 h-5" />}
+                          </div>
+                        ) : (
+                          <div 
+                            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                            style={{ 
+                              backgroundColor: domain.color ? `${domain.color}20` : "hsl(var(--muted))",
+                              color: domain.color ?? undefined,
+                            }}
+                          >
+                            <Trophy className="w-5 h-5" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-medium text-sm truncate ${isCompleted ? "text-muted-foreground" : ""}`}>
+                            {challenge.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isCompleted ? (
+                              <span className="text-green-600 dark:text-green-400">
+                                ✓ Completed{achievedRank ? ` • ${achievedRank}-Tier` : ""}
+                              </span>
+                            ) : (
+                              "Not completed"
+                            )}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Categories Grid */}
       <div className="mb-4">

@@ -130,7 +130,7 @@ export const createEquipmentSchema = z.object({
 export const updateEquipmentSchema = createEquipmentSchema.partial();
 
 // Grading type enum (matches Prisma)
-export const gradingTypes = ["PASS_FAIL", "REPS", "TIME", "DISTANCE", "TIMED_REPS"] as const;
+export const gradingTypes = ["PASS_FAIL", "REPS", "TIME", "DISTANCE", "TIMED_REPS", "WEIGHTED_REPS"] as const;
 export type GradingType = typeof gradingTypes[number];
 
 // Time format for TIME-based challenges
@@ -153,6 +153,7 @@ export const challengeGradeSchema = z.object({
   divisionId: z.string().cuid(),
   rank: z.enum(RANKS as unknown as [string, ...string[]]),
   targetValue: z.number().int().min(0),
+  targetWeight: z.number().int().min(0).optional().nullable(),
   description: z.string().max(200).optional().nullable(),
   bonusXP: z.number().int().min(0).default(0),
 });
@@ -172,6 +173,7 @@ const challengeBaseSchema = z.object({
   // Grading configuration
   gradingType: z.enum(gradingTypes).default("PASS_FAIL"),
   gradingUnit: z.string().max(20).optional().nullable(), // e.g., "reps", "seconds", "meters"
+  weightUnit: z.enum(["lbs", "kg"]).optional().nullable(), // For WEIGHTED_REPS: weight unit
   timeFormat: z.enum(timeFormats).optional().nullable(), // For TIME type: display format
   minRank: z.enum(RANKS as unknown as [string, ...string[]]).default("F"),
   maxRank: z.enum(RANKS as unknown as [string, ...string[]]).default("S"),
@@ -293,6 +295,10 @@ export const createGymSchema = z.object({
   zipCode: z.string().max(20).optional().nullable(),
   phone: z.string().max(30).optional().nullable(),
   email: z.string().email().optional().nullable(),
+  instagramUrl: z.string().url().optional().nullable(),
+  facebookUrl: z.string().url().optional().nullable(),
+  tiktokUrl: z.string().url().optional().nullable(),
+  youtubeUrl: z.string().url().optional().nullable(),
   isActive: z.boolean().default(true),
   disciplineIds: z.array(z.string().cuid()).optional().default([]),
   equipmentIds: z.array(z.string().cuid()).optional().default([]),

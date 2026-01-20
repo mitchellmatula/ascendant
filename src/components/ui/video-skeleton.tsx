@@ -24,8 +24,8 @@ export function VideoSkeleton({ className, aspectRatio = "16/9" }: VideoSkeleton
       
       {/* Fake play button */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="rounded-full bg-background/80 p-4 animate-pulse">
-          <Play className="h-8 w-8 text-muted-foreground" />
+        <div className="rounded-full bg-black/60 backdrop-blur-sm p-4 animate-pulse border border-white/20">
+          <Play className="h-8 w-8 text-primary" />
         </div>
       </div>
 

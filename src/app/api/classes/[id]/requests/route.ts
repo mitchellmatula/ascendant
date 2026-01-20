@@ -45,16 +45,13 @@ export async function GET(
     }
 
     const requests = await db.classJoinRequest.findMany({
-      where: { classId: id, status: "PENDING" },
+      where: { classId: id },
       include: {
         athlete: {
           select: {
             id: true,
             displayName: true,
-            username: true,
             avatarUrl: true,
-            dateOfBirth: true,
-            gender: true,
           },
         },
         requestedBy: {
@@ -64,22 +61,24 @@ export async function GET(
           },
         },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     });
 
     return NextResponse.json({
       requests: requests.map((r) => ({
         id: r.id,
         athleteId: r.athlete.id,
-        displayName: r.athlete.displayName,
-        username: r.athlete.username,
-        avatarUrl: r.athlete.avatarUrl,
-        dateOfBirth: r.athlete.dateOfBirth,
-        gender: r.athlete.gender,
+        athlete: {
+          id: r.athlete.id,
+          displayName: r.athlete.displayName,
+          avatarUrl: r.athlete.avatarUrl,
+        },
         note: r.note,
-        requestedAt: r.createdAt,
+        createdAt: r.createdAt.toISOString(),
+        status: r.status,
         requestedBy: r.requestedBy.athlete?.displayName || "Unknown",
       })),
+      className: (await db.class.findUnique({ where: { id }, select: { name: true } }))?.name || "Class",
     });
   } catch (error) {
     console.error("Class requests GET error:", error);

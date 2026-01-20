@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     const { 
       name, description, logoUrl, bannerUrl, website, googlePlaceId,
       address, city, state, country, zipCode, phone, email,
+      instagramUrl, facebookUrl, tiktokUrl, youtubeUrl,
       isActive, disciplineIds, equipmentIds 
     } = parsed.data;
 
@@ -107,6 +108,10 @@ export async function POST(request: NextRequest) {
         zipCode,
         phone,
         email,
+        instagramUrl,
+        facebookUrl,
+        tiktokUrl,
+        youtubeUrl,
         isActive,
         ownerId: user.id,
         // Create discipline links

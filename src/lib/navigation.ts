@@ -14,5 +14,4 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/challenges", label: "Challenges", icon: "🏆" },
   { href: "/classes", label: "Classes", icon: "🎓" },
   { href: "/gyms", label: "Gyms", icon: "🏋️" },
-  { href: "/domains", label: "Ranks", icon: "🎯" },
 ];

@@ -1,10 +1,11 @@
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import Image from "next/image";
-import { Building2, MapPin, Users, Search } from "lucide-react";
+import { Building2, MapPin, Users, Search, Crown, UserCheck } from "lucide-react";
 
 interface GymsPageProps {
   searchParams: Promise<{ q?: string; discipline?: string }>;
@@ -12,6 +13,7 @@ interface GymsPageProps {
 
 export default async function GymsPage({ searchParams }: GymsPageProps) {
   const { q, discipline } = await searchParams;
+  const user = await getCurrentUser();
 
   // Get all disciplines for filtering
   const disciplines = await db.discipline.findMany({
@@ -48,6 +50,55 @@ export default async function GymsPage({ searchParams }: GymsPageProps) {
       _count: { select: { members: { where: { isActive: true } } } },
     },
     orderBy: [{ isVerified: "desc" }, { name: "asc" }],
+  });
+
+  // Get user's gym affiliations (owner or coach)
+  let userGymIds: Set<string> = new Set();
+  let ownedGymIds: Set<string> = new Set();
+  let coachGymIds: Set<string> = new Set();
+  
+  if (user) {
+    // Get gyms user owns
+    const ownedGyms = await db.gym.findMany({
+      where: { ownerId: user.id, isActive: true },
+      select: { id: true },
+    });
+    ownedGymIds = new Set(ownedGyms.map(g => g.id));
+    
+    // Get gyms where user is a coach or manager
+    const memberships = await db.gymMember.findMany({
+      where: { 
+        userId: user.id, 
+        isActive: true,
+        role: { in: ["COACH", "MANAGER", "OWNER"] },
+      },
+      select: { gymId: true, role: true },
+    });
+    
+    memberships.forEach(m => {
+      userGymIds.add(m.gymId);
+      if (m.role === "COACH") coachGymIds.add(m.gymId);
+    });
+    
+    // Combine owned and member gyms
+    ownedGymIds.forEach(id => userGymIds.add(id));
+  }
+
+  // Sort gyms: user's gyms first, then verified, then alphabetical
+  const sortedGyms = [...gyms].sort((a, b) => {
+    const aIsUserGym = userGymIds.has(a.id);
+    const bIsUserGym = userGymIds.has(b.id);
+    
+    // User's gyms first
+    if (aIsUserGym && !bIsUserGym) return -1;
+    if (!aIsUserGym && bIsUserGym) return 1;
+    
+    // Then verified
+    if (a.isVerified && !b.isVerified) return -1;
+    if (!a.isVerified && b.isVerified) return 1;
+    
+    // Then alphabetical
+    return a.name.localeCompare(b.name);
   });
 
   return (
@@ -123,9 +174,14 @@ export default async function GymsPage({ searchParams }: GymsPageProps) {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {gyms.map((gym) => (
+          {sortedGyms.map((gym) => {
+            const isOwner = ownedGymIds.has(gym.id);
+            const isCoach = coachGymIds.has(gym.id);
+            const isUserGym = userGymIds.has(gym.id);
+            
+            return (
             <Link key={gym.id} href={`/gym/${gym.slug}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card className={`hover:shadow-md transition-shadow cursor-pointer ${isUserGym ? "ring-1 ring-primary/30" : ""}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-start gap-4">
                     {gym.logoUrl ? (
@@ -144,6 +200,18 @@ export default async function GymsPage({ searchParams }: GymsPageProps) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <CardTitle className="text-lg">{gym.name}</CardTitle>
+                        {isOwner && (
+                          <Badge variant="default" className="text-xs">
+                            <Crown className="w-3 h-3 mr-1" />
+                            Your Gym
+                          </Badge>
+                        )}
+                        {isCoach && !isOwner && (
+                          <Badge variant="secondary" className="text-xs">
+                            <UserCheck className="w-3 h-3 mr-1" />
+                            Coach
+                          </Badge>
+                        )}
                         {gym.isVerified && (
                           <Badge variant="secondary" className="text-xs">
                             ✓ Verified
@@ -185,7 +253,7 @@ export default async function GymsPage({ searchParams }: GymsPageProps) {
                 </CardContent>
               </Card>
             </Link>
-          ))}
+          )})}
         </div>
       )}
 

@@ -205,7 +205,7 @@ async function DisciplineChallengesContent({ params }: PageProps) {
                   </div>
 
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors line-clamp-1">
+                    <h3 className="font-semibold text-lg mb-1 group-hover:text-accent transition-colors line-clamp-1">
                       {challenge.name}
                     </h3>
                     

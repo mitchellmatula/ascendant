@@ -132,20 +132,34 @@ export default async function DashboardPage() {
           <CardDescription className="text-xs md:text-sm">Your overall athletic balance</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4">
-            <div
-              className="text-4xl md:text-5xl font-bold"
-              style={{ color: getRankColor(prime.letter) }}
-            >
-              {formatLevel(prime.letter, prime.sublevel)}
-            </div>
-            <div>
-              <div className="text-base md:text-lg font-medium">{getRankLabel(prime.letter)}</div>
-              <div className="text-xs md:text-sm text-muted-foreground">
-                Average of all domains
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className="text-4xl md:text-5xl font-bold"
+                style={{ color: getRankColor(prime.letter) }}
+              >
+                {formatLevel(prime.letter, prime.sublevel)}
+              </div>
+              <div>
+                <div className="text-base md:text-lg font-medium">{getRankLabel(prime.letter)}</div>
+                <div className="text-xs md:text-sm text-muted-foreground">
+                  Average of all domains
+                </div>
               </div>
             </div>
+            <Link
+              href="/how-it-works"
+              className="text-xs text-accent hover:text-accent/80 transition-colors hidden sm:block"
+            >
+              How do rankings work?
+            </Link>
           </div>
+          <Link
+            href="/how-it-works"
+            className="text-xs text-accent hover:text-accent/80 transition-colors mt-3 inline-block sm:hidden"
+          >
+            How do rankings work? →
+          </Link>
         </CardContent>
       </Card>
 

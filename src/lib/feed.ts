@@ -303,6 +303,7 @@ export async function getCommunityFeed(options: FeedQueryOptions = {}) {
     where: {
       status: SubmissionStatus.APPROVED,
       isPublic: true,
+      isHiddenFromFeed: false,
       athlete: {
         feedVisibility: "PUBLIC",
         OR: [
@@ -358,6 +359,7 @@ export async function getFollowingFeed(
     where: {
       status: SubmissionStatus.APPROVED,
       isPublic: true,
+      isHiddenFromFeed: false,
       athleteId: { in: followingIds },
       athlete: {
         feedVisibility: { in: ["PUBLIC", "FOLLOWERS"] },
@@ -423,6 +425,7 @@ export async function getGymFeed(
     where: {
       status: SubmissionStatus.APPROVED,
       isPublic: true,
+      isHiddenFromFeed: false,
       athleteId: { in: athleteIds },
       athlete: {
         feedVisibility: { in: ["PUBLIC", "FOLLOWERS"] },
@@ -532,6 +535,7 @@ export async function getDivisionFeed(
     where: {
       status: SubmissionStatus.APPROVED,
       isPublic: true,
+      isHiddenFromFeed: false,
       athleteId: { in: athleteIdsInDivision },
     },
     include: submissionFeedInclude,
@@ -598,7 +602,7 @@ export async function getAthleteFeed(
       athleteId: athlete.id,
       status: SubmissionStatus.APPROVED,
       // Show private submissions only to owner
-      ...(isOwner ? {} : { isPublic: true }),
+      ...(isOwner ? {} : { isPublic: true, isHiddenFromFeed: false }),
     },
     include: submissionFeedInclude,
     orderBy: { submittedAt: "desc" },

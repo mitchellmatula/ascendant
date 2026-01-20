@@ -164,3 +164,52 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// DELETE /api/notifications - Clear all notifications
+export async function DELETE() {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const user = await db.user.findUnique({
+      where: { clerkId: userId },
+      include: { 
+        athlete: { select: { id: true } },
+        managedAthletes: { select: { id: true } },
+      },
+    });
+    
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Collect all athlete IDs
+    const athleteIds: string[] = [];
+    if (user.athlete) {
+      athleteIds.push(user.athlete.id);
+    }
+    athleteIds.push(...user.managedAthletes.map(a => a.id));
+
+    if (athleteIds.length === 0) {
+      return NextResponse.json({ error: "No athlete profile found" }, { status: 404 });
+    }
+    
+    // Delete all notifications for all managed athletes
+    await db.notification.deleteMany({
+      where: {
+        athleteId: { in: athleteIds },
+      },
+    });
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Notifications DELETE error:", error);
+    return NextResponse.json(
+      { error: "Failed to clear notifications" },
+      { status: 500 }
+    );
+  }
+}

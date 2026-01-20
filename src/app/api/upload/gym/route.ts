@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { isAdmin } from "@/lib/auth";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -12,13 +11,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Check if user is admin
+    // Check if user is admin or gym owner
     const user = await db.user.findUnique({
       where: { clerkId: userId },
       select: { role: true },
     });
 
-    if (!user || !isAdmin(user.role)) {
+    // Allow SYSTEM_ADMIN and GYM_ADMIN to upload gym images
+    if (!user || !["SYSTEM_ADMIN", "GYM_ADMIN"].includes(user.role)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

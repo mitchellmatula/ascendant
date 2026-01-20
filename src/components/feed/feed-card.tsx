@@ -4,12 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   MessageCircle, 
   Play, 
@@ -20,10 +27,13 @@ import {
   UserPlus,
   UserMinus,
   Loader2,
+  MoreVertical,
+  EyeOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatSecondsToTime } from "@/lib/time";
 import { FeedReactions } from "./feed-reactions";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import type { FeedItem } from "@/lib/feed";
 
 // Dynamically import map to avoid SSR issues with Leaflet
@@ -35,13 +45,33 @@ const StravaRouteMap = dynamic(
 interface FeedCardProps {
   item: FeedItem;
   currentAthleteId?: string;
+  isAdmin?: boolean;
   onReactionToggle?: (emoji: string) => void;
+  onHide?: (submissionId: string) => void;
 }
 
-export function FeedCard({ item, currentAthleteId, onReactionToggle }: FeedCardProps) {
+export function FeedCard({ item, currentAthleteId, isAdmin, onReactionToggle, onHide }: FeedCardProps) {
+  const router = useRouter();
   const [showVideo, setShowVideo] = useState(false);
   const [isFollowing, setIsFollowing] = useState(item.athlete.isFollowing ?? false);
   const [followPending, setFollowPending] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
+
+  // Handle hide from feed (admin only)
+  const handleHideFromFeed = async (submissionId: string) => {
+    setIsHiding(true);
+    try {
+      const res = await fetchWithAuth(`/api/feed/${submissionId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        onHide?.(submissionId);
+        router.refresh();
+      }
+    } finally {
+      setIsHiding(false);
+    }
+  };
 
   // Handle follow/unfollow
   const handleFollowToggle = async () => {
@@ -248,7 +278,7 @@ export function FeedCard({ item, currentAthleteId, onReactionToggle }: FeedCardP
               </Avatar>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-medium group-hover:text-primary transition-colors">
+                  <span className="font-medium group-hover:text-accent transition-colors">
                     @{athlete.username}
                   </span>
                   {athlete.primeLevel && (
@@ -285,6 +315,26 @@ export function FeedCard({ item, currentAthleteId, onReactionToggle }: FeedCardP
                 )}
               </Button>
             )}
+            {isAdmin && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">Actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => handleHideFromFeed(submission.id)}
+                    disabled={isHiding}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <EyeOff className="mr-2 h-4 w-4" />
+                    {isHiding ? "Hiding..." : "Hide from feed"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
 
@@ -293,7 +343,7 @@ export function FeedCard({ item, currentAthleteId, onReactionToggle }: FeedCardP
           <div className="flex items-center gap-2 flex-wrap">
             <Link 
               href={`/challenges/${submission.challengeSlug}`}
-              className="font-semibold text-lg hover:text-primary transition-colors"
+              className="font-semibold text-lg hover:text-accent transition-colors"
             >
               {submission.challengeName}
             </Link>

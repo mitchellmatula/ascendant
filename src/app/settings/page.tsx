@@ -121,7 +121,7 @@ export default async function SettingsPage() {
 
           <div className="pt-4">
             <Link 
-              href="/domains" 
+              href="/dashboard" 
               className="text-sm text-primary hover:underline"
             >
               View detailed progress →

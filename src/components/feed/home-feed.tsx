@@ -28,9 +28,10 @@ interface FeedResponse {
 interface HomeFeedProps {
   isSignedIn: boolean;
   currentAthleteId?: string;
+  isAdmin?: boolean;
 }
 
-export function HomeFeed({ isSignedIn, currentAthleteId }: HomeFeedProps) {
+export function HomeFeed({ isSignedIn, currentAthleteId, isAdmin }: HomeFeedProps) {
   const [activeTab, setActiveTab] = useState<FeedTab>("community");
   const [items, setItems] = useState<FeedItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>();
@@ -135,6 +136,11 @@ export function HomeFeed({ isSignedIn, currentAthleteId }: HomeFeedProps) {
     </div>
   );
 
+  // Handle hiding items from feed (optimistic update)
+  const handleHideItem = (submissionId: string) => {
+    setItems((prev) => prev.filter((item) => item.submission?.id !== submissionId));
+  };
+
   // Feed list component
   const FeedList = ({ emptyMessage }: { emptyMessage: string }) => {
     if (isLoading) {
@@ -165,7 +171,13 @@ export function HomeFeed({ isSignedIn, currentAthleteId }: HomeFeedProps) {
     return (
       <div className="space-y-4">
         {items.map((item) => (
-          <FeedCard key={item.id} item={item} currentAthleteId={currentAthleteId} />
+          <FeedCard 
+            key={item.id} 
+            item={item} 
+            currentAthleteId={currentAthleteId} 
+            isAdmin={isAdmin}
+            onHide={handleHideItem}
+          />
         ))}
         
         {/* Load more trigger */}

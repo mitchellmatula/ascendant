@@ -3,13 +3,13 @@ import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { SignUpButton } from "@clerk/nextjs";
 import { HomeFeed } from "@/components/feed/home-feed";
-import { Trophy, Zap, Users, Target } from "lucide-react";
 import { db } from "@/lib/db";
+import { isAdmin as checkIsAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Ascendant - Universal Progression System for Athletes",
+  title: "Ascendant - Become the Complete Athlete",
   description:
-    "Level up your athletic performance with Ascendant. Track challenges across Strength, Skill, Endurance, and Speed domains. Earn XP, progress through ranks F→S, and compete with athletes worldwide.",
+    "Your potential isn't limited to one lane. Ascendant tracks your growth across Strength, Skill, Endurance, and Speed — discover what you're truly capable of.",
   alternates: {
     canonical: "/",
   },
@@ -95,14 +95,16 @@ export default async function Home() {
   const { userId } = await auth();
   const isSignedIn = !!userId;
   
-  // Get current user's athlete ID for follow button state
+  // Get current user's athlete ID for follow button state and check admin status
   let currentAthleteId: string | undefined;
+  let isAdmin = false;
   if (userId) {
     const user = await db.user.findUnique({
       where: { clerkId: userId },
-      select: { athlete: { select: { id: true } } },
+      select: { role: true, athlete: { select: { id: true } } },
     });
     currentAthleteId = user?.athlete?.id;
+    isAdmin = user ? checkIsAdmin(user.role) : false;
   }
 
   return (
@@ -118,30 +120,30 @@ export default async function Home() {
           <section className="mb-8 rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/10 p-6 sm:p-8">
             <div className="text-center space-y-4">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                Rise Through the <span className="text-primary">Ranks</span>
+                Become the <span className="text-gradient-primary">Complete Athlete</span>
               </h1>
-              <p className="text-muted-foreground max-w-lg mx-auto">
-                Ascendant is a universal progression system for athletes. 
-                Complete challenges, earn XP, and level up across Strength, Skill, Endurance, and Speed.
+              <p className="text-muted-foreground max-w-lg mx-auto text-balance">
+                Your potential isn&apos;t limited to one lane. Ascendant tracks your growth across 
+                Strength, Skill, Endurance, and Speed — discover what you&apos;re truly capable of.
               </p>
               
-              {/* Feature highlights */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
-                  <Trophy className="w-6 h-6 text-yellow-500" />
-                  <span className="text-xs font-medium">Earn XP</span>
+              {/* Domain highlights */}
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 pt-4">
+                <div className="flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-lg bg-background/50 border border-strength/20">
+                  <span className="text-xl sm:text-2xl">💪</span>
+                  <span className="text-xs font-medium text-strength">Strength</span>
                 </div>
-                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
-                  <Zap className="w-6 h-6 text-primary" />
-                  <span className="text-xs font-medium">Level Up</span>
+                <div className="flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-lg bg-background/50 border border-skill/20">
+                  <span className="text-xl sm:text-2xl">🎯</span>
+                  <span className="text-xs font-medium text-skill">Skill</span>
                 </div>
-                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
-                  <Target className="w-6 h-6 text-green-500" />
-                  <span className="text-xs font-medium">4 Domains</span>
+                <div className="flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-lg bg-background/50 border border-endurance/20">
+                  <span className="text-xl sm:text-2xl">🏃</span>
+                  <span className="text-xs font-medium text-endurance">Endurance</span>
                 </div>
-                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-background/50">
-                  <Users className="w-6 h-6 text-blue-500" />
-                  <span className="text-xs font-medium">Community</span>
+                <div className="flex flex-col items-center gap-1.5 p-2 sm:p-3 rounded-lg bg-background/50 border border-speed/20">
+                  <span className="text-xl sm:text-2xl">⚡</span>
+                  <span className="text-xs font-medium text-speed">Speed</span>
                 </div>
               </div>
 
@@ -149,27 +151,35 @@ export default async function Home() {
               <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
                 <SignUpButton mode="modal">
                   <button className="bg-primary text-primary-foreground rounded-lg font-medium text-base h-11 px-6 hover:opacity-90 transition-opacity cursor-pointer">
-                    Start Your Journey
+                    Begin Your Ascent
                   </button>
                 </SignUpButton>
                 <Link
                   href="/challenges"
                   className="border border-border rounded-lg font-medium text-base h-11 px-6 flex items-center justify-center hover:bg-accent transition-colors"
                 >
-                  Browse Challenges
+                  Explore Challenges
                 </Link>
               </div>
 
-              {/* Rank progression */}
+              {/* Tagline */}
               <p className="text-xs text-muted-foreground pt-2">
-                F → E → D → C → B → A → S • 7 ranks, each with 10 sublevels
+                Track progress • Complete challenges • Unlock your full potential
               </p>
+              
+              {/* How it works link */}
+              <Link
+                href="/how-it-works"
+                className="inline-flex items-center text-sm text-accent hover:text-accent/80 transition-colors"
+              >
+                How do the rankings work? →
+              </Link>
             </div>
           </section>
         )}
 
         {/* Feed Section */}
-        <HomeFeed isSignedIn={isSignedIn} currentAthleteId={currentAthleteId} />
+        <HomeFeed isSignedIn={isSignedIn} currentAthleteId={currentAthleteId} isAdmin={isAdmin} />
       </div>
     </>
   );

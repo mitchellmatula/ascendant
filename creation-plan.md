@@ -763,8 +763,11 @@ The following items are the highest priority for immediate work:
    - ✅ Parent notifications: parents see notifications for all managed athletes
    - ✅ Progress page links to challenges (with athlete switch for parents)
    - ✅ Dashboard recent submissions link to challenges
+   - ✅ Leave class functionality (self-removal for athletes/parents)
+   - ✅ Coach athlete detail page (`/coach/classes/[id]/athletes/[athleteId]`)
+   - ✅ Notification improvements: bulk delete, individual delete (supports parent accounts)
+   - ✅ Privacy: class submissions hidden from public feeds (isPublic: false by default)
    - [ ] Custom challenge creation form (1 per class limit)
-   - [ ] Privacy: ensure class data doesn't leak to public feed
    - [ ] Admin moderation: view coach-created challenges
 
 2. **Community Feed & Social System** (Phase 9) – COMPLETED
@@ -1626,7 +1629,10 @@ model ChallengeSubmission {
 - [x] XP integration: grades create ChallengeSubmission records
 - [x] Notifications: added to class, request approved, new grade (CLASS_GRADE type)
 - [x] Parent notifications: parents see notifications for all managed athletes
-- [ ] Privacy: ensure class data doesn't leak to public feed
+- [x] Leave class functionality (self-removal for athletes/parents)
+- [x] Coach athlete detail page (`/coach/classes/[id]/athletes/[athleteId]`)
+- [x] Notification improvements: bulk delete, individual delete (supports parent accounts)
+- [x] Privacy: class submissions hidden from public feeds (isPublic: false by default)
 - [ ] Admin moderation: view coach-created challenges
 - [ ] Admin: promote class challenges to global
 - [ ] Admin: flag/disable problematic class challenges

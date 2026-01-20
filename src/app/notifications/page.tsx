@@ -267,7 +267,7 @@ export default function NotificationsPage() {
                         }
                         className="block group"
                       >
-                        <p className="font-medium group-hover:text-primary transition-colors">
+                        <p className="font-medium group-hover:text-accent transition-colors">
                           {notification.title}
                         </p>
                         <p className="text-sm text-muted-foreground mt-0.5">

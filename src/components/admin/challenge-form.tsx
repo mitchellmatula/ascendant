@@ -68,6 +68,7 @@ interface ChallengeGrade {
   divisionId: string;
   rank: string;
   targetValue: number;
+  targetWeight?: number | null;
   description?: string | null;
   bonusXP?: number;
 }
@@ -78,6 +79,7 @@ const GRADING_TYPES = [
   { value: "TIME", label: "Time", description: "Duration in seconds (e.g., hold for X sec)" },
   { value: "DISTANCE", label: "Distance", description: "Distance achieved (e.g., broad jump)" },
   { value: "TIMED_REPS", label: "Timed Reps", description: "Max reps in time limit" },
+  { value: "WEIGHTED_REPS", label: "Weighted Reps", description: "Reps at a specific weight (e.g., 10 reps at 100lbs)" },
 ] as const;
 
 const RANKS = ["F", "E", "D", "C", "B", "A", "S"] as const;
@@ -106,6 +108,7 @@ interface ChallengeFormProps {
     isActive: boolean;
     gradingType: string;
     gradingUnit: string | null;
+    weightUnit: string | null;
     timeFormat: string | null;
     minRank: string;
     maxRank: string;
@@ -127,7 +130,7 @@ interface ChallengeFormProps {
     categories: { category: Category }[];
     disciplines: { discipline: Discipline }[];
     equipment: { equipment: Equipment }[];
-    grades?: { divisionId: string; rank: string; targetValue: number; description: string | null; bonusXP: number }[];
+    grades?: { divisionId: string; rank: string; targetValue: number; targetWeight: number | null; description: string | null; bonusXP: number }[];
     allowedDivisions?: { division: Division }[];
   };
   domains: Domain[];
@@ -170,6 +173,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
     isActive: challenge?.isActive ?? true,
     gradingType: challenge?.gradingType ?? "PASS_FAIL",
     gradingUnit: challenge?.gradingUnit ?? "",
+    weightUnit: challenge?.weightUnit ?? "lbs",
     timeFormat: (challenge?.timeFormat as TimeFormat) ?? "seconds" as TimeFormat,
     minRank: challenge?.minRank ?? "F",
     maxRank: challenge?.maxRank ?? "S",
@@ -473,6 +477,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
         demoVideoUrl: formData.demoVideoUrl?.trim() || null,
         demoImageUrl: formData.demoImageUrl?.trim() || null,
         gradingUnit: getGradingUnit(),
+        weightUnit: formData.gradingType === "WEIGHTED_REPS" ? formData.weightUnit : null,
         timeFormat: formData.gradingType === "TIME" ? formData.timeFormat : null,
         secondaryDomainId: formData.secondaryDomainId || null,
         secondaryXPPercent: formData.secondaryDomainId ? formData.secondaryXPPercent : null,
@@ -647,6 +652,16 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
     }
     
     setFormData({ ...formData, grades: newGrades });
+  };
+
+  const setGradeWeight = (divisionId: string, rank: string, targetWeight: number | null) => {
+    const existingIdx = formData.grades.findIndex(g => g.divisionId === divisionId && g.rank === rank);
+    const newGrades = [...formData.grades];
+    
+    if (existingIdx >= 0) {
+      newGrades[existingIdx] = { ...newGrades[existingIdx], targetWeight };
+      setFormData({ ...formData, grades: newGrades });
+    }
   };
 
   // Generate grades with AI
@@ -1305,7 +1320,8 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                 placeholder={
                   formData.gradingType === "REPS" ? "reps" :
                   formData.gradingType === "DISTANCE" ? "meters" :
-                  formData.gradingType === "TIMED_REPS" ? "reps in 60s" : "unit"
+                  formData.gradingType === "TIMED_REPS" ? "reps in 60s" :
+                  formData.gradingType === "WEIGHTED_REPS" ? "reps" : "unit"
                 }
                 value={formData.gradingUnit}
                 onChange={(e) => setFormData({ ...formData, gradingUnit: e.target.value })}
@@ -1319,6 +1335,28 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                   e.g., &quot;reps&quot;, &quot;meters&quot;, &quot;reps in 60s&quot;
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Weight Unit (only for WEIGHTED_REPS) */}
+          {formData.gradingType === "WEIGHTED_REPS" && (
+            <div className="space-y-2">
+              <Label>Weight Unit</Label>
+              <Select
+                value={formData.weightUnit}
+                onValueChange={(val) => setFormData({ ...formData, weightUnit: val })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lbs">Pounds (lbs)</SelectItem>
+                  <SelectItem value="kg">Kilograms (kg)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Weight unit for grade targets
+              </p>
             </div>
           )}
 
@@ -1667,6 +1705,28 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                                 format={formData.timeFormat}
                                 className="w-20 h-8 text-sm"
                               />
+                            ) : formData.gradingType === "WEIGHTED_REPS" ? (
+                              <div className="flex flex-col gap-1">
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="w-16 h-7 text-center text-xs"
+                                  value={grade?.targetValue ?? ""}
+                                  onChange={(e) => setGrade(division.id, rank, parseInt(e.target.value) || 0)}
+                                  placeholder="reps"
+                                  title="Reps"
+                                />
+                                <Input
+                                  type="number"
+                                  min={0}
+                                  className="w-16 h-7 text-center text-xs"
+                                  value={grade?.targetWeight ?? ""}
+                                  onChange={(e) => setGradeWeight(division.id, rank, parseInt(e.target.value) || null)}
+                                  placeholder={formData.weightUnit}
+                                  title={`Weight (${formData.weightUnit})`}
+                                  disabled={!grade?.targetValue}
+                                />
+                              </div>
                             ) : (
                               <Input
                                 type="number"
@@ -1685,6 +1745,11 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
                 </tbody>
               </table>
             </div>
+            {formData.gradingType === "WEIGHTED_REPS" && (
+              <p className="text-xs text-muted-foreground mt-3">
+                💡 Enter target reps (top) and weight in {formData.weightUnit} (bottom) for each tier.
+              </p>
+            )}
             {formData.allowedDivisionIds.length > 0 && (
               <p className="text-xs text-muted-foreground mt-3">
                 💡 Only showing divisions selected in "Allowed Divisions" above.

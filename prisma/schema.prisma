@@ -380,11 +380,12 @@ model ChallengeDiscipline {
 
 // How a challenge is measured/graded
 enum GradingType {
-  PASS_FAIL   // Simple completion (e.g., "Complete the warped wall")
-  REPS        // Count repetitions (e.g., "Pull-ups")
-  TIME        // Duration in seconds (e.g., "Hold a dead hang for X seconds")
-  DISTANCE    // Distance in meters/feet (e.g., "Broad jump X meters")
-  TIMED_REPS  // Reps within a time limit (e.g., "Max pull-ups in 60 seconds")
+  PASS_FAIL     // Simple completion (e.g., "Complete the warped wall")
+  REPS          // Count repetitions (e.g., "Pull-ups")
+  TIME          // Duration in seconds (e.g., "Hold a dead hang for X seconds")
+  DISTANCE      // Distance in meters/feet (e.g., "Broad jump X meters")
+  TIMED_REPS    // Reps within a time limit (e.g., "Max pull-ups in 60 seconds")
+  WEIGHTED_REPS // Reps at a specific weight (e.g., "10 reps at 100lbs")
 }
 
 // Graded requirements per division and rank
@@ -395,6 +396,7 @@ model ChallengeGrade {
   divisionId   String
   rank         String  // F, E, D, C, B, A, S
   targetValue  Int     // The number to achieve (reps, seconds, etc.)
+  targetWeight Int?    // For WEIGHTED_REPS: weight in lbs/kg per challenge weightUnit
   description  String? // Optional override text, e.g., "15 strict pull-ups"
   bonusXP      Int     @default(0) // Extra XP for this specific grade
   createdAt    DateTime @default(now())
@@ -421,6 +423,7 @@ model Challenge {
   // Grading configuration
   gradingType  GradingType @default(PASS_FAIL) // How is this challenge measured?
   gradingUnit  String?     // e.g., "reps", "seconds", "meters", "feet"
+  weightUnit   String?     // For WEIGHTED_REPS: "lbs" or "kg"
   timeFormat   String?     // For TIME type: "seconds", "mm:ss", "hh:mm:ss"
   minRank      String      @default("F") // Lowest rank this challenge is available for
   maxRank      String      @default("S") // Highest rank this challenge is available for
@@ -672,7 +675,8 @@ model ChallengeSubmission {
   activityPolyline   String?   // Encoded polyline for route map display
 
   // For graded challenges: what value did they achieve?
-  achievedValue Int? // e.g., 20 reps, 45 seconds, etc.
+  achievedValue  Int? // e.g., 20 reps, 45 seconds, etc.
+  achievedWeight Int? // For WEIGHTED_REPS: weight used in lbs/kg
   
   // Which rank tier did they achieve? (F, E, D, C, B, A, S)
   achievedRank  String? // Calculated from achievedValue vs ChallengeGrade targets
@@ -687,6 +691,7 @@ model ChallengeSubmission {
   // Privacy settings
   isPublic       Boolean @default(true)  // Show on public feeds/leaderboards
   hideExactValue Boolean @default(false) // Hide achievedValue but still show rank
+  isHiddenFromFeed Boolean @default(false) // Admin-hidden from activity feeds
 
   // Manual entry verification - which coach supervised this attempt
   supervisorId   String? // User ID of supervising coach
@@ -780,6 +785,13 @@ model Gym {
   zipCode       String?
   phone         String?
   email         String?
+  
+  // Social media links
+  instagramUrl  String?
+  facebookUrl   String?
+  tiktokUrl     String?
+  youtubeUrl    String?
+  
   isActive      Boolean @default(true)
   isVerified    Boolean @default(false) // Admin-verified gym
   createdAt     DateTime @default(now())

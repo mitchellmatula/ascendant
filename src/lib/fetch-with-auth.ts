@@ -8,6 +8,8 @@
 // Track if we're currently refreshing to prevent multiple simultaneous refreshes
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
+let lastRefreshTime = 0;
+const REFRESH_COOLDOWN = 5000; // 5 seconds between proactive refreshes
 
 async function refreshClerkSession(): Promise<boolean> {
   // If already refreshing, wait for that to complete
@@ -25,6 +27,7 @@ async function refreshClerkSession(): Promise<boolean> {
         // Force a fresh token by skipping the cache
         const token = await clerk.session.getToken({ skipCache: true });
         if (token) {
+          lastRefreshTime = Date.now();
           // Small delay to ensure cookies are updated
           await new Promise((resolve) => setTimeout(resolve, 50));
           return true;
@@ -43,6 +46,14 @@ async function refreshClerkSession(): Promise<boolean> {
   return refreshPromise;
 }
 
+// Proactively refresh token before making request if it's been a while
+async function ensureFreshToken(): Promise<void> {
+  const timeSinceRefresh = Date.now() - lastRefreshTime;
+  if (timeSinceRefresh > 30000) { // If more than 30 seconds since last refresh
+    await refreshClerkSession();
+  }
+}
+
 export async function fetchWithAuth(
   input: RequestInfo | URL,
   init?: RequestInit
@@ -52,6 +63,12 @@ export async function fetchWithAuth(
     ...init,
     credentials: "include",
   };
+
+  // Proactively refresh if needed (only if not in cooldown)
+  const timeSinceRefresh = Date.now() - lastRefreshTime;
+  if (timeSinceRefresh > REFRESH_COOLDOWN) {
+    await ensureFreshToken();
+  }
 
   // Make the initial request
   let response = await fetch(input, options);

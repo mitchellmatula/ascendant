@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Check, Heart, MessageCircle, UserPlus, Trophy, Loader2, GraduationCap } from "lucide-react";
+import { Bell, Check, Heart, MessageCircle, UserPlus, Trophy, Loader2, GraduationCap, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
@@ -131,6 +131,41 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
     }
   };
 
+  // Delete single notification
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await fetchWithAuth(`/api/notifications/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        const wasUnread = notifications.find(n => n.id === id)?.isRead === false;
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        if (wasUnread) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+    }
+  };
+
+  // Clear all notifications
+  const handleClearAll = async () => {
+    try {
+      const res = await fetchWithAuth("/api/notifications", {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Failed to clear notifications:", error);
+    }
+  };
+
   // Get icon for notification type
   const getIcon = (type: string) => {
     switch (type) {
@@ -170,20 +205,33 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex items-center justify-between">
+      <DropdownMenuContent align="end" className="w-screen sm:w-96 sm:max-w-[calc(100vw-2rem)]">
+        <DropdownMenuLabel className="flex items-center justify-between gap-2">
           <span>Notifications</span>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleMarkAllRead}
-              className="h-auto py-1 px-2 text-xs"
-            >
-              <Check className="w-3 h-3 mr-1" />
-              Mark all read
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllRead}
+                className="h-auto py-1 px-2 text-xs"
+              >
+                <Check className="w-3 h-3 mr-1" />
+                Mark read
+              </Button>
+            )}
+            {notifications.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAll}
+                className="h-auto py-1 px-2 text-xs text-destructive hover:text-destructive"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Clear all
+              </Button>
+            )}
+          </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
@@ -205,7 +253,7 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
                 key={notification.id}
                 asChild
                 className={cn(
-                  "cursor-pointer flex-col items-start gap-1 p-3",
+                  "cursor-pointer flex-col items-start gap-1 p-3 group",
                   !notification.isRead && "bg-muted/50"
                 )}
               >
@@ -230,9 +278,19 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
                           })}
                         </p>
                       </div>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                      )}
+                      <div className="flex items-center gap-1">
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => handleDelete(notification.id, e)}
+                          className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-opacity"
+                          title="Delete notification"
+                        >
+                          <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </div>
                     </div>
                   </Link>
                 ) : (
@@ -255,9 +313,19 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
                           })}
                         </p>
                       </div>
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                      )}
+                      <div className="flex items-center gap-1">
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => handleDelete(notification.id, e)}
+                          className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-opacity"
+                          title="Delete notification"
+                        >
+                          <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { markAsRead } from "@/lib/notifications";
 
 // PATCH /api/notifications/[id] - Mark single notification as read
 export async function PATCH(
@@ -19,14 +18,35 @@ export async function PATCH(
     
     const user = await db.user.findUnique({
       where: { clerkId: userId },
-      include: { athlete: { select: { id: true } } },
+      include: { 
+        athlete: { select: { id: true } },
+        managedAthletes: { select: { id: true } },
+      },
     });
     
-    if (!user?.athlete) {
-      return NextResponse.json({ error: "Athlete profile not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
     
-    await markAsRead(id, user.athlete.id);
+    // Collect all athlete IDs (own + managed)
+    const athleteIds: string[] = [];
+    if (user.athlete) {
+      athleteIds.push(user.athlete.id);
+    }
+    athleteIds.push(...user.managedAthletes.map(a => a.id));
+
+    if (athleteIds.length === 0) {
+      return NextResponse.json({ error: "No athlete profile found" }, { status: 404 });
+    }
+    
+    // Mark as read if notification belongs to one of user's athletes
+    await db.notification.updateMany({
+      where: {
+        id,
+        athleteId: { in: athleteIds },
+      },
+      data: { isRead: true },
+    });
     
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -54,18 +74,32 @@ export async function DELETE(
     
     const user = await db.user.findUnique({
       where: { clerkId: userId },
-      include: { athlete: { select: { id: true } } },
+      include: { 
+        athlete: { select: { id: true } },
+        managedAthletes: { select: { id: true } },
+      },
     });
     
-    if (!user?.athlete) {
-      return NextResponse.json({ error: "Athlete profile not found" }, { status: 404 });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
     
-    // Verify notification belongs to this athlete and delete
+    // Collect all athlete IDs (own + managed)
+    const athleteIds: string[] = [];
+    if (user.athlete) {
+      athleteIds.push(user.athlete.id);
+    }
+    athleteIds.push(...user.managedAthletes.map(a => a.id));
+
+    if (athleteIds.length === 0) {
+      return NextResponse.json({ error: "No athlete profile found" }, { status: 404 });
+    }
+    
+    // Verify notification belongs to one of user's athletes and delete
     await db.notification.deleteMany({
       where: {
         id,
-        athleteId: user.athlete.id,
+        athleteId: { in: athleteIds },
       },
     });
     
