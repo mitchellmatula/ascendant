@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   // Only show real name in metadata if they've opted in
-  const displayedName = athlete.showDisplayName ? athlete.displayName : `@${username}`;
+  const displayedName = athlete.showDisplayName ? athlete.displayName : username;
 
   return {
     title: `${displayedName} | Ascendant`,
@@ -108,7 +108,7 @@ export default async function AthleteProfilePage({ params }: Props) {
   // Determine what name to show
   // Show real name only if: owner viewing own profile, OR athlete has showDisplayName enabled
   const showRealName = isOwner || athlete.showDisplayName;
-  const displayedName = showRealName ? athlete.displayName : `@${athlete.username}`;
+  const displayedName = showRealName ? athlete.displayName : athlete.username;
 
   // Check visibility for non-owners
   const canViewFeed =
@@ -171,7 +171,7 @@ export default async function AthleteProfilePage({ params }: Props) {
 
               {/* Only show username line if real name is being displayed */}
               {showRealName && (
-                <p className="text-muted-foreground mb-3">@{athlete.username}</p>
+                <p className="text-muted-foreground mb-3">{athlete.username}</p>
               )}
 
               {/* Meta info */}

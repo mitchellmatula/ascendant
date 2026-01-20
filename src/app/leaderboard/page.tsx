@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
 
   // Athlete row component
   const AthleteRow = ({ athlete }: { athlete: LeaderboardAthlete }) => {
-    const displayText = athlete.username ? `@${athlete.username}` : athlete.displayName;
+    const displayText = athlete.username || athlete.displayName;
     const initials = (athlete.username || athlete.displayName)
       .split(/[\s@]/)
       .filter(Boolean)

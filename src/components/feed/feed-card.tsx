@@ -279,7 +279,7 @@ export function FeedCard({ item, currentAthleteId, isAdmin, onReactionToggle, on
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium group-hover:text-accent transition-colors">
-                    @{athlete.username}
+                    {athlete.username}
                   </span>
                   {athlete.primeLevel && (
                     <Badge variant="secondary" className="text-xs px-1.5 py-0">
@@ -298,7 +298,7 @@ export function FeedCard({ item, currentAthleteId, isAdmin, onReactionToggle, on
                 size="sm"
                 onClick={handleFollowToggle}
                 disabled={followPending}
-                className="shrink-0"
+                className="shrink-0 ml-auto"
               >
                 {followPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -499,7 +499,7 @@ export function FeedCard({ item, currentAthleteId, isAdmin, onReactionToggle, on
                   href={`/athletes/${athlete.username}`}
                   className="font-medium hover:text-primary transition-colors"
                 >
-                  @{athlete.username}
+                  {athlete.username}
                 </Link>
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}

@@ -166,7 +166,7 @@ export function AthleteSearchContent() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">@{athlete.username}</p>
+                    <p className="text-sm text-muted-foreground">{athlete.username}</p>
                   </div>
                 </CardContent>
               </Card>
