@@ -168,8 +168,10 @@ export default function LeaderboardPage() {
 
   // Athlete row component
   const AthleteRow = ({ athlete }: { athlete: LeaderboardAthlete }) => {
-    const initials = athlete.displayName
-      .split(" ")
+    const displayText = athlete.username ? `@${athlete.username}` : athlete.displayName;
+    const initials = (athlete.username || athlete.displayName)
+      .split(/[\s@]/)
+      .filter(Boolean)
       .map((n) => n[0])
       .join("")
       .slice(0, 2)
@@ -192,7 +194,7 @@ export default function LeaderboardPage() {
         {/* Avatar */}
         <Avatar className="w-10 h-10">
           {athlete.avatarUrl ? (
-            <AvatarImage src={athlete.avatarUrl} alt={athlete.displayName} />
+            <AvatarImage src={athlete.avatarUrl} alt={displayText} />
           ) : null}
           <AvatarFallback>
             {initials || <User className="w-4 h-4" />}
@@ -202,7 +204,7 @@ export default function LeaderboardPage() {
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium truncate">{athlete.displayName}</span>
+            <span className="font-medium truncate">{displayText}</span>
             {athlete.isCurrentUser && (
               <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
                 You

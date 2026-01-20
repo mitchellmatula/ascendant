@@ -101,6 +101,7 @@ model Athlete {
   
   // Privacy settings (COPPA compliance for minors)
   isPublicProfile Boolean @default(false) // Can appear in public lists (leaderboards, gym members)
+  showDisplayName Boolean @default(false) // Show real name on profile (otherwise just username)
   feedVisibility  FeedVisibility @default(PUBLIC) // Who can see activity in feeds
   
   createdAt   DateTime @default(now())

@@ -42,6 +42,7 @@ interface ProfileFormProps {
     gender: string;
     avatarUrl: string | null;
     isPublicProfile: boolean;
+    showDisplayName: boolean;
     disciplines: { discipline: Discipline }[];
   };
   disciplines: Discipline[];
@@ -64,6 +65,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
       gender: athlete.gender,
       disciplineIds: athlete.disciplines.map((d) => d.discipline.id).sort(),
       isPublicProfile: athlete.isPublicProfile,
+      showDisplayName: athlete.showDisplayName,
     }),
     [athlete]
   );
@@ -75,6 +77,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
     gender: athlete.gender,
     disciplineIds: athlete.disciplines.map((d) => d.discipline.id),
     isPublicProfile: athlete.isPublicProfile,
+    showDisplayName: athlete.showDisplayName,
   });
 
   const [usernameError, setUsernameError] = useState<string | null>(null);
@@ -87,6 +90,7 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
     if (formData.gender !== initialValues.gender) return true;
     if (formData.dateOfBirth.toDateString() !== initialValues.dateOfBirth) return true;
     if (formData.isPublicProfile !== initialValues.isPublicProfile) return true;
+    if (formData.showDisplayName !== initialValues.showDisplayName) return true;
     
     const currentDisciplines = [...formData.disciplineIds].sort();
     if (currentDisciplines.length !== initialValues.disciplineIds.length) return true;
@@ -311,6 +315,26 @@ export function ProfileForm({ athlete, disciplines, isOwnProfile }: ProfileFormP
               </Label>
               <p className="text-xs text-muted-foreground">
                 Allow your profile to appear on public leaderboards and gym member lists
+              </p>
+            </div>
+          </div>
+
+          {/* Show Display Name */}
+          <div className="flex items-start space-x-3 pt-2">
+            <Checkbox
+              id="showDisplayName"
+              checked={formData.showDisplayName}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, showDisplayName: checked === true })
+              }
+              className="mt-1"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="showDisplayName" className="cursor-pointer leading-none">
+                Show my real name on my profile
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Display your name publicly. If disabled, only your username will be shown.
               </p>
             </div>
           </div>

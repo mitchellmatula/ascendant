@@ -22,16 +22,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   const athlete = await db.athlete.findUnique({
     where: { username },
-    select: { displayName: true },
+    select: { displayName: true, showDisplayName: true },
   });
 
   if (!athlete) {
     return { title: "Athlete Not Found" };
   }
 
+  // Only show real name in metadata if they've opted in
+  const displayedName = athlete.showDisplayName ? athlete.displayName : `@${username}`;
+
   return {
-    title: `${athlete.displayName} (@${username}) | Ascendant`,
-    description: `View ${athlete.displayName}'s profile and achievements on Ascendant`,
+    title: `${displayedName} | Ascendant`,
+    description: `View ${displayedName}'s profile and achievements on Ascendant`,
   };
 }
 
@@ -102,6 +105,11 @@ export default async function AthleteProfilePage({ params }: Props) {
     }
   }
 
+  // Determine what name to show
+  // Show real name only if: owner viewing own profile, OR athlete has showDisplayName enabled
+  const showRealName = isOwner || athlete.showDisplayName;
+  const displayedName = showRealName ? athlete.displayName : `@${athlete.username}`;
+
   // Check visibility for non-owners
   const canViewFeed =
     isOwner ||
@@ -119,10 +127,12 @@ export default async function AthleteProfilePage({ params }: Props) {
       ? calculatePrime(athlete.domainLevels)
       : { letter: "F", sublevel: 0 };
 
-  // Get initials
+  // Get initials (from username if real name hidden)
   const getInitials = (name: string) =>
     name
-      .split(" ")
+      .replace("@", "")
+      .split(/[\s_]/)
+      .filter(Boolean)
       .map((n) => n[0])
       .join("")
       .toUpperCase()
@@ -139,14 +149,14 @@ export default async function AthleteProfilePage({ params }: Props) {
           <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
             {/* Avatar */}
             <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-              <AvatarImage src={athlete.avatarUrl || undefined} alt={athlete.displayName} />
-              <AvatarFallback className="text-2xl">{getInitials(athlete.displayName)}</AvatarFallback>
+              <AvatarImage src={athlete.avatarUrl || undefined} alt={displayedName} />
+              <AvatarFallback className="text-2xl">{getInitials(displayedName)}</AvatarFallback>
             </Avatar>
 
             {/* Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold">{athlete.displayName}</h1>
+                <h1 className="text-2xl font-bold">{displayedName}</h1>
                 {/* Prime Badge */}
                 <Badge
                   className="font-bold"
@@ -159,7 +169,10 @@ export default async function AthleteProfilePage({ params }: Props) {
                 </Badge>
               </div>
 
-              <p className="text-muted-foreground mb-3">@{athlete.username}</p>
+              {/* Only show username line if real name is being displayed */}
+              {showRealName && (
+                <p className="text-muted-foreground mb-3">@{athlete.username}</p>
+              )}
 
               {/* Meta info */}
               <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
