@@ -12,8 +12,19 @@ import { ImageUpload } from "@/components/ui/image-upload";
 import { Badge } from "@/components/ui/badge";
 import { 
   MapPin, Search, Loader2, X, ExternalLink, Globe, Mail, Phone, 
-  Building2, Image, Dumbbell, Activity, CheckCircle2, AlertCircle, Package 
+  Building2, Image, Dumbbell, Activity, CheckCircle2, AlertCircle, Package, Trash2 
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 interface Discipline {
@@ -78,6 +89,7 @@ interface PlaceResult {
 export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], mode }: GymFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Google Places search state
@@ -324,6 +336,33 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
       console.error("Gym form error:", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!gym?.id) return;
+    
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/gyms/${gym.id}?force=true`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete gym");
+      }
+
+      router.push("/admin/gyms");
+      router.refresh();
+    } catch (err) {
+      console.error("Delete gym error:", err);
+      setError(err instanceof Error ? err.message : "Failed to delete gym");
+      setIsDeleting(false);
     }
   };
 
@@ -943,7 +982,7 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
       <div className="flex flex-col sm:flex-row gap-3 pt-4">
         <Button 
           type="submit" 
-          disabled={isLoading || !isFormValid} 
+          disabled={isLoading || isDeleting || !isFormValid} 
           className="min-w-[140px] h-11"
           size="lg"
         >
@@ -963,11 +1002,56 @@ export function GymForm({ gym, disciplines, equipment, equipmentPackages = [], m
           type="button"
           variant="outline"
           onClick={() => router.push("/admin/gyms")}
+          disabled={isLoading || isDeleting}
           className="h-11"
           size="lg"
         >
           Cancel
         </Button>
+        {mode === "edit" && gym && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={isLoading || isDeleting}
+                className="h-11 sm:ml-auto"
+                size="lg"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Gym
+                  </>
+                )}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {gym.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the gym
+                  and remove all associated data including gym-specific challenges,
+                  member relationships, and equipment associations.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
         {!isFormValid && formData.name.length > 0 && (
           <p className="text-sm text-destructive self-center ml-2">
             Please fix the errors above before submitting

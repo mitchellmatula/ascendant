@@ -108,7 +108,7 @@ export default async function AthleteProfilePage({ params }: Props) {
   // Determine what name to show
   // Show real name only if: owner viewing own profile, OR athlete has showDisplayName enabled
   const showRealName = isOwner || athlete.showDisplayName;
-  const displayedName = showRealName ? athlete.displayName : athlete.username;
+  const displayedName = (showRealName ? athlete.displayName : athlete.username) || "Athlete";
 
   // Check visibility for non-owners
   const canViewFeed =
