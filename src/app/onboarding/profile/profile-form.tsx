@@ -60,6 +60,7 @@ function ProfileFormContent() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [disciplineFilter, setDisciplineFilter] = useState("");
   
   // For athlete accounts
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -390,22 +391,41 @@ function ProfileFormContent() {
                             (optional)
                           </span>
                         </Label>
+                        {disciplines.length > 8 && (
+                          <div className="relative">
+                            <Input
+                              placeholder="Search disciplines..."
+                              value={disciplineFilter}
+                              onChange={(e) => setDisciplineFilter(e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                            {disciplineFilter && (
+                              <button
+                                type="button"
+                                onClick={() => setDisciplineFilter("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2">
-                          {disciplines.map((disc) => (
-                            <Badge
-                              key={disc.id}
-                              variant={
-                                child.disciplineIds.includes(disc.id)
-                                  ? "default"
-                                  : "outline"
-                              }
-                              className="cursor-pointer hover:bg-primary/80"
-                              onClick={() => toggleChildDiscipline(index, disc.id)}
-                            >
-                              {disc.icon} {disc.name}
-                              {child.disciplineIds.includes(disc.id) && " ✓"}
-                            </Badge>
-                          ))}
+                          {disciplines
+                            .filter((d) => d.name.toLowerCase().includes(disciplineFilter.toLowerCase()))
+                            .map((disc) => {
+                              const isSelected = child.disciplineIds.includes(disc.id);
+                              return (
+                                <Badge
+                                  key={disc.id}
+                                  variant={isSelected ? "default" : "outline"}
+                                  className="cursor-pointer hover:bg-primary/80"
+                                  onClick={() => toggleChildDiscipline(index, disc.id)}
+                                >
+                                  {disc.icon} {disc.name}
+                                </Badge>
+                              );
+                            })}
                         </div>
                       </div>
                     )}
@@ -533,22 +553,41 @@ function ProfileFormContent() {
                             (optional)
                           </span>
                         </Label>
+                        {disciplines.length > 8 && (
+                          <div className="relative">
+                            <Input
+                              placeholder="Search disciplines..."
+                              value={disciplineFilter}
+                              onChange={(e) => setDisciplineFilter(e.target.value)}
+                              className="h-8 text-sm"
+                            />
+                            {disciplineFilter && (
+                              <button
+                                type="button"
+                                onClick={() => setDisciplineFilter("")}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2">
-                          {disciplines.map((disc) => (
-                            <Badge
-                              key={disc.id}
-                              variant={
-                                formData.disciplineIds.includes(disc.id)
-                                  ? "default"
-                                  : "outline"
-                              }
-                              className="cursor-pointer hover:bg-primary/80"
-                              onClick={() => toggleDiscipline(disc.id)}
-                            >
-                              {disc.icon} {disc.name}
-                              {formData.disciplineIds.includes(disc.id) && " ✓"}
-                            </Badge>
-                          ))}
+                          {disciplines
+                            .filter((d) => d.name.toLowerCase().includes(disciplineFilter.toLowerCase()))
+                            .map((disc) => {
+                              const isSelected = formData.disciplineIds.includes(disc.id);
+                              return (
+                                <Badge
+                                  key={disc.id}
+                                  variant={isSelected ? "default" : "outline"}
+                                  className="cursor-pointer hover:bg-primary/80"
+                                  onClick={() => toggleDiscipline(disc.id)}
+                                >
+                                  {disc.icon} {disc.name}
+                                </Badge>
+                              );
+                            })}
                         </div>
                       </div>
                     )}
@@ -654,22 +693,41 @@ function ProfileFormContent() {
                     <p className="text-xs text-muted-foreground">
                       What sports are you training for?
                     </p>
+                    {disciplines.length > 8 && (
+                      <div className="relative">
+                        <Input
+                          placeholder="Search disciplines..."
+                          value={disciplineFilter}
+                          onChange={(e) => setDisciplineFilter(e.target.value)}
+                          className="h-8 text-sm"
+                        />
+                        {disciplineFilter && (
+                          <button
+                            type="button"
+                            onClick={() => setDisciplineFilter("")}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <div className="flex flex-wrap gap-2">
-                      {disciplines.map((disc) => (
-                        <Badge
-                          key={disc.id}
-                          variant={
-                            formData.disciplineIds.includes(disc.id)
-                              ? "default"
-                              : "outline"
-                          }
-                          className="cursor-pointer hover:bg-primary/80"
-                          onClick={() => toggleDiscipline(disc.id)}
-                        >
-                          {disc.icon} {disc.name}
-                          {formData.disciplineIds.includes(disc.id) && " ✓"}
-                        </Badge>
-                      ))}
+                      {disciplines
+                        .filter((d) => d.name.toLowerCase().includes(disciplineFilter.toLowerCase()))
+                        .map((disc) => {
+                          const isSelected = formData.disciplineIds.includes(disc.id);
+                          return (
+                            <Badge
+                              key={disc.id}
+                              variant={isSelected ? "default" : "outline"}
+                              className="cursor-pointer hover:bg-primary/80"
+                              onClick={() => toggleDiscipline(disc.id)}
+                            >
+                              {disc.icon} {disc.name}
+                            </Badge>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
