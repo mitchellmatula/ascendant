@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { ClassCoachRole, Role } from "../../../../../../prisma/generated/prisma/client";
+import { ClassCoachRole, Role, GymRole } from "../../../../../../prisma/generated/prisma/client";
 
 // Helper to check if user is a main coach of the class (COACH role has full access)
 async function isMainCoach(classId: string, userId: string): Promise<boolean> {
@@ -137,6 +137,38 @@ export async function POST(
         { error: "User is already a coach of this class" },
         { status: 400 }
       );
+    }
+
+    // Get the class to check if it has a gym
+    const classData = await db.class.findUnique({
+      where: { id },
+      select: { gymId: true },
+    });
+
+    // If class has a gym, ensure the new coach is a gym member (add as COACH if not)
+    if (classData?.gymId) {
+      const gymMembership = await db.gymMember.findUnique({
+        where: { gymId_userId: { gymId: classData.gymId, userId: newCoachUserId } },
+      });
+
+      if (!gymMembership) {
+        // Auto-add as gym COACH
+        await db.gymMember.create({
+          data: {
+            gymId: classData.gymId,
+            userId: newCoachUserId,
+            role: GymRole.COACH,
+            isActive: true,
+            isPublicMember: true,
+          },
+        });
+      } else if (gymMembership.role === GymRole.MEMBER) {
+        // Upgrade to COACH role if currently just a member
+        await db.gymMember.update({
+          where: { id: gymMembership.id },
+          data: { role: GymRole.COACH },
+        });
+      }
     }
 
     // Create coach entry - new coaches are assistants by default

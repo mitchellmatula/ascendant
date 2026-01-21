@@ -5,6 +5,7 @@ import { Prisma } from "../../../../../prisma/generated/prisma/client";
 
 // GET /api/athletes/search - Search for athletes by username or display name
 // Optional params for coaching: gymId (filter to gym members), excludeClassId (exclude current members)
+// forCoach=true allows searching all users (for adding coaches)
 export async function GET(request: NextRequest) {
   try {
     const { userId: clerkId } = await auth();
@@ -16,13 +17,14 @@ export async function GET(request: NextRequest) {
     // Coaching-specific filters
     const gymId = searchParams.get("gymId");
     const excludeClassId = searchParams.get("excludeClassId");
-    const forClass = gymId || excludeClassId;
+    const forCoach = searchParams.get("forCoach") === "true";
+    const forClass = gymId || excludeClassId || forCoach;
     
     if (!query || query.length < 2) {
       return NextResponse.json({ athletes: [] });
     }
 
-    // If searching for class, require authentication
+    // If searching for class/coach, require authentication
     if (forClass && !clerkId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -33,6 +35,8 @@ export async function GET(request: NextRequest) {
         { username: { contains: query, mode: "insensitive" } },
         { displayName: { contains: query, mode: "insensitive" } },
       ],
+      // Must have a userId (linked to a User account)
+      userId: { not: null },
     };
 
     // For class search (coaching context), show gym members regardless of profile settings
@@ -47,6 +51,7 @@ export async function GET(request: NextRequest) {
           none: { classId: excludeClassId, status: "ACTIVE" },
         };
       }
+      // forCoach=true: no additional filters, search all users with accounts
     } else {
       // Public search: only show public, non-minor profiles
       where.isPublicProfile = true;
@@ -57,6 +62,7 @@ export async function GET(request: NextRequest) {
       where,
       select: {
         id: true,
+        userId: true,
         username: true,
         displayName: true,
         avatarUrl: true,
@@ -105,6 +111,7 @@ export async function GET(request: NextRequest) {
       
       return {
         id: athlete.id,
+        userId: athlete.userId,
         username: athlete.username,
         displayName: athlete.displayName,
         avatarUrl: athlete.avatarUrl,

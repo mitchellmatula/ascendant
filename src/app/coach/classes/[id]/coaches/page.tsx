@@ -33,6 +33,7 @@ interface Coach {
 interface SearchResult {
   id: string;
   displayName: string;
+  username: string | null;
   avatarUrl: string | null;
   userId: string;
 }
@@ -100,7 +101,7 @@ export default function ManageCoachesPage() {
       setSearching(true);
       try {
         const res = await fetchWithAuth(
-          `/api/athletes/search?q=${encodeURIComponent(debouncedSearch)}&limit=10`
+          `/api/athletes/search?q=${encodeURIComponent(debouncedSearch)}&limit=10&forCoach=true`
         );
         if (res.ok) {
           const data = await res.json();
@@ -221,7 +222,7 @@ export default function ManageCoachesPage() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name..."
+                placeholder="Search by name or username..."
                 className="pl-10"
               />
             </div>
@@ -246,7 +247,12 @@ export default function ManageCoachesPage() {
                           {(athlete.displayName || "?").slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <p className="font-medium">{athlete.displayName}</p>
+                      <div>
+                        <p className="font-medium">{athlete.displayName}</p>
+                        {athlete.username && (
+                          <p className="text-sm text-muted-foreground">@{athlete.username}</p>
+                        )}
+                      </div>
                     </div>
                     <Button
                       size="sm"
@@ -311,9 +317,12 @@ export default function ManageCoachesPage() {
                           <Crown className="w-4 h-4 text-amber-500" />
                         )}
                       </p>
+                      {coach.username && (
+                        <p className="text-sm text-muted-foreground">@{coach.username}</p>
+                      )}
                       <Badge 
                         variant={coach.role === "COACH" ? "default" : "secondary"} 
-                        className="text-xs"
+                        className="text-xs mt-1"
                       >
                         {coach.role === "COACH" ? "Head Coach" : "Assistant"}
                       </Badge>
