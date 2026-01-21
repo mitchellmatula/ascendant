@@ -35,7 +35,7 @@ const rankDescriptions: Record<string, { subtitle: string; description: string; 
   B: {
     subtitle: "Breakthrough",
     description: "Breaking through plateaus that stop most people. You're entering territory that requires serious dedication and smart programming.",
-    examples: ["20 muscle-ups", "Sub-3:30 marathon", "Front lever hold"],
+    examples: ["20 pull-ups", "Sub-3:30 marathon", "Front lever hold"],
   },
   A: {
     subtitle: "Apex",
