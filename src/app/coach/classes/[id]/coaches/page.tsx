@@ -58,26 +58,27 @@ export default function ManageCoachesPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Get class info
+        // Get class info (includes current user ID and coaches)
         const classRes = await fetchWithAuth(`/api/classes/${classId}`);
         if (classRes.ok) {
           const classData = await classRes.json();
           setClassName(classData.name || "Class");
+          
+          // Check if current user is head coach from class data
+          const currentUserId = classData.currentUserId;
+          if (currentUserId && classData.coaches) {
+            const myCoachEntry = classData.coaches.find(
+              (c: { userId: string; role: string }) => c.userId === currentUserId
+            );
+            setIsHeadCoach(myCoachEntry?.role === "COACH");
+          }
         }
 
-        // Get coaches
+        // Get coaches list
         const coachesRes = await fetchWithAuth(`/api/classes/${classId}/coaches`);
         if (coachesRes.ok) {
           const data = await coachesRes.json();
           setCoaches(data.coaches || []);
-          
-          // Check if current user is head coach
-          const meRes = await fetchWithAuth("/api/me");
-          if (meRes.ok) {
-            const meData = await meRes.json();
-            const myCoachEntry = data.coaches?.find((c: Coach) => c.userId === meData.userId);
-            setIsHeadCoach(myCoachEntry?.role === "COACH");
-          }
         }
       } catch (error) {
         console.error("Error loading data:", error);

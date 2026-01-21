@@ -61,7 +61,7 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
     }
   }, [isOpen, fetchNotifications]);
 
-  // Poll for unread count every 30 seconds (start after initial delay)
+  // Poll for unread count every 60 seconds (start after initial delay)
   useEffect(() => {
     // Don't poll immediately - wait for hydration to complete
     let mounted = true;
@@ -83,8 +83,8 @@ export function NotificationBell({ initialUnreadCount = 0 }: NotificationBellPro
     // Initial check after a short delay to let auth settle
     const initialTimeout = setTimeout(checkUnread, 2000);
     
-    // Then poll every 30 seconds
-    const interval = setInterval(checkUnread, 30000);
+    // Then poll every 60 seconds
+    const interval = setInterval(checkUnread, 60000);
     
     return () => {
       mounted = false;
