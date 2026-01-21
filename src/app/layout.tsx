@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { PageTransition } from "@/components/layout/page-transition";
+import { InstallPrompt } from "@/components/layout/install-prompt";
 import { CelebrationProvider } from "@/components/ui/celebration-provider";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -128,6 +129,7 @@ export default function RootLayout({
               <main className="pb-16 md:pb-0">{children}</main>
             </PageTransition>
             <BottomNav />
+            <InstallPrompt />
             <Toaster theme="dark" position="top-center" richColors />
           </CelebrationProvider>
           <Analytics />

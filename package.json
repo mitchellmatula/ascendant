@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:ngrok": "concurrently \"next dev --turbopack\" \"ngrok http 3000 --domain=proven-fine-baboon.ngrok-free.app\"",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build --webpack",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
     "db:generate": "prisma generate",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.7",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@mapbox/polyline": "^1.2.1",

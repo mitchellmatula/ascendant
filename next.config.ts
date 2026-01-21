@@ -1,8 +1,22 @@
 import type { NextConfig } from "next";
+import withPWAInit from "@ducanh2912/next-pwa";
+
+const withPWA = withPWAInit({
+  dest: "public",
+  disable: process.env.NODE_ENV === "development",
+  register: true,
+  fallbacks: {
+    document: "/offline",
+  },
+  workboxOptions: {
+    skipWaiting: true,
+  },
+});
 
 const nextConfig: NextConfig = {
   // Turbopack is now the default in Next.js 16
-  // cacheComponents: true, // Enable when ready - see next16.md for migration notes
+  // Allow webpack plugins (like next-pwa) while using Turbopack for dev
+  turbopack: {},
   
   // Allow ngrok domain for development
   allowedDevOrigins: ["https://proven-fine-baboon.ngrok-free.app"],
@@ -61,4 +75,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
