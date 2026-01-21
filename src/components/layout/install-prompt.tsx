@@ -88,7 +88,7 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="bg-card border border-border rounded-xl shadow-lg p-4">
+      <div className="bg-zinc-900 border border-border rounded-xl shadow-2xl p-4">
         <button
           onClick={handleDismiss}
           className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-foreground transition-colors"
