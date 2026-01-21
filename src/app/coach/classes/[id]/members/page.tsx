@@ -259,7 +259,7 @@ export default function ManageMembersPage() {
                     <Avatar>
                       <AvatarImage src={request.avatarUrl || undefined} />
                       <AvatarFallback>
-                        {request.displayName.slice(0, 2).toUpperCase()}
+                        {(request.displayName || "?").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
@@ -346,7 +346,7 @@ export default function ManageMembersPage() {
                     <Avatar>
                       <AvatarImage src={athlete.avatarUrl || undefined} />
                       <AvatarFallback>
-                        {athlete.displayName.slice(0, 2).toUpperCase()}
+                        {(athlete.displayName || "?").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <p className="font-medium">{athlete.displayName}</p>
@@ -403,7 +403,7 @@ export default function ManageMembersPage() {
                     <Avatar>
                       <AvatarImage src={member.athlete.avatarUrl || undefined} />
                       <AvatarFallback>
-                        {member.athlete.displayName.slice(0, 2).toUpperCase()}
+                        {(member.athlete.displayName || "?").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>

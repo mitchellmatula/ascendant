@@ -53,8 +53,8 @@ export function StravaRouteMap({
 
     mapInstanceRef.current = map;
 
-    // Add tile layer (using CartoDB's Positron - clean, light style)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    // Add tile layer (using CartoDB's Voyager - colorful, modern style)
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       subdomains: "abcd",
       maxZoom: 19,
     }).addTo(map);
