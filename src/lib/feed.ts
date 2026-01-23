@@ -51,6 +51,7 @@ export interface FeedItem {
     // Level up info (if this submission caused a level up)
     levelUp?: {
       domainName: string;
+      domainSlug: string;
       domainColor: string | null;
       oldLetter: string;
       oldSublevel: number;
@@ -246,6 +247,21 @@ function transformSubmissionToFeedItem(
     ? (submission.claimedTiers as string[]).length 
     : 0;
   
+  // Get the most significant level up to show (first one, usually primary domain)
+  let levelUp: NonNullable<FeedItem["submission"]>["levelUp"] = undefined;
+  if (submission.levelUpInfo && Array.isArray(submission.levelUpInfo) && submission.levelUpInfo.length > 0) {
+    const firstLevelUp = submission.levelUpInfo[0] as {
+      domainName: string;
+      domainSlug: string;
+      domainColor: string | null;
+      oldLetter: string;
+      oldSublevel: number;
+      newLetter: string;
+      newSublevel: number;
+    };
+    levelUp = firstLevelUp;
+  }
+  
   return {
     id: `submission-${submission.id}`,
     type: "submission",
@@ -279,6 +295,7 @@ function transformSubmissionToFeedItem(
       reactors,
       commentCount: submission._count.comments,
       userReactions: currentAthleteId ? userReactions : undefined,
+      levelUp,
     },
   };
 }

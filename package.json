@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "concurrently \"next dev --turbopack\" \"ngrok http 3000 --domain=proven-fine-baboon.ngrok-free.app\"",
     "dev:ngrok": "concurrently \"next dev --turbopack\" \"ngrok http 3000 --domain=proven-fine-baboon.ngrok-free.app\"",
     "build": "prisma generate && next build --webpack",
     "start": "next start",

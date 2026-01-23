@@ -247,8 +247,25 @@ async function processXPAward(
     xpDistribution.push({ domainId: challenge.tertiaryDomainId, amount: tertiaryXP });
   }
 
+  // Track level ups for feed display
+  const levelUpInfoForDb: Array<{
+    domainName: string;
+    domainSlug: string;
+    domainColor: string | null;
+    oldLetter: string;
+    oldSublevel: number;
+    newLetter: string;
+    newSublevel: number;
+  }> = [];
+
   for (const { domainId, amount } of xpDistribution) {
-    await awardXP({
+    // Get domain info for level up display
+    const domain = await db.domain.findUnique({
+      where: { id: domainId },
+      select: { name: true, slug: true, color: true },
+    });
+    
+    const xpResult = await awardXP({
       athleteId: submission.athleteId,
       domainId,
       amount,
@@ -256,6 +273,19 @@ async function processXPAward(
       sourceId: submission.id,
       note: `Completed ${newTiers.join(",")} tier(s)`,
     });
+    
+    // Track level ups
+    if (xpResult.leveledUp && domain) {
+      levelUpInfoForDb.push({
+        domainName: domain.name,
+        domainSlug: domain.slug,
+        domainColor: domain.color,
+        oldLetter: xpResult.previousLevel.letter,
+        oldSublevel: xpResult.previousLevel.sublevel,
+        newLetter: xpResult.newLevel.letter,
+        newSublevel: xpResult.newLevel.sublevel,
+      });
+    }
   }
 
   const updatedClaimed = [...alreadyClaimed, ...newTiers];
@@ -264,6 +294,8 @@ async function processXPAward(
     data: {
       claimedTiers: ranks.filter(r => updatedClaimed.includes(r)).join(","),
       xpAwarded: { increment: baseXP },
+      // Store level up info for feed display
+      ...(levelUpInfoForDb.length > 0 ? { levelUpInfo: levelUpInfoForDb } : {}),
     },
   });
 }

@@ -524,7 +524,23 @@ async function processXPAward(
   }
 
   // Award XP for each domain and track level ups
+  const levelUpInfoForDb: Array<{
+    domainName: string;
+    domainSlug: string;
+    domainColor: string | null;
+    oldLetter: string;
+    oldSublevel: number;
+    newLetter: string;
+    newSublevel: number;
+  }> = [];
+  
   for (const { domainId, amount, domainName, domainIcon } of xpDistribution) {
+    // Get domain color and slug for feed display
+    const domain = await db.domain.findUnique({
+      where: { id: domainId },
+      select: { color: true, slug: true },
+    });
+    
     const xpResult = await awardXP({
       athleteId: athlete.id,
       domainId,
@@ -552,6 +568,17 @@ async function processXPAward(
         domainIcon,
         xpGained: amount,
       });
+      
+      // Store for database
+      levelUpInfoForDb.push({
+        domainName,
+        domainSlug: domain?.slug ?? domainName.toLowerCase(),
+        domainColor: domain?.color ?? null,
+        oldLetter: xpResult.previousLevel.letter,
+        oldSublevel: xpResult.previousLevel.sublevel,
+        newLetter: xpResult.newLevel.letter,
+        newSublevel: xpResult.newLevel.sublevel,
+      });
     }
   }
 
@@ -578,6 +605,8 @@ async function processXPAward(
     data: {
       claimedTiers: ranks.filter(r => updatedClaimed.includes(r)).join(","),
       xpAwarded: { increment: baseXP },
+      // Store level up info for feed display
+      ...(levelUpInfoForDb.length > 0 ? { levelUpInfo: levelUpInfoForDb } : {}),
     },
   });
 

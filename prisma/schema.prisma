@@ -697,6 +697,10 @@ model ChallengeSubmission {
   // Manual entry verification - which coach supervised this attempt
   supervisorId   String? // User ID of supervising coach
   supervisorName String? // Cached name for display purposes
+  
+  // Level up info (for feed display when submission caused a level up)
+  // JSON: { domainName, domainColor, oldLetter, oldSublevel, newLetter, newSublevel }[]
+  levelUpInfo    Json?
 
   athlete   Athlete             @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   challenge Challenge           @relation(fields: [challengeId], references: [id], onDelete: Cascade)

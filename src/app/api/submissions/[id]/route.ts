@@ -128,6 +128,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 /**
  * DELETE /api/submissions/[id]
  * Delete a submission - only owners can delete their own submissions
+ * Also reverses any XP that was awarded for this submission
  */
 export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
@@ -138,11 +139,14 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Get submission to check ownership
+    // Get submission with full details needed for XP reversal
     const submission = await db.challengeSubmission.findUnique({
       where: { id },
       select: {
+        id: true,
         athleteId: true,
+        xpAwarded: true,
+        claimedTiers: true,
         athlete: {
           select: {
             userId: true,
@@ -150,7 +154,15 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
           },
         },
         challenge: {
-          select: { slug: true },
+          select: { 
+            slug: true,
+            primaryDomainId: true,
+            primaryXPPercent: true,
+            secondaryDomainId: true,
+            secondaryXPPercent: true,
+            tertiaryDomainId: true,
+            tertiaryXPPercent: true,
+          },
         },
       },
     });
@@ -169,6 +181,92 @@ export async function DELETE(req: NextRequest, { params }: RouteParams) {
         { error: "You don't have permission to delete this submission" },
         { status: 403 }
       );
+    }
+
+    // Reverse XP if any was awarded
+    if (submission.xpAwarded > 0) {
+      const challenge = submission.challenge;
+      
+      // Calculate how much XP went to each domain
+      const xpDistribution: Array<{ domainId: string; amount: number }> = [];
+      
+      if (challenge.primaryDomainId) {
+        const primaryXP = Math.round(submission.xpAwarded * (challenge.primaryXPPercent / 100));
+        xpDistribution.push({ domainId: challenge.primaryDomainId, amount: primaryXP });
+      }
+      
+      if (challenge.secondaryDomainId && challenge.secondaryXPPercent) {
+        const secondaryXP = Math.round(submission.xpAwarded * (challenge.secondaryXPPercent / 100));
+        xpDistribution.push({ domainId: challenge.secondaryDomainId, amount: secondaryXP });
+      }
+      
+      if (challenge.tertiaryDomainId && challenge.tertiaryXPPercent) {
+        const tertiaryXP = Math.round(submission.xpAwarded * (challenge.tertiaryXPPercent / 100));
+        xpDistribution.push({ domainId: challenge.tertiaryDomainId, amount: tertiaryXP });
+      }
+      
+      // Deduct XP from each domain level
+      for (const { domainId, amount } of xpDistribution) {
+        const domainLevel = await db.domainLevel.findUnique({
+          where: {
+            athleteId_domainId: {
+              athleteId: submission.athleteId,
+              domainId,
+            },
+          },
+        });
+        
+        if (domainLevel) {
+          // Calculate new XP (can't go below 0)
+          const newXP = Math.max(0, domainLevel.currentXP - amount);
+          
+          // Recalculate level from new XP
+          const XP_PER_SUBLEVEL: Record<string, number> = {
+            F: 100, E: 200, D: 400, C: 800, B: 1600, A: 3200, S: 6400,
+          };
+          const XP_PER_RANK: Record<string, number> = {
+            F: 1000, E: 2000, D: 4000, C: 8000, B: 16000, A: 32000, S: 64000,
+          };
+          const CUMULATIVE_XP_TO_RANK: Record<string, number> = {
+            F: 0, E: 1000, D: 3000, C: 7000, B: 15000, A: 31000, S: 63000,
+          };
+          const RANKS = ["F", "E", "D", "C", "B", "A", "S"];
+          
+          // Find which rank we're in with the new XP
+          let newLetter = "F";
+          let newSublevel = 0;
+          
+          for (let i = RANKS.length - 1; i >= 0; i--) {
+            const rank = RANKS[i];
+            if (newXP >= CUMULATIVE_XP_TO_RANK[rank]) {
+              newLetter = rank;
+              const xpIntoRank = newXP - CUMULATIVE_XP_TO_RANK[rank];
+              newSublevel = Math.min(9, Math.floor(xpIntoRank / XP_PER_SUBLEVEL[rank]));
+              break;
+            }
+          }
+          
+          // Update domain level
+          await db.domainLevel.update({
+            where: { id: domainLevel.id },
+            data: {
+              currentXP: newXP,
+              letter: newLetter,
+              sublevel: newSublevel,
+              // Reset breakthrough status if we dropped below max XP for rank
+              breakthroughReady: newXP >= XP_PER_RANK[newLetter] && newSublevel === 9,
+            },
+          });
+        }
+      }
+      
+      // Delete XP transactions for this submission
+      await db.xPTransaction.deleteMany({
+        where: {
+          sourceId: submission.id,
+          source: "CHALLENGE",
+        },
+      });
     }
 
     // Delete the submission (cascade will handle reactions, comments, etc.)

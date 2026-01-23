@@ -22,13 +22,14 @@ import {
   Play, 
   TrendingUp,
   Trophy,
-  Flame,
   MapPin,
   UserPlus,
   UserMinus,
   Loader2,
   MoreVertical,
   EyeOff,
+  ChevronRight,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatSecondsToTime } from "@/lib/time";
@@ -108,157 +109,81 @@ export function FeedCard({ item, currentAthleteId, isAdmin, onReactionToggle, on
   // Format rank badge
   const formatRank = (letter: string, sublevel: number) => `${letter}${sublevel}`;
 
-  // Get tier color
-  const getTierColor = (tier: string) => {
-    const colors: Record<string, string> = {
-      F: "bg-gray-500",
-      E: "bg-green-500",
-      D: "bg-blue-500",
-      C: "bg-purple-500",
-      B: "bg-orange-500",
-      A: "bg-red-500",
-      S: "bg-yellow-500",
-    };
-    return colors[tier] || "bg-gray-500";
-  };
-
-  // Varied achievement phrases based on tier
-  const getAchievementPhrase = (tier: string | null | undefined, submissionId: string) => {
-    // Use submission ID to get consistent but varied phrase per submission
-    const phrases = tier && ["S"].includes(tier)
-      ? [ // Legendary phrases for S-tier
-          "Absolutely legendary",
-          "Peak performance",
-          "Untouchable",
-          "God-tier execution",
-          "Maximum effort",
-          "Historic achievement",
-          "Beyond limits",
-          "Transcendent",
-        ]
-      : tier && ["A"].includes(tier)
-      ? [ // Elite phrases for A-tier
-          "Elite showing",
-          "Incredible performance",
-          "Exceptional work",
-          "Outstanding execution",
-          "Top-tier effort",
-          "Impressive display",
-          "Remarkable achievement",
-          "Masterful",
-        ]
-      : tier && ["B"].includes(tier)
-      ? [ // Strong phrases for B-tier
-          "Crushed it",
-          "Dominated",
-          "Excellent work",
-          "Strong performance",
-          "Brought the heat",
-          "Serious gains",
-          "Powerful showing",
-          "Beast mode",
-        ]
-      : tier && ["C"].includes(tier)
-      ? [ // Good phrases for C-tier
-          "Nailed it",
-          "Solid performance",
-          "Great effort",
-          "Well executed",
-          "Clean work",
-          "Delivered",
-          "On point",
-          "Steady progress",
-        ]
-      : tier && ["D"].includes(tier)
-      ? [ // Decent phrases for D-tier
-          "Got it done",
-          "Good work",
-          "Respectable showing",
-          "Building momentum",
-          "Making moves",
-          "Putting in reps",
-          "Consistent effort",
-          "Grinding",
-        ]
-      : tier && ["E"].includes(tier)
-      ? [ // Encouraging phrases for E-tier
-          "On the board",
-          "Getting started",
-          "First steps",
-          "Building foundation",
-          "Learning the ropes",
-          "In the game",
-          "Starting strong",
-          "Early gains",
-        ]
-      : [ // Default phrases for F-tier or no tier (pass/fail)
-          "Challenge complete",
-          "Checked it off",
-          "Another one down",
-          "Did the thing",
-          "Mission accomplished",
-          "In the books",
-          "Logged it",
-          "Rep counted",
-        ];
-    
-    // Use a hash of submission ID to pick phrase consistently
-    const hash = submissionId.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return phrases[hash % phrases.length];
-  };
-
-  // Build achievement story sentence
-  const buildAchievementStory = (submission: NonNullable<FeedItem["submission"]>) => {
-    const parts: string[] = [];
-    
-    // Value achieved (e.g., "25 reps", "22:33", "100m")
-    if (submission.achievedValue != null && submission.achievedValue > 0) {
-      if (submission.gradingType === "TIME") {
-        // Use proper time formatting based on magnitude
-        // If over an hour, use hh:mm:ss, otherwise mm:ss
-        const format = submission.achievedValue >= 3600 ? "hh:mm:ss" : "mm:ss";
-        parts.push(formatSecondsToTime(submission.achievedValue, format));
-      } else if (submission.gradingUnit) {
-        parts.push(`${submission.achievedValue} ${submission.gradingUnit}`);
-      }
-    }
-    
-    // XP earned
-    if (submission.xpAwarded > 0) {
-      parts.push(`+${submission.xpAwarded} XP`);
-    }
-    
-    if (parts.length === 0) return null;
-    
-    // Build the sentence with varied phrase
-    const phrase = getAchievementPhrase(submission.achievedTier, submission.id);
-    return `${phrase} with ${parts.join(" • ")}!`;
-  };
-  
-  // Build rank up summary if level up occurred
-  const buildRankUpSummary = (levelUp: NonNullable<FeedItem["submission"]>["levelUp"]) => {
+  // Render exciting rank up banner
+  const renderRankUpBanner = (levelUp: NonNullable<FeedItem["submission"]>["levelUp"]) => {
     if (!levelUp) return null;
     
-    // Calculate how many sublevels gained
     const oldTotal = "FEDCBAS".indexOf(levelUp.oldLetter) * 10 + levelUp.oldSublevel;
     const newTotal = "FEDCBAS".indexOf(levelUp.newLetter) * 10 + levelUp.newSublevel;
     const sublevelsGained = newTotal - oldTotal;
-    
-    // Check if it was a letter rank change
     const letterChanged = levelUp.oldLetter !== levelUp.newLetter;
     
-    if (letterChanged) {
-      return `Ranked up to ${levelUp.newLetter}-rank in ${levelUp.domainName}!`;
-    } else if (sublevelsGained > 1) {
-      return `Gained ${sublevelsGained} levels in ${levelUp.domainName}!`;
-    }
-    return null; // Single sublevel gain shown in the level up callout
+    // Only show banner for significant gains (letter change or 2+ sublevels)
+    if (!letterChanged && sublevelsGained < 2) return null;
+    
+    // Get domain color (subtle backgrounds)
+    const domainColors: Record<string, { bg: string; text: string; glow: string }> = {
+      Strength: { bg: "from-red-600/10 to-orange-600/10", text: "text-red-400", glow: "shadow-red-500/20" },
+      Skill: { bg: "from-purple-600/10 to-pink-600/10", text: "text-purple-400", glow: "shadow-purple-500/20" },
+      Endurance: { bg: "from-green-600/10 to-emerald-600/10", text: "text-green-400", glow: "shadow-green-500/20" },
+      Speed: { bg: "from-yellow-600/10 to-amber-600/10", text: "text-yellow-400", glow: "shadow-yellow-500/20" },
+    };
+    const colors = domainColors[levelUp.domainName] || { bg: "from-blue-600/10 to-cyan-600/10", text: "text-blue-400", glow: "shadow-blue-500/20" };
+    
+    return (
+      <Link 
+        href={`/domains/${levelUp.domainSlug}`}
+        className={cn(
+          "block mx-4 mb-3 p-3 rounded-xl border border-white/10",
+          "bg-gradient-to-r",
+          colors.bg,
+          "hover:scale-[1.02] transition-transform cursor-pointer"
+        )}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Domain Icon/Name */}
+            <div className="flex flex-col items-start">
+              <span className={cn("text-[10px] font-bold uppercase tracking-widest", colors.text)}>
+                {levelUp.domainName}
+              </span>
+              {/* Level Transition */}
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xl font-bold text-muted-foreground">
+                  {levelUp.oldLetter}{levelUp.oldSublevel}
+                </span>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                <span className={cn("text-xl font-bold", colors.text)}>
+                  {levelUp.newLetter}{levelUp.newSublevel}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* RANK UP / LEVEL UP Badge */}
+          <div className="flex flex-col items-end">
+            <div className="flex items-center gap-1">
+              <Zap className={cn("w-4 h-4", colors.text)} />
+              <span className={cn(
+                "text-sm font-black uppercase tracking-wide",
+                letterChanged ? "text-yellow-400" : colors.text
+              )}>
+                {letterChanged ? "RANK UP!" : "LEVEL UP!"}
+              </span>
+            </div>
+            {sublevelsGained > 1 && (
+              <span className="text-[10px] text-muted-foreground">
+                +{sublevelsGained} rank
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
   };
 
   if (item.type === "submission" && item.submission) {
     const { submission, athlete } = item;
-    const achievementStory = buildAchievementStory(submission);
-    const rankUpSummary = buildRankUpSummary(submission.levelUp);
     
     // Don't show follow button for own posts
     const showFollowButton = currentAthleteId && currentAthleteId !== athlete.id;
@@ -338,46 +263,51 @@ export function FeedCard({ item, currentAthleteId, isAdmin, onReactionToggle, on
           </div>
         </div>
 
-        {/* Challenge Name & Achievement Story */}
+        {/* Challenge Name & Stats */}
         <div className="px-4 pb-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link 
-              href={`/challenges/${submission.challengeSlug}`}
-              className="font-semibold text-lg hover:text-accent transition-colors"
-            >
-              {submission.challengeName}
-            </Link>
-            {/* Tier Badge */}
-            {submission.achievedTier && (
-              <Badge className={cn("text-white", getTierColor(submission.achievedTier))}>
-                🏆 {submission.achievedTier}-Tier
-              </Badge>
+          <Link 
+            href={`/challenges/${submission.challengeSlug}`}
+            className="font-semibold text-lg hover:text-accent transition-colors block"
+          >
+            {submission.challengeName}
+          </Link>
+          
+          {/* Stats Row - Plain text */}
+          <p className="text-sm text-muted-foreground mt-1">
+            {/* Value + Tier */}
+            {submission.achievedValue != null && submission.achievedValue > 0 && (
+              <>
+                <span className="font-semibold text-foreground">
+                  {submission.gradingType === "TIME" 
+                    ? formatSecondsToTime(submission.achievedValue, submission.achievedValue >= 3600 ? "hh:mm:ss" : "mm:ss")
+                    : `${submission.achievedValue} ${submission.gradingUnit || ""}`}
+                </span>
+                {submission.achievedTier && ` (${submission.achievedTier}-Tier)`}
+              </>
             )}
-          </div>
-          
-          {/* Achievement Story (value + XP) */}
-          {achievementStory && (
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
-              <Flame className="w-4 h-4 text-orange-500 flex-shrink-0" />
-              {achievementStory}
-            </p>
-          )}
-          
-          {/* Rank Up Summary (if letter rank changed or multiple levels gained) */}
-          {rankUpSummary && (
-            <p className="text-sm font-medium text-yellow-500 flex items-center gap-1.5 mt-1">
-              <TrendingUp className="w-4 h-4 flex-shrink-0" />
-              {rankUpSummary}
-            </p>
-          )}
+            {/* Just tier if no value (pass/fail) */}
+            {(submission.achievedValue == null || submission.achievedValue === 0) && submission.achievedTier && (
+              <>{submission.achievedTier}-Tier</>
+            )}
+            {/* XP */}
+            {submission.xpAwarded > 0 && (
+              <span className="text-green-600 dark:text-green-400">
+                {(submission.achievedValue != null && submission.achievedValue > 0) || submission.achievedTier ? " • " : ""}
+                +{submission.xpAwarded} XP
+              </span>
+            )}
+          </p>
           
           {/* User Notes */}
           {submission.notes && (
-            <p className="text-sm text-muted-foreground mt-2 line-clamp-3">
-              "{submission.notes}"
+            <p className="text-sm mt-2 line-clamp-3">
+              {submission.notes}
             </p>
           )}
         </div>
+
+        {/* Rank Up Banner - Game Style! */}
+        {renderRankUpBanner(submission.levelUp)}
 
         {/* Route Map for Strava activities with polyline */}
         {submission.activityPolyline && (

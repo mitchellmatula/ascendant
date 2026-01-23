@@ -242,6 +242,15 @@ export async function POST(
     // Award XP for achieved tier(s)
     let xpAwarded = 0;
     const newClaimedTiers: string[] = [];
+    const levelUpInfoForDb: Array<{
+      domainName: string;
+      domainSlug: string;
+      domainColor: string | null;
+      oldLetter: string;
+      oldSublevel: number;
+      newLetter: string;
+      newSublevel: number;
+    }> = [];
     
     if (tier) {
       const TIER_ORDER: Rank[] = ["F", "E", "D", "C", "B", "A", "S"];
@@ -267,7 +276,12 @@ export async function POST(
         // Award XP to primary domain
         const primaryXP = Math.round(baseXP * (challenge.primaryXPPercent / 100));
         if (primaryXP > 0 && challenge.primaryDomainId) {
-          await awardXP({
+          const domain = await db.domain.findUnique({
+            where: { id: challenge.primaryDomainId },
+            select: { name: true, slug: true, color: true },
+          });
+          
+          const xpResult = await awardXP({
             athleteId,
             domainId: challenge.primaryDomainId,
             amount: primaryXP,
@@ -276,13 +290,30 @@ export async function POST(
             note: `Quick grade: ${newClaimedTiers.join(",")} tier(s) on "${challenge.name}"`,
           });
           xpAwarded += primaryXP;
+          
+          if (xpResult.leveledUp && domain) {
+            levelUpInfoForDb.push({
+              domainName: domain.name,
+              domainSlug: domain.slug,
+              domainColor: domain.color,
+              oldLetter: xpResult.previousLevel.letter,
+              oldSublevel: xpResult.previousLevel.sublevel,
+              newLetter: xpResult.newLevel.letter,
+              newSublevel: xpResult.newLevel.sublevel,
+            });
+          }
         }
         
         // Award XP to secondary domain if applicable
         if (challenge.secondaryDomainId && challenge.secondaryXPPercent) {
           const secondaryXP = Math.round(baseXP * (challenge.secondaryXPPercent / 100));
           if (secondaryXP > 0) {
-            await awardXP({
+            const domain = await db.domain.findUnique({
+              where: { id: challenge.secondaryDomainId },
+              select: { name: true, slug: true, color: true },
+            });
+            
+            const xpResult = await awardXP({
               athleteId,
               domainId: challenge.secondaryDomainId,
               amount: secondaryXP,
@@ -291,6 +322,18 @@ export async function POST(
               note: `Quick grade: ${newClaimedTiers.join(",")} tier(s) on "${challenge.name}"`,
             });
             xpAwarded += secondaryXP;
+            
+            if (xpResult.leveledUp && domain) {
+              levelUpInfoForDb.push({
+                domainName: domain.name,
+                domainSlug: domain.slug,
+                domainColor: domain.color,
+                oldLetter: xpResult.previousLevel.letter,
+                oldSublevel: xpResult.previousLevel.sublevel,
+                newLetter: xpResult.newLevel.letter,
+                newSublevel: xpResult.newLevel.sublevel,
+              });
+            }
           }
         }
         
@@ -298,7 +341,12 @@ export async function POST(
         if (challenge.tertiaryDomainId && challenge.tertiaryXPPercent) {
           const tertiaryXP = Math.round(baseXP * (challenge.tertiaryXPPercent / 100));
           if (tertiaryXP > 0) {
-            await awardXP({
+            const domain = await db.domain.findUnique({
+              where: { id: challenge.tertiaryDomainId },
+              select: { name: true, slug: true, color: true },
+            });
+            
+            const xpResult = await awardXP({
               athleteId,
               domainId: challenge.tertiaryDomainId,
               amount: tertiaryXP,
@@ -307,6 +355,18 @@ export async function POST(
               note: `Quick grade: ${newClaimedTiers.join(",")} tier(s) on "${challenge.name}"`,
             });
             xpAwarded += tertiaryXP;
+            
+            if (xpResult.leveledUp && domain) {
+              levelUpInfoForDb.push({
+                domainName: domain.name,
+                domainSlug: domain.slug,
+                domainColor: domain.color,
+                oldLetter: xpResult.previousLevel.letter,
+                oldSublevel: xpResult.previousLevel.sublevel,
+                newLetter: xpResult.newLevel.letter,
+                newSublevel: xpResult.newLevel.sublevel,
+              });
+            }
           }
         }
         
@@ -317,6 +377,7 @@ export async function POST(
           data: {
             claimedTiers: allClaimedTiers.join(","),
             xpAwarded: { increment: xpAwarded },
+            ...(levelUpInfoForDb.length > 0 ? { levelUpInfo: levelUpInfoForDb } : {}),
           },
         });
       }

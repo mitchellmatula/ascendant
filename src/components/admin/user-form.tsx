@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/ui/date-picker";
 import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, Plus, UserPlus, ExternalLink, Ban, CheckCircle, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Trash2, Plus, UserPlus, ExternalLink, Ban, CheckCircle, AlertTriangle, Eye, EyeOff, RefreshCw } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -140,6 +140,14 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
   const [reviewBanReason, setReviewBanReason] = useState("");
   const [showReviewBanDialog, setShowReviewBanDialog] = useState(false);
   const [canReviewState, setCanReviewState] = useState(user.canReview);
+  
+  // XP Reconciliation state (admin tool)
+  const [isReconciling, setIsReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<{
+    success: boolean;
+    message: string;
+    changes?: Array<{ domain: string; oldXP: number; newXP: number; oldLevel: string; newLevel: string }>;
+  } | null>(null);
 
   // User fields
   const [role, setRole] = useState<Role>(user.role);
@@ -399,6 +407,49 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
       alert("Failed to restore review privileges");
     } finally {
       setIsReviewBanning(false);
+    }
+  };
+
+  // XP Reconciliation handler (admin tool for fixing XP drift)
+  const athleteIdForReconcile = user.athlete?.id || user.managedAthletes[0]?.id;
+
+  const handleReconcileXP = async () => {
+    if (!athleteIdForReconcile) {
+      alert("No athlete profile to reconcile");
+      return;
+    }
+
+    setIsReconciling(true);
+    setReconcileResult(null);
+    try {
+      const response = await fetch(`/api/admin/athletes/${athleteIdForReconcile}/reconcile-xp`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setReconcileResult({
+          success: true,
+          message: data.message,
+          changes: data.changes,
+        });
+        router.refresh();
+      } else {
+        setReconcileResult({
+          success: false,
+          message: data.error || "Failed to reconcile XP",
+        });
+      }
+    } catch (error) {
+      console.error("Error reconciling XP:", error);
+      setReconcileResult({
+        success: false,
+        message: "Failed to reconcile XP",
+      });
+    } finally {
+      setIsReconciling(false);
     }
   };
 
@@ -726,6 +777,68 @@ export function UserForm({ user, disciplines, isCurrentUser }: UserFormProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* XP Tools (Admin only) */}
+      {athleteIdForReconcile && (
+        <Card>
+          <CardHeader>
+            <CardTitle>XP Tools</CardTitle>
+            <CardDescription>
+              Admin tools for fixing XP inconsistencies
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <p>
+                If XP appears incorrect (e.g., from deleted submissions not properly reversed), 
+                use this tool to recalculate XP from approved submissions.
+              </p>
+            </div>
+            
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleReconcileXP}
+              disabled={isReconciling}
+            >
+              {isReconciling ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Reconciling...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Reconcile XP
+                </>
+              )}
+            </Button>
+            
+            {reconcileResult && (
+              <div className={`p-3 rounded-lg border ${
+                reconcileResult.success 
+                  ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" 
+                  : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+              }`}>
+                <p className={`font-medium ${
+                  reconcileResult.success ? "text-green-800 dark:text-green-300" : "text-red-800 dark:text-red-300"
+                }`}>
+                  {reconcileResult.message}
+                </p>
+                {reconcileResult.changes && reconcileResult.changes.length > 0 && (
+                  <ul className="mt-2 text-sm text-muted-foreground space-y-1">
+                    {reconcileResult.changes.map((change, i) => (
+                      <li key={i}>
+                        {change.domain}: {change.oldXP} → {change.newXP} XP ({change.oldLevel} → {change.newLevel})
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gym Memberships (Read-only) */}
       {(user.gymMemberships.length > 0 || user.ownedGyms.length > 0) && (
