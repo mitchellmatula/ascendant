@@ -158,6 +158,15 @@ export default async function SettingsPage() {
               </Link>
             </div>
           )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Connected Apps</span>
+            <Link 
+              href="/settings/connections" 
+              className="text-sm text-primary hover:underline"
+            >
+              Strava, Garmin →
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

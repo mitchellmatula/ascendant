@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { format, subDays, startOfDay } from "date-fns";
 import dynamic from "next/dynamic";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import {
   Dialog,
   DialogContent,
@@ -196,9 +197,7 @@ export function StravaActivityPicker({
         params.set("after", String(after));
       }
 
-      const response = await fetch(`/api/strava/activities?${params}`, {
-        credentials: "include",
-      });
+      const response = await fetchWithAuth(`/api/strava/activities?${params}`);
       
       // Retry once on 401 (auth may not be ready yet on initial load)
       if (response.status === 401 && retryCount < 1) {
