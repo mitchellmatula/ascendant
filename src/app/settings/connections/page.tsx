@@ -95,26 +95,12 @@ export default async function ConnectionsSettingsPage({ searchParams }: Connecti
             <StravaConnectButton connected={stravaConnected} />
           </div>
 
-          {/* Garmin Connection - Coming Soon */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg border opacity-60">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <span className="text-2xl">⌚</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium">Garmin Connect</span>
-                  <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Sync activities from your Garmin device
-                </p>
-              </div>
-            </div>
-            
-            <Badge variant="outline" className="text-muted-foreground">
-              Not Available
-            </Badge>
+          {/* Tip: Garmin → Strava sync */}
+          <div className="p-4 rounded-lg border bg-muted/30">
+            <p className="text-sm text-muted-foreground">
+              <strong>Garmin users:</strong> Connect Garmin to Strava to sync your activities automatically. 
+              Most Garmin users already have this enabled in the Garmin Connect app.
+            </p>
           </div>
         </CardContent>
       </Card>

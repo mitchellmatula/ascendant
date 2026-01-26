@@ -138,10 +138,10 @@ export const timeFormats = ["seconds", "mm:ss", "hh:mm:ss"] as const;
 export type TimeFormat = typeof timeFormats[number];
 
 // Proof types for challenge submissions
-export const proofTypes = ["VIDEO", "IMAGE", "STRAVA", "GARMIN", "MANUAL"] as const;
+export const proofTypes = ["VIDEO", "IMAGE", "STRAVA", "MANUAL"] as const;
 export type ProofType = typeof proofTypes[number];
 
-// Activity types for Strava/Garmin validation
+// Activity types for Strava validation
 export const activityTypes = [
   "Run", "Trail Run", "Ride", "Mountain Bike", "Swim", "Open Water Swim",
   "Walk", "Hike", "Row", "Kayak", "Cross-Country Ski", "Other"
@@ -178,7 +178,7 @@ const challengeBaseSchema = z.object({
   minRank: z.enum(RANKS as unknown as [string, ...string[]]).default("F"),
   maxRank: z.enum(RANKS as unknown as [string, ...string[]]).default("S"),
   
-  // Proof types & activity validation (Strava/Garmin integration)
+  // Proof types & activity validation (Strava integration)
   proofTypes: z.array(z.enum(proofTypes)).min(1, "At least one proof type is required").default(["VIDEO"]),
   activityType: z.string().max(50).optional().nullable(), // Run, Ride, Swim, etc.
   minDistance: z.number().min(0).optional().nullable(), // meters

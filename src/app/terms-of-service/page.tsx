@@ -86,7 +86,7 @@ export default function TermsOfServicePage() {
         <section>
           <h2 className="text-xl font-semibold mb-3">7. Third-Party Integrations</h2>
           <p className="text-muted-foreground">
-            The Service integrates with third-party platforms (Strava, Garmin, Google). Your use of these integrations 
+            The Service integrates with third-party platforms (Strava, Google). Your use of these integrations 
             is subject to the respective third party&apos;s terms of service. We are not responsible for third-party 
             services or their availability.
           </p>

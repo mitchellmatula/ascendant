@@ -44,7 +44,7 @@ export default function PrivacyPage() {
             We integrate with third-party services to enhance your experience:
           </p>
           <ul className="list-disc list-inside text-muted-foreground space-y-1">
-            <li><strong>Strava/Garmin:</strong> If you connect your account, we access activity data (distance, time, route) to verify challenge completions.</li>
+            <li><strong>Strava:</strong> If you connect your account, we access activity data (distance, time, route) to verify challenge completions.</li>
             <li><strong>Google Sign-In:</strong> We use Google for authentication. We receive your name, email, and profile picture.</li>
             <li><strong>Clerk:</strong> Our authentication provider that securely manages your login credentials.</li>
           </ul>

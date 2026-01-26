@@ -88,7 +88,6 @@ const PROOF_TYPES = [
   { value: "VIDEO", label: "Video Upload", icon: "🎥", description: "Athlete uploads a video" },
   { value: "IMAGE", label: "Image Upload", icon: "📷", description: "Athlete uploads a photo" },
   { value: "STRAVA", label: "Strava Activity", icon: "🏃", description: "Link a Strava activity" },
-  { value: "GARMIN", label: "Garmin Activity", icon: "⌚", description: "Link a Garmin activity" },
   { value: "MANUAL", label: "Manual Entry", icon: "✍️", description: "Coach/admin verified" },
 ] as const;
 
@@ -204,7 +203,7 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
   });
 
   // Check if activity-based proof types are selected
-  const hasActivityProof = formData.proofTypes.includes("STRAVA") || formData.proofTypes.includes("GARMIN");
+  const hasActivityProof = formData.proofTypes.includes("STRAVA");
 
   const [isExtractingThumbnail, setIsExtractingThumbnail] = useState(false);
 
@@ -1611,13 +1610,13 @@ export function ChallengeForm({ challenge, domains, categories, disciplines, equ
             )}
           </div>
 
-          {/* Activity Validation Rules (only when Strava or Garmin selected) */}
+          {/* Activity Validation Rules (only when Strava selected) */}
           {hasActivityProof && (
             <div className="space-y-4 pt-4 border-t">
               <div>
                 <h4 className="font-medium text-sm mb-1">Activity Validation Rules</h4>
                 <p className="text-xs text-muted-foreground">
-                  Configure requirements for Strava/Garmin activities. Leave blank for no restriction.
+                  Configure requirements for Strava activities. Leave blank for no restriction.
                 </p>
               </div>
 

@@ -59,6 +59,8 @@ model User {
   // Gym relationships
   gymMemberships GymMember[] // Gyms this user is a member of
   ownedGyms      Gym[]       @relation("GymOwner") // Gyms this user owns
+  createdInvites GymInvite[] @relation("InviteCreator") // Invites this user created
+  usedInvites    GymInviteUsage[] @relation("InviteUser") // Invites this user redeemed
   
   // Class/coaching relationships
   coachedClasses        ClassCoach[]         // Classes where user is a coach
@@ -430,9 +432,9 @@ model Challenge {
   maxRank      String      @default("S") // Highest rank this challenge is available for
 
   // Proof/submission types allowed for this challenge
-  proofTypes   String[]    @default(["VIDEO"]) // VIDEO, IMAGE, STRAVA, GARMIN, MANUAL
+  proofTypes   String[]    @default(["VIDEO"]) // VIDEO, IMAGE, STRAVA, MANUAL
   
-  // Activity validation rules (for Strava/Garmin challenges)
+  // Activity validation rules (for Strava challenges)
   activityType      String?   // Run, Ride, Swim, Hike, Walk, etc.
   minDistance       Float?    // Minimum distance in meters
   maxDistance       Float?    // Maximum distance in meters (for time trials)
@@ -629,7 +631,7 @@ enum ProofType {
   VIDEO       // Video upload
   IMAGE       // Image upload
   STRAVA      // Strava activity
-  GARMIN      // Garmin activity
+  GARMIN      // Garmin activity (future use)
   RACE_RESULT // Official race result
   MANUAL      // Manual entry (coach/admin approved)
 }
@@ -661,11 +663,11 @@ model ChallengeSubmission {
   stravaActivityId  String?
   stravaActivityUrl String?
   
-  // Garmin activity proof
+  // Garmin activity proof (future use)
   garminActivityId  String?
   garminActivityUrl String?
   
-  // Cached activity metrics (from Strava/Garmin API)
+  // Cached activity metrics (from Strava API)
   activityDistance   Float?    // Distance in meters
   activityTime       Int?      // Duration in seconds
   activityElevation  Float?    // Elevation gain in meters
@@ -812,6 +814,7 @@ model Gym {
   disciplines GymDiscipline[]  // Disciplines this gym focuses on
   challenges  Challenge[]      // Gym-specific challenges
   classes     Class[]          // Classes at this gym
+  invites     GymInvite[]      // Invite links for this gym
 }
 
 // Gym membership role
@@ -1212,4 +1215,49 @@ enum TicketPriority {
   NORMAL
   HIGH
   URGENT
+}
+
+// ============================================
+// GYM INVITES
+// ============================================
+
+model GymInvite {
+  id          String   @id @default(cuid())
+  gymId       String
+  token       String   @unique @default(cuid()) // Unique invite token for URL
+  role        GymRole  @default(COACH)          // Role to assign on join
+  createdById String                             // User who created the invite
+  
+  // Usage tracking
+  maxUses     Int?                               // Max number of uses (null = unlimited)
+  useCount    Int      @default(0)               // How many times it's been used
+  
+  // Expiration
+  expiresAt   DateTime                           // When invite expires
+  
+  // Status
+  isActive    Boolean  @default(true)            // Can be revoked
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  gym       Gym                @relation(fields: [gymId], references: [id], onDelete: Cascade)
+  createdBy User               @relation("InviteCreator", fields: [createdById], references: [id])
+  usages    GymInviteUsage[]
+  
+  @@index([gymId])
+  @@index([token])
+}
+
+// Track who used each invite
+model GymInviteUsage {
+  id        String   @id @default(cuid())
+  inviteId  String
+  userId    String
+  usedAt    DateTime @default(now())
+  
+  invite GymInvite @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  user   User      @relation("InviteUser", fields: [userId], references: [id])
+  
+  @@unique([inviteId, userId]) // User can only use an invite once
 }

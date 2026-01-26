@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 // Proof type enum
-const proofTypeEnum = z.enum(["VIDEO", "IMAGE", "STRAVA", "GARMIN", "RACE_RESULT", "MANUAL"]);
+const proofTypeEnum = z.enum(["VIDEO", "IMAGE", "STRAVA", "RACE_RESULT", "MANUAL"]);
 
 // Create a new submission
 export const createSubmissionSchema = z.object({
@@ -18,11 +18,7 @@ export const createSubmissionSchema = z.object({
   stravaActivityId: z.string().optional(),
   stravaActivityUrl: z.string().url().optional(),
   
-  // Garmin activity proof
-  garminActivityId: z.string().optional(),
-  garminActivityUrl: z.string().url().optional(),
-  
-  // Cached activity metrics (from Strava/Garmin API)
+  // Cached activity metrics (from Strava API)
   activityDistance: z.number().positive().optional(), // Distance in meters
   activityTime: z.number().int().positive().optional(), // Duration in seconds
   activityElevation: z.number().positive().optional(), // Elevation gain in meters
@@ -52,8 +48,6 @@ export const createSubmissionSchema = z.object({
         return !!data.imageUrl;
       case "STRAVA":
         return !!data.stravaActivityId;
-      case "GARMIN":
-        return !!data.garminActivityId;
       case "RACE_RESULT":
         return !!data.imageUrl || !!data.videoUrl; // Usually an image of the result
       case "MANUAL":

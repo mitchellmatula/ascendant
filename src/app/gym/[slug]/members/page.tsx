@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Crown, Shield, UserCheck, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Users, Crown, Shield, UserCheck, Eye, EyeOff, Link2 } from "lucide-react";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
 
@@ -93,16 +93,24 @@ export default async function MembersPage({ params }: MembersPageProps) {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href={`/gym/${slug}`}>
-            <ArrowLeft className="w-5 h-5" />
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href={`/gym/${slug}`}>
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold">Manage Members</h1>
+            <p className="text-sm text-muted-foreground">{gym.name}</p>
+          </div>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href={`/gym/${slug}/invites`}>
+            <Link2 className="w-4 h-4 mr-2" />
+            Invite Links
           </Link>
         </Button>
-        <div>
-          <h1 className="text-xl font-bold">Manage Members</h1>
-          <p className="text-sm text-muted-foreground">{gym.name}</p>
-        </div>
       </div>
 
       <Card className="mb-6">

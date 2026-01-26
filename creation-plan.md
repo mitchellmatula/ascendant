@@ -959,15 +959,17 @@ The following items are the highest priority for immediate work:
     - ✅ Banner shows equipment filter status and count of hidden challenges
     - ✅ "Show all" toggle to disable equipment filter
     - ✅ URL parameter `?equipment=false` to show all challenges regardless of equipment
-23. [ ] **Coach invite system** – Gym owners invite coaches via link
-    - [ ] Generate unique invite link (`/invite/[token]`)
-    - [ ] Link contains: gym ID, role (COACH), expiration
-    - [ ] Copy-to-clipboard button in gym management UI
-    - [ ] When clicked: sign in (if account exists) or create account
-    - [ ] After auth: auto-join gym with COACH role
-    - [ ] Invite tokens expire after 7 days (configurable)
-    - [ ] Owner can revoke/regenerate invite links
-    - [ ] Schema: `GymInvite` model with token, gymId, role, expiresAt, usedBy
+23. [x] **Coach invite system** – Gym owners invite coaches via link
+    - [x] Generate unique invite link (`/invite/[token]`)
+    - [x] Link contains: gym ID, role (COACH/MEMBER/MANAGER), expiration
+    - [x] Copy-to-clipboard button in gym management UI
+    - [x] When clicked: sign in (if account exists) or create account
+    - [x] After auth: auto-join gym with specified role
+    - [x] Invite tokens expire after configurable days (1-30)
+    - [x] Owner can revoke/regenerate invite links
+    - [x] Schema: `GymInvite` + `GymInviteUsage` models with token, gymId, role, expiresAt, maxUses, useCount
+    - [x] Invite management page at `/gym/[slug]/invites`
+    - [x] Public redemption page at `/invite/[token]`
 
 ### ✅ COMPLETED - Phase 7: Fitness App Integrations (Strava/Garmin)
 For running, cycling, and outdoor endurance challenges, athletes can link their fitness accounts to submit verified activities.
@@ -987,8 +989,37 @@ For running, cycling, and outdoor endurance challenges, athletes can link their 
 24. [x] **Strava OAuth flow** – Connect/disconnect Strava account
     - [x] Store `stravaAccessToken`, `stravaRefreshToken`, `stravaAthleteId` on User
     - [x] Token refresh logic (`src/lib/strava.ts`)
-25. [ ] **Garmin OAuth flow** – Connect/disconnect Garmin account (future - schema ready)
-25. [x] **Settings page** – `/settings/connections` - Manage linked accounts with Strava connect/disconnect
+25. [ ] **Garmin OAuth flow** – Connect/disconnect Garmin account (PENDING APPROVAL)
+    - [ ] Apply for Garmin Connect Developer Program (submitted Jan 2026, ~2 day approval)
+    - [ ] Receive Consumer Key and Consumer Secret after approval
+    - [ ] Create `src/lib/garmin.ts` - Token management, activity fetching
+    - [ ] OAuth callback route: `GET /api/auth/garmin/callback`
+    - [ ] Connect endpoint: `GET /api/auth/garmin` (redirects to Garmin OAuth)
+    - [ ] Disconnect endpoint: `DELETE /api/auth/garmin`
+    - [ ] Store `garminAccessToken`, `garminRefreshToken`, `garminUserId` on User (schema ready)
+    - [ ] Activity API: Fetch activities (supports FIT, GPX, TCX formats)
+    - [ ] Webhook setup for push notifications (Garmin prefers push over polling)
+    - [ ] `GarminActivityPicker` component (mirror of StravaActivityPicker)
+    - [ ] Update `/settings/connections` with Garmin connect/disconnect button
+26. [x] **Settings page** – `/settings/connections` - Manage linked accounts with Strava connect/disconnect
+
+**Garmin Connect API Details** (for implementation after approval):
+- **OAuth 2.0 flow**: Similar to Strava but uses Garmin's authorization server
+- **Activity API endpoints**:
+  - `GET /wellness-api/rest/activities` - List activities
+  - `GET /wellness-api/rest/activityDetails` - Activity details with GPS data
+  - Activity types: running, cycling, swimming, hiking, etc.
+- **Webhook (Push) Architecture** (recommended by Garmin):
+  - Register webhook URL with Garmin
+  - Receive real-time activity notifications
+  - Endpoint: `POST /api/webhooks/garmin`
+  - Events: activity created, updated, deleted
+- **Environment Variables Needed**:
+  ```
+  GARMIN_CONSUMER_KEY=
+  GARMIN_CONSUMER_SECRET=
+  GARMIN_WEBHOOK_SECRET=  # For webhook signature validation
+  ```
 
 **Athlete: Activity-Based Submission**
 26. [x] **Activity picker component** – `StravaActivityPicker` component

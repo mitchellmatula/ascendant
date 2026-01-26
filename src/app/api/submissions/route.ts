@@ -277,9 +277,9 @@ export async function POST(req: NextRequest) {
       // Strava activity data
       stravaActivityId: data.stravaActivityId || null,
       stravaActivityUrl: data.stravaActivityUrl || null,
-      // Garmin activity data
-      garminActivityId: data.garminActivityId || null,
-      garminActivityUrl: data.garminActivityUrl || null,
+      // Garmin activity data (reserved for future use)
+      garminActivityId: null,
+      garminActivityUrl: null,
       // Cached activity metrics
       activityDistance: data.activityDistance || null,
       activityTime: data.activityTime || null,
